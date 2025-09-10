@@ -125,9 +125,9 @@
 <script>
 /* ========== GANTI DATA PRODUK DI SINI (sesuaikan dgn daftar hargamu) ========== */
 const PRODUCTS = [
-  { id: "d1", name: "Donat Coklat (Full Celup)", price: 3000, desc: "Donat lembut, coklat full" },
-  { id: "d2", name: "Donat Polos", price: 2500, desc: "Donat klasik" },
-  { id: "d3", name: "Donat Keju", price: 3000, desc: "Taburan keju parut" },
+  { id: "d1", name: "Donat Coklat karakter", price: 3000, desc: "Donat lembut, coklat full" },
+  { id: "d2", name: "Donat salju", price: 2500, desc: "Donat klasik" },
+  { id: "d3", name: "Donat strawbery karakter", price: 3000, desc: "donat lembut strawbery" },
   { id: "p1", name: "Kue Pancong", price: 7000, desc: "Pancong gurih" },
   { id: "j1", name: "Wedang Jahe Susu (Hot)", price: 5000, desc: "Jahe hangat + susu" },
   { id: "s1", name: "Sosis kecil", price: 2000, desc: "Sosis kecil" },
