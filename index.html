@@ -321,6 +321,7 @@
         <!-- ================= 6. VIEW PENGATURAN ================= -->
         <main id="view-pengaturan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-lg mx-auto space-y-6">
+                <!-- Pengaturan Struk -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-receipt text-blue-500 mr-2"></i>Pengaturan Struk Toko</h2>
                     <div class="space-y-4">
@@ -342,6 +343,25 @@
                     </div>
                 </div>
 
+                <!-- Backup & Restore Data (NEW) -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-database text-emerald-500 mr-2"></i>Backup & Restore Data</h2>
+                    <div class="space-y-4">
+                        <p class="text-[11px] text-gray-500 font-medium">Amankan data toko Anda dengan menyimpannya ke perangkat, atau pulihkan data dari file backup sebelumnya.</p>
+                        <div class="flex gap-3">
+                            <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
+                                <i class="fa-solid fa-download mr-2"></i> Backup
+                            </button>
+                            <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
+                                <i class="fa-solid fa-upload mr-2"></i> Restore
+                            </button>
+                            <!-- Input File tersembunyi untuk Restore -->
+                            <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keamanan Aplikasi -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-shield-halved text-red-500 mr-2"></i>Keamanan Aplikasi</h2>
                     <div class="space-y-4">
@@ -401,7 +421,6 @@
             </div>
             
             <div class="overflow-y-auto flex-1 pr-1 space-y-5 pb-4">
-                <!-- Section Uang Tunai Fisik -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
                         <span><i class="fa-solid fa-money-bill-wave text-green-500 mr-2"></i>Uang Tunai (Laci)</span>
@@ -418,7 +437,6 @@
                     </div>
                 </div>
 
-                <!-- Section Saldo Digital -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
                         <span><i class="fa-solid fa-mobile-screen text-blue-500 mr-2"></i>Saldo Digital (Aplikasi)</span>
@@ -435,7 +453,6 @@
                 </div>
             </div>
 
-            <!-- Footer Modal (Total & Save) -->
             <div class="flex-none pt-4 border-t border-gray-200 mt-2 bg-gray-50">
                 <div class="flex justify-between items-end mb-4">
                     <span class="text-gray-500 font-bold text-sm">TOTAL KESELURUHAN</span>
@@ -448,10 +465,6 @@
         </div>
     </div>
 
-
-    <!-- Modal Scanner, Manual, Pratinjau, Form Barang, Form Hutang (Sama seperti sebelumnya) -->
-    <!-- ... (Disembunyikan demi efisiensi karena sama persis, kodenya ada di bawah) ... -->
-    
     <!-- Modal Scanner Kamera Full Screen -->
     <div id="scannerModal" class="fixed inset-0 bg-black z-[150] hidden flex flex-col">
         <div class="flex justify-between items-center p-4 bg-gray-900 text-white shadow-md z-10 flex-none">
@@ -624,6 +637,12 @@
 
     <!-- =============== SCRIPT LOGIKA =============== -->
     <script>
+        // Variabel Global
+        let scanMode = '';
+        let html5QrcodeScanner = null;
+        let lastScanTime = 0;
+        let lastScannedCode = '';
+
         // Data Dummy Barang
         const newProductsBatch = [
             { id: 1, name: "Bale Emas", buyPrice: 15300, price: 17000, barcode: "" },
@@ -641,7 +660,7 @@
         let masterProducts = [];
         let cart = [];
         let debtsData = [];
-        let rekapHistory = []; // Untuk simpan rekap uang
+        let rekapHistory = []; 
         let currentTransactionDateStr = "";
         
         let isReprintMode = false;
@@ -739,6 +758,65 @@
             localStorage.setItem('soka_store_settings', JSON.stringify(storeSettings));
             document.getElementById('header-store-name').innerText = storeSettings.name;
             showToast("Pengaturan struk disimpan!");
+        }
+
+        // ================= SISTEM BACKUP & RESTORE =================
+        function backupData() {
+            const data = {
+                soka_master_products: localStorage.getItem('soka_master_products'),
+                soka_transactions: localStorage.getItem('soka_transactions'),
+                soka_debts: localStorage.getItem('soka_debts'),
+                soka_rekap_history: localStorage.getItem('soka_rekap_history'),
+                soka_store_settings: localStorage.getItem('soka_store_settings'),
+                soka_password: localStorage.getItem('soka_password')
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.download = `Backup_SokaPOS_${dateStr}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast("Backup data berhasil diunduh!");
+        }
+
+        function restoreData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(confirm("Peringatan: Restore data akan menimpa SEMUA data toko Anda saat ini. Lanjutkan?")) {
+                        
+                        if(data.soka_master_products) localStorage.setItem('soka_master_products', data.soka_master_products);
+                        if(data.soka_transactions) localStorage.setItem('soka_transactions', data.soka_transactions);
+                        if(data.soka_debts) localStorage.setItem('soka_debts', data.soka_debts);
+                        if(data.soka_rekap_history) localStorage.setItem('soka_rekap_history', data.soka_rekap_history);
+                        if(data.soka_store_settings) localStorage.setItem('soka_store_settings', data.soka_store_settings);
+                        if(data.soka_password) localStorage.setItem('soka_password', data.soka_password);
+                        
+                        showToast("Restore data berhasil! Aplikasi akan dimuat ulang...");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                } catch (err) {
+                    showToast("Gagal membaca file backup. Format tidak valid!", true);
+                    console.error(err);
+                }
+                event.target.value = ""; // Reset input
+            };
+            reader.readAsText(file);
         }
 
         function generateInvoiceCode() {
@@ -972,7 +1050,16 @@
             }
         }
 
-        // ================= KASIR, TRANSAKSI, HUTANG, DLL (Fungsi Lama) =================
+        // ================= KASIR, TRANSAKSI, HUTANG =================
+        function toggleMobileCart(show) {
+            const cartSection = document.getElementById('cartSection');
+            if (show) {
+                cartSection.classList.remove('translate-y-full');
+            } else {
+                cartSection.classList.add('translate-y-full');
+            }
+        }
+
         function handleBarcodeEnter(e) {
             if (e.key === 'Enter') {
                 const inputEl = document.getElementById('searchInput');
@@ -1472,5 +1559,4 @@
     </script>
 </body>
 </html>
-
 
