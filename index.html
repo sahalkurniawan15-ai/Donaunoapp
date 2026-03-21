@@ -269,10 +269,43 @@
             </div>
         </main>
 
-        <!-- ================= 4. VIEW PENGATURAN ================= -->
+        <!-- ================= 4. VIEW HUTANG (KASBON) ================= -->
+        <main id="view-hutang" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
+            <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
+                <!-- Summary Card -->
+                <div class="bg-gradient-to-r from-red-500 to-red-600 p-5 rounded-2xl shadow-md text-white flex flex-col justify-center items-center relative overflow-hidden">
+                    <i class="fa-solid fa-book absolute -right-4 -bottom-4 text-7xl opacity-20"></i>
+                    <p class="text-xs font-bold opacity-90 mb-1">TOTAL PIUTANG (BELUM LUNAS)</p>
+                    <h3 id="debtTotalAmount" class="text-3xl font-black">Rp 0</h3>
+                </div>
+
+                <!-- Kontrol Pencarian & Tambah -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-3">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                            <i class="fa-solid fa-search"></i>
+                        </span>
+                        <input type="text" id="searchDebt" onkeyup="renderDebts()" placeholder="Cari nama pelanggan..." class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+                    </div>
+                    <button onclick="openDebtModal()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-bold shadow-md transition flex justify-center items-center">
+                        <i class="fa-solid fa-plus mr-2"></i> Catat Hutang
+                    </button>
+                </div>
+
+                <!-- Daftar Hutang -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
+                    <div class="p-4 bg-gray-50 border-b font-bold text-gray-800 flex justify-between items-center">
+                        <span><i class="fa-solid fa-list-ul mr-2 text-red-500"></i>Buku Catatan Hutang</span>
+                        <span id="debtTotalItems" class="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-bold">0 Catatan</span>
+                    </div>
+                    <div id="debtList" class="divide-y divide-gray-100"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ================= 5. VIEW PENGATURAN ================= -->
         <main id="view-pengaturan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-lg mx-auto space-y-6">
-                
                 <!-- Pengaturan Struk -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-receipt text-blue-500 mr-2"></i>Pengaturan Struk Toko</h2>
@@ -330,6 +363,10 @@
         <button onclick="switchTab('barang')" id="tab-barang" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
             <i class="fa-solid fa-boxes-stacked text-[20px] mb-1"></i>
             <span class="text-[10px] font-bold">Barang</span>
+        </button>
+        <button onclick="switchTab('hutang')" id="tab-hutang" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition pt-1 border-l border-gray-100 h-full">
+            <i class="fa-solid fa-book-open text-[20px] mb-1"></i>
+            <span class="text-[10px] font-bold">Hutang</span>
         </button>
         <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
             <i class="fa-solid fa-gear text-[20px] mb-1"></i>
@@ -475,6 +512,34 @@
         </div>
     </div>
 
+    <!-- Modal Form Hutang -->
+    <div id="debtModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative">
+            <h2 id="debtModalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5"><i class="fa-solid fa-book-medical text-red-500 mr-2"></i>Catat Hutang</h2>
+            <input type="hidden" id="editDebtId">
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Pelanggan</label>
+                    <input type="text" id="debtName" placeholder="Contoh: Budi" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Jumlah Hutang (Rp)</label>
+                    <input type="number" id="debtAmount" placeholder="50000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold text-lg">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Keterangan / Rincian (Opsional)</label>
+                    <input type="text" id="debtDesc" placeholder="Contoh: Rokok 2, Kopi 1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 border-t pt-5">
+                <button onclick="closeDebtModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button>
+                <button onclick="saveDebtData()" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifikasi -->
     <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-2xl text-sm font-bold z-[200] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center">
         <i class="fa-solid fa-circle-check text-green-400 mr-3 text-xl" id="toast-icon"></i>
@@ -483,34 +548,23 @@
 
     <!-- =============== SCRIPT LOGIKA =============== -->
     <script>
-        // Data Dummy Barang (Dipersingkat untuk contoh, silakan ganti dengan 169 item Anda)
+        // Data Dummy Barang (Dipersingkat untuk contoh)
         const newProductsBatch = [
             { id: 1, name: "Bale Emas", buyPrice: 15300, price: 17000, barcode: "" },
             { id: 2, name: "Bentoel Lucky Putih", buyPrice: 28400, price: 30500, barcode: "" },
-            { id: 3, name: "Camel Mild Purple", buyPrice: 18600, price: 20500, barcode: "" },
-            { id: 4, name: "Class Aroma Bold 16", buyPrice: 21650, price: 23500, barcode: "" },
-            { id: 5, name: "Class Aroma Mile 16", buyPrice: 21350, price: 23000, barcode: "" },
             { id: 6, name: "Djarum 76 12", buyPrice: 15500, price: 17000, barcode: "" },
-            { id: 7, name: "Djarum Coklat 12", buyPrice: 16400, price: 18000, barcode: "" },
-            { id: 8, name: "Djarum Coklat Extra", buyPrice: 15500, price: 17000, barcode: "" },
-            { id: 9, name: "Djarum Dio Krt 12", buyPrice: 8950, price: 10500, barcode: "" },
             { id: 10, name: "Djarum LA Ice 16", buyPrice: 34850, price: 37000, barcode: "" },
-            { id: 11, name: "Djarum LA Ice Purple Boost", buyPrice: 34450, price: 36500, barcode: "" },
-            { id: 12, name: "Djarum LA Light 16", buyPrice: 33350, price: 35500, barcode: "" },
             { id: 13, name: "Djarum Super 12", buyPrice: 22900, price: 24500, barcode: "" },
-            { id: 14, name: "Djarum Tron", buyPrice: 11750, price: 13500, barcode: "" },
             { id: 101, name: "Kapal Api Kopi 7gr (Pcs)", buyPrice: 925, price: 1500, barcode: "" },
-            { id: 102, name: "Kapal Api Kopi Mix (Pcs)", buyPrice: 1650, price: 2000, barcode: "" },
             { id: 120, name: "Beng-Beng (Pcs)", buyPrice: 1775, price: 2500, barcode: "" },
             { id: 150, name: "Sedaap Mie Soto", buyPrice: 2950, price: 3500, barcode: "" },
-            { id: 151, name: "Sedaap Mie Ayam Bawang", buyPrice: 2950, price: 3500, barcode: "" },
             { id: 171, name: "Pocari Sweat 350ml", buyPrice: 5750, price: 6500, barcode: "" },
-            { id: 201, name: "Gula Pasir 1/4kg", buyPrice: 4500, price: 6000, barcode: "" },
-            { id: 220, name: "Daia Pk 46gr (Pcs)", buyPrice: 520, price: 1000, barcode: "" }
+            { id: 201, name: "Gula Pasir 1/4kg", buyPrice: 4500, price: 6000, barcode: "" }
         ];
 
         let masterProducts = [];
         let cart = [];
+        let debtsData = [];
         let currentTransactionDateStr = "";
         
         // Mode Cetak Ulang
@@ -623,7 +677,7 @@
         }
 
 
-        // ================= SISTEM PEMULIHAN CACHE OTOMATIS =================
+        // ================= SISTEM DATA PRODUK =================
         function loadMasterData() {
             const saved = localStorage.getItem('soka_master_products');
             let savedProducts = [];
@@ -657,12 +711,15 @@
         }
 
         function switchTab(tabName) {
-            ['kasir', 'laporan', 'barang', 'pengaturan'].forEach(v => {
+            ['kasir', 'laporan', 'barang', 'hutang', 'pengaturan'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.remove('active');
                 document.getElementById(`tab-${v}`).classList.replace('text-blue-600', 'text-gray-400');
+                document.getElementById(`tab-${v}`).classList.replace('text-red-500', 'text-gray-400'); // khusus hutang
             });
+            
             document.getElementById(`view-${tabName}`).classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.replace('text-gray-400', 'text-blue-600');
+            let activeColor = tabName === 'hutang' ? 'text-red-500' : 'text-blue-600';
+            document.getElementById(`tab-${tabName}`).classList.replace('text-gray-400', activeColor);
             
             toggleMobileCart(false);
 
@@ -678,6 +735,10 @@
                 document.getElementById('header-subtitle').innerText = "Database Toko";
                 document.getElementById('btn-clear-cart-desktop').style.display = 'none';
                 renderMasterProducts();
+            } else if (tabName === 'hutang') {
+                document.getElementById('header-subtitle').innerText = "Buku Catatan Hutang";
+                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                renderDebts();
             } else if (tabName === 'pengaturan') {
                 document.getElementById('header-subtitle').innerText = "Setelan Aplikasi";
                 document.getElementById('btn-clear-cart-desktop').style.display = 'none';
@@ -732,7 +793,6 @@
 
             filtered.forEach(product => {
                 const div = document.createElement('div');
-                // Modifikasi kelas flex agar nama barang tidak tertutup
                 div.className = "bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer active:scale-95 active:bg-blue-50 transition transform h-full relative overflow-hidden min-h-[140px]";
                 div.onclick = () => addToCart(product.id, product.name, product.price, product.buyPrice);
                 
@@ -913,7 +973,7 @@
             document.getElementById('btn-save-tx').classList.add('hidden');
             
             populateReceiptUI(
-                reprintTxData.invoice || `INV-${txId.toString().slice(-6)}`, // Fallback jika trx lama ga ada invoice
+                reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`, 
                 reprintTxData.displayDate,
                 reprintTxData.time,
                 reprintTxData.items,
@@ -926,7 +986,6 @@
         }
 
         function populateReceiptUI(invoice, dateStr, timeStr, itemsList, total, pay, change) {
-            // Pasang Header & Footer
             document.getElementById('print-store-name').innerText = storeSettings.name;
             document.getElementById('print-store-address').innerText = storeSettings.address;
             document.getElementById('print-store-footer').innerText = storeSettings.footer;
@@ -973,7 +1032,6 @@
             let textReceipt = "";
             
             if(!isReprintMode) {
-                // TRANSAKSI BARU
                 const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
                 const pay = parseInt(document.getElementById('payAmount').value || 0);
                 const inv = document.getElementById('receiptInvoice').innerText;
@@ -998,12 +1056,10 @@
 
                 textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
             } else {
-                // CETAK ULANG TRANSAKSI LAMA
                 const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-            // EKSEKUSI CETAK/WA
             if (actionType === 'printer') {
                 if (navigator.share) { navigator.share({ title: 'Struk '+storeSettings.name, text: textReceipt }).catch(e => console.log(e)); } 
                 else { alert("Fitur Share Printer App tidak didukung di Browser ini."); }
@@ -1011,7 +1067,6 @@
                 window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank');
             }
 
-            // CLEANUP JIKA BUKAN REPRINT
             if(!isReprintMode) {
                 clearCart(true); 
                 showToast("Transaksi Berhasil Disimpan!");
@@ -1042,7 +1097,7 @@
             });
 
             let maxCount = Math.max(...hoursCount);
-            if (maxCount === 0) maxCount = 1; // Hindari bagi dengan nol
+            if (maxCount === 0) maxCount = 1;
 
             let html = "";
             for(let i=0; i<24; i++) {
@@ -1087,7 +1142,6 @@
             document.getElementById('reportTotalProfit').innerText = formatRp(totalProfit);
             document.getElementById('reportTotalTx').innerText = `${filteredTransactions.length} Nota`;
 
-            // Update Grafik Jam
             renderHourlyChart(filteredTransactions);
 
             const listContainer = document.getElementById('reportList');
@@ -1143,7 +1197,7 @@
                 localStorage.setItem('soka_transactions', JSON.stringify(history));
                 
                 showToast("Transaksi berhasil dihapus!");
-                loadReport(); // Refresh tampilan laporan
+                loadReport();
             }
         }
 
@@ -1158,7 +1212,6 @@
             }
         }
 
-        // FUNGSI EXPORT CSV (EXCEL)
         function downloadCSV(csvContent, fileName) {
             const bom = "\uFEFF";
             const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1308,6 +1361,145 @@
             }
         }
 
+        // ================= SISTEM BUKU HUTANG (KASBON) =================
+        function loadDebtsData() {
+            const saved = localStorage.getItem('soka_debts');
+            if (saved) { debtsData = JSON.parse(saved); }
+        }
+
+        function saveDebtsData() {
+            localStorage.setItem('soka_debts', JSON.stringify(debtsData));
+        }
+
+        function renderDebts() {
+            const filterText = document.getElementById('searchDebt').value.toLowerCase();
+            const list = document.getElementById('debtList');
+            list.innerHTML = "";
+            
+            // Filter dan urutkan: Belum Lunas di atas, Lunas di bawah
+            const filtered = debtsData.filter(d => 
+                d.name.toLowerCase().includes(filterText)
+            ).sort((a,b) => {
+                if(a.isPaid === b.isPaid) return b.id - a.id; // yang terbaru di atas
+                return a.isPaid ? 1 : -1;
+            });
+            
+            document.getElementById('debtTotalItems').innerText = `${filtered.length} Catatan`;
+
+            let totalPiutang = 0;
+            debtsData.forEach(d => { if(!d.isPaid) totalPiutang += d.amount; });
+            document.getElementById('debtTotalAmount').innerText = formatRp(totalPiutang);
+
+            if(filtered.length === 0) {
+                list.innerHTML = `<div class="p-8 text-center text-gray-400 font-medium">Buku hutang bersih, tidak ada catatan.</div>`;
+                return;
+            }
+
+            filtered.forEach(debt => {
+                const div = document.createElement('div');
+                div.className = `p-4 hover:bg-gray-50 transition border-b border-gray-100 ${debt.isPaid ? 'opacity-60 bg-gray-50' : ''}`;
+                
+                let statusBadge = debt.isPaid ? 
+                    `<span class="text-green-600 bg-green-100 border border-green-200 px-2 py-0.5 rounded font-bold text-[10px] ml-2"><i class="fa-solid fa-check-circle mr-1"></i>Lunas</span>` : 
+                    `<span class="text-red-600 bg-red-100 border border-red-200 px-2 py-0.5 rounded font-bold text-[10px] ml-2"><i class="fa-solid fa-clock mr-1"></i>Belum Lunas</span>`;
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="font-bold text-gray-800 text-base ${debt.isPaid ? 'line-through' : ''}">${debt.name} ${statusBadge}</div>
+                            <div class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-calendar-days mr-1"></i> ${debt.dateStr}</div>
+                            ${debt.desc ? `<div class="text-xs text-gray-500 mt-0.5"><i class="fa-solid fa-pen-clip mr-1"></i> ${debt.desc}</div>` : ''}
+                        </div>
+                        <div class="font-black ${debt.isPaid ? 'text-gray-400' : 'text-red-600'} text-lg">${formatRp(debt.amount)}</div>
+                    </div>
+                    <div class="flex gap-2 justify-end mt-3 border-t border-gray-100 pt-3">
+                        ${!debt.isPaid ? `<button onclick="toggleDebtStatus(${debt.id})" class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center"><i class="fa-solid fa-check mr-1"></i> Tandai Lunas</button>` : `<button onclick="toggleDebtStatus(${debt.id})" class="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-4 py-2 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center"><i class="fa-solid fa-arrow-rotate-left mr-1"></i> Batal Lunas</button>`}
+                        <button onclick="openDebtModal(${debt.id})" class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteDebt(${debt.id})" class="bg-red-50 text-red-500 hover:bg-red-100 px-3 py-2 rounded-lg transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function openDebtModal(id = null) {
+            document.getElementById('debtModal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('debtModalTitle').innerHTML = "<i class='fa-solid fa-pen-to-square mr-2 text-yellow-500'></i>Edit Hutang";
+                const debt = debtsData.find(d => String(d.id) === String(id));
+                document.getElementById('editDebtId').value = debt.id;
+                document.getElementById('debtName').value = debt.name;
+                document.getElementById('debtAmount').value = debt.amount;
+                document.getElementById('debtDesc').value = debt.desc || "";
+            } else {
+                document.getElementById('debtModalTitle').innerHTML = "<i class='fa-solid fa-book-medical mr-2 text-red-500'></i>Catat Hutang Baru";
+                document.getElementById('editDebtId').value = "";
+                document.getElementById('debtName').value = "";
+                document.getElementById('debtAmount').value = "";
+                document.getElementById('debtDesc').value = "";
+            }
+        }
+
+        function closeDebtModal() { document.getElementById('debtModal').classList.add('hidden'); }
+
+        function saveDebtData() {
+            const id = document.getElementById('editDebtId').value;
+            const name = document.getElementById('debtName').value.trim();
+            const amount = parseInt(document.getElementById('debtAmount').value);
+            const desc = document.getElementById('debtDesc').value.trim();
+
+            if(!name || isNaN(amount) || amount <= 0) return showToast("Nama dan Jumlah Hutang wajib diisi dengan benar!", true);
+
+            if (id) {
+                const index = debtsData.findIndex(d => String(d.id) === String(id));
+                if (index !== -1) {
+                    debtsData[index].name = name; 
+                    debtsData[index].amount = amount; 
+                    debtsData[index].desc = desc;
+                    showToast("Catatan hutang berhasil diubah!");
+                }
+            } else {
+                const now = new Date();
+                const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                debtsData.push({ 
+                    id: Date.now(), 
+                    name: name, 
+                    amount: amount, 
+                    desc: desc,
+                    dateStr: dateStr,
+                    isPaid: false
+                });
+                showToast("Catatan hutang baru ditambahkan!");
+            }
+            saveDebtsData(); 
+            renderDebts();
+            closeDebtModal();
+        }
+
+        function deleteDebt(id) {
+            if(confirm("Yakin ingin menghapus catatan hutang ini?")) {
+                debtsData = debtsData.filter(d => String(d.id) !== String(id));
+                saveDebtsData(); 
+                renderDebts(); 
+                showToast("Catatan dihapus!");
+            }
+        }
+
+        function toggleDebtStatus(id) {
+            const index = debtsData.findIndex(d => String(d.id) === String(id));
+            if (index !== -1) {
+                debtsData[index].isPaid = !debtsData[index].isPaid;
+                saveDebtsData();
+                renderDebts();
+                if(debtsData[index].isPaid) {
+                    showToast("Hutang ditandai LUNAS!");
+                    playBeep();
+                } else {
+                    showToast("Status dikembalikan ke Belum Lunas", true);
+                }
+            }
+        }
+
         // ================= SISTEM BARCODE SCANNER =================
         let html5QrcodeScanner = null;
         let scanMode = 'kasir'; 
@@ -1355,7 +1547,7 @@
                     addToCart(product.id, product.name, product.price, product.buyPrice);
                     playBeep();
                     showToast(`✅ Masuk: ${product.name}`);
-                    closeScanner(); // Menutup kamera otomatis setelah berhasil
+                    closeScanner();
                 } else {
                     playErrorBeep();
                     showToast(`❌ Barcode tidak ditemukan!`, true);
@@ -1372,6 +1564,7 @@
         function initApp() {
             loadStoreSettings();
             loadMasterData(); 
+            loadDebtsData();
             renderProducts(); 
             
             const now = new Date();
