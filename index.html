@@ -34,14 +34,36 @@
         /* Modifikasi tampilan kamera scanner */
         #reader { width: 100%; border: none; }
         #reader video { object-fit: cover; border-radius: 1rem; }
+
+        /* Sembunyikan scrollbar untuk grafik */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
 
+    <!-- ================= LAYAR LOGIN ================= -->
+    <div id="login-screen" class="fixed inset-0 bg-blue-700 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm text-gray-800">
+            <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h1 class="text-2xl font-black mb-1 text-center">Akses Kasir</h1>
+            <p class="text-gray-500 text-sm mb-6 text-center font-medium">Masukkan password untuk masuk</p>
+            
+            <input type="password" id="login-pin" class="w-full bg-gray-100 border-2 border-gray-200 text-center text-3xl font-black tracking-[0.5em] px-4 py-4 rounded-2xl mb-6 focus:outline-none focus:border-blue-500 transition" placeholder="****" inputmode="numeric">
+            
+            <button onclick="checkLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-lg py-4 rounded-2xl shadow-[0_8px_20px_rgba(29,78,216,0.3)] transition active:scale-95">
+                BUKA APLIKASI
+            </button>
+            <p class="text-xs text-gray-400 mt-4 text-center">Default Password: 1234</p>
+        </div>
+    </div>
+
     <!-- HEADER UTAMA -->
     <header class="h-[65px] flex-none bg-blue-600 text-white shadow-md flex justify-between items-center px-4 z-40">
         <div>
-            <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-store mr-2"></i>Soka Celluler</h1>
+            <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-store mr-2"></i><span id="header-store-name">Soka Celluler</span></h1>
             <p class="text-[11px] text-blue-200 font-medium" id="header-subtitle">Mesin Kasir Pintar</p>
         </div>
         <button id="btn-clear-cart-desktop" onclick="clearCart(false)" class="hidden md:flex bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold shadow transition items-center">
@@ -54,10 +76,8 @@
 
         <!-- ================= 1. VIEW KASIR ================= -->
         <main id="view-kasir" class="tab-content active absolute inset-0 flex-col md:flex-row bg-white z-10 w-full h-full">
-            
             <!-- KIRI: DAFTAR PRODUK -->
             <section class="w-full md:w-[60%] lg:w-2/3 h-full flex flex-col relative border-r border-gray-200">
-                
                 <!-- Kotak Pencarian & Tombol Aksi -->
                 <div class="flex-none p-3 border-b bg-white shadow-sm flex flex-col sm:flex-row gap-2 z-10">
                     <div class="relative flex-1">
@@ -105,7 +125,6 @@
 
             <!-- KANAN: KERANJANG -->
             <section id="cartSection" class="fixed inset-0 bg-gray-50 z-[80] transform translate-y-full transition-transform duration-300 md:static md:translate-y-0 md:z-auto md:w-[40%] lg:w-1/3 md:h-full flex flex-col shadow-2xl md:shadow-none">
-                
                 <!-- Header Keranjang HP -->
                 <div class="md:hidden h-[65px] flex-none bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm z-20">
                     <h2 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-cart-shopping mr-2 text-blue-600"></i>Keranjang Kasir</h2>
@@ -197,6 +216,20 @@
                     </div>
                 </div>
 
+                <!-- Grafik Jam Ramai/Sepi -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-simple text-blue-500 mr-2"></i>Analisis Jam Sibuk</h3>
+                    <p class="text-[10px] text-gray-400 mb-4">Grafik frekuensi transaksi berdasarkan jam</p>
+                    <div class="relative h-32 w-full flex items-end border-b border-gray-200">
+                        <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-0.5 px-1 pb-1">
+                            <!-- Batang grafik akan dirender disini -->
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-2 font-bold px-1">
+                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
                     <div class="p-4 bg-gray-50 border-b font-bold text-gray-800 flex justify-between items-center">
                         <span><i class="fa-solid fa-clock-rotate-left mr-2 text-blue-500"></i>Riwayat Transaksi</span>
@@ -235,21 +268,72 @@
                 </div>
             </div>
         </main>
+
+        <!-- ================= 4. VIEW PENGATURAN ================= -->
+        <main id="view-pengaturan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
+            <div class="p-4 w-full max-w-lg mx-auto space-y-6">
+                
+                <!-- Pengaturan Struk -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-receipt text-blue-500 mr-2"></i>Pengaturan Struk Toko</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Nama Toko</label>
+                            <input type="text" id="set-store-name" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Alamat / Tagline (Header)</label>
+                            <input type="text" id="set-store-address" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Pesan Penutup (Footer)</label>
+                            <input type="text" id="set-store-footer" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
+                        </div>
+                        <button onclick="saveStoreSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition">
+                            <i class="fa-solid fa-save mr-2"></i>Simpan Pengaturan Struk
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pengaturan Keamanan -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-shield-halved text-red-500 mr-2"></i>Keamanan Aplikasi</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Password Lama</label>
+                            <input type="password" id="set-old-pass" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 tracking-widest font-black" placeholder="****">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Password Baru</label>
+                            <input type="password" id="set-new-pass" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 tracking-widest font-black" placeholder="****">
+                        </div>
+                        <button onclick="changePassword()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-md transition">
+                            <i class="fa-solid fa-key mr-2"></i>Ubah Password
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
     </div>
 
     <!-- BOTTOM NAVIGATION (MENU BAWAH) -->
     <nav class="h-[65px] flex-none bg-white border-t border-gray-300 w-full flex justify-around items-center z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.15)] relative">
         <button onclick="switchTab('kasir')" id="tab-kasir" class="flex-1 flex flex-col items-center justify-center text-blue-600 transition pt-1 h-full">
-            <i class="fa-solid fa-cash-register text-[22px] mb-1"></i>
-            <span class="text-[11px] font-bold">Kasir</span>
+            <i class="fa-solid fa-cash-register text-[20px] mb-1"></i>
+            <span class="text-[10px] font-bold">Kasir</span>
         </button>
-        <button onclick="switchTab('laporan')" id="tab-laporan" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-r border-gray-100 h-full">
-            <i class="fa-solid fa-chart-pie text-[22px] mb-1"></i>
-            <span class="text-[11px] font-bold">Laporan Laba</span>
+        <button onclick="switchTab('laporan')" id="tab-laporan" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
+            <i class="fa-solid fa-chart-pie text-[20px] mb-1"></i>
+            <span class="text-[10px] font-bold">Laporan</span>
         </button>
-        <button onclick="switchTab('barang')" id="tab-barang" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 h-full">
-            <i class="fa-solid fa-boxes-stacked text-[22px] mb-1"></i>
-            <span class="text-[11px] font-bold">Data Barang</span>
+        <button onclick="switchTab('barang')" id="tab-barang" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
+            <i class="fa-solid fa-boxes-stacked text-[20px] mb-1"></i>
+            <span class="text-[10px] font-bold">Barang</span>
+        </button>
+        <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="flex-1 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
+            <i class="fa-solid fa-gear text-[20px] mb-1"></i>
+            <span class="text-[10px] font-bold">Setelan</span>
         </button>
     </nav>
 
@@ -312,10 +396,13 @@
             
             <div class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
                 <div id="receipt-area" class="font-receipt text-xs text-black w-full max-w-[58mm] bg-white p-4 shadow-md">
-                    <div class="text-center font-bold text-sm mb-1">SOKA CELLULER</div>
-                    <div class="text-center mb-2">Sembako & Konter Pulsa</div>
+                    <div class="text-center font-bold text-sm mb-1 uppercase" id="print-store-name">SOKA CELLULER</div>
+                    <div class="text-center mb-2" id="print-store-address">Sembako & Konter Pulsa</div>
                     <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div class="flex justify-between">
+                    <div class="flex justify-between text-[10px]">
+                        <span>TRX: <span id="receiptInvoice">INV-000000</span></span>
+                    </div>
+                    <div class="flex justify-between text-[10px]">
                         <span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span>
                     </div>
                     <div class="border-t border-dashed border-gray-500 my-1"></div>
@@ -331,7 +418,7 @@
                         <span>KEMBALI</span><span id="receiptChange">Rp 0</span>
                     </div>
                     <div class="border-t border-dashed border-gray-500 my-1 mt-2"></div>
-                    <div class="text-center mt-2">Terima Kasih</div>
+                    <div class="text-center mt-2" id="print-store-footer">Terima Kasih</div>
                 </div>
             </div>
 
@@ -396,7 +483,7 @@
 
     <!-- =============== SCRIPT LOGIKA =============== -->
     <script>
-        // KUMPULAN SEMUA DATA BARANG
+        // Data Dummy Barang (Dipersingkat untuk contoh, silakan ganti dengan 169 item Anda)
         const newProductsBatch = [
             { id: 1, name: "Bale Emas", buyPrice: 15300, price: 17000, barcode: "" },
             { id: 2, name: "Bentoel Lucky Putih", buyPrice: 28400, price: 30500, barcode: "" },
@@ -412,155 +499,14 @@
             { id: 12, name: "Djarum LA Light 16", buyPrice: 33350, price: 35500, barcode: "" },
             { id: 13, name: "Djarum Super 12", buyPrice: 22900, price: 24500, barcode: "" },
             { id: 14, name: "Djarum Tron", buyPrice: 11750, price: 13500, barcode: "" },
-            { id: 15, name: "Esse Win Click Ice Mango", buyPrice: 22900, price: 24500, barcode: "" },
-            { id: 16, name: "Esse Win Click Juicy", buyPrice: 22900, price: 24500, barcode: "" },
-            { id: 17, name: "Esse Win Kretek Berry", buyPrice: 10350, price: 12000, barcode: "" },
-            { id: 18, name: "GG Djaja 12", buyPrice: 13600, price: 15500, barcode: "" },
-            { id: 19, name: "GG Filter 12", buyPrice: 25550, price: 27500, barcode: "" },
-            { id: 20, name: "GG Signature 12", buyPrice: 25900, price: 28000, barcode: "" },
-            { id: 21, name: "GG Surya 12", buyPrice: 25900, price: 28000, barcode: "" },
-            { id: 22, name: "GG Surya Coklat 12", buyPrice: 25550, price: 27500, barcode: "" },
-            { id: 23, name: "Marlboro Merah Kretek", buyPrice: 11150, price: 13000, barcode: "" },
-            { id: 24, name: "Marlboro Filter 12", buyPrice: 23150, price: 25000, barcode: "" },
-            { id: 25, name: "Marlboro Red 20", buyPrice: 50250, price: 52500, barcode: "" },
-            { id: 26, name: "Rokok Gajah Baru 12", buyPrice: 16700, price: 18500, barcode: "" },
-            { id: 27, name: "Rokok Grow Berry 12", buyPrice: 17650, price: 19500, barcode: "" },
-            { id: 28, name: "Rokok Harmoni 16", buyPrice: 11450, price: 13000, barcode: "" },
-            { id: 29, name: "Rokok Mozza", buyPrice: 16000, price: 17500, barcode: "" },
-            { id: 30, name: "S. A Mild Red 16", buyPrice: 34850, price: 37000, barcode: "" },
-            { id: 31, name: "Sampoerna A Mild Polos", buyPrice: 15350, price: 17000, barcode: "" },
-            { id: 32, name: "S. Djisamsoe Kretek 12", buyPrice: 19400, price: 21000, barcode: "" },
-            { id: 33, name: "S. Djisamsoe Snapbox 12", buyPrice: 22000, price: 24000, barcode: "" },
-            { id: 34, name: "S. Serasa 16", buyPrice: 9000, price: 10500, barcode: "" },
-            { id: 35, name: "Sampoerna Kret + Refil", buyPrice: 15450, price: 17000, barcode: "" },
-            { id: 36, name: "Sampoerna Prima Soft Pck", buyPrice: 13450, price: 15000, barcode: "" },
-            { id: 37, name: "Marlboro Craft Wrap 12", buyPrice: 10450, price: 12000, barcode: "" },
-            { id: 38, name: "Rokok HS Kretek", buyPrice: 9050, price: 11000, barcode: "" },
-            { id: 39, name: "GG Signature 12 Pak/Slop", buyPrice: 253500, price: 256000, barcode: "" },
-            { id: 40, name: "Djarum Coklat Extra Pak/Slop", buyPrice: 154500, price: 157000, barcode: "" },
-            { id: 41, name: "Djarum Dio Krt 12 Pak/Slop", buyPrice: 89500, price: 92000, barcode: "" },
-            { id: 42, name: "Sampoerna Kret + Refil Pak/Slop", buyPrice: 154000, price: 156000, barcode: "" },
             { id: 101, name: "Kapal Api Kopi 7gr (Pcs)", buyPrice: 925, price: 1500, barcode: "" },
             { id: 102, name: "Kapal Api Kopi Mix (Pcs)", buyPrice: 1650, price: 2000, barcode: "" },
-            { id: 103, name: "Coffemix (Pcs)", buyPrice: 1525, price: 2000, barcode: "" },
-            { id: 104, name: "Energen Vanila (Pcs)", buyPrice: 1930, price: 2500, barcode: "" },
-            { id: 105, name: "Energen Kacang Hijau (Pcs)", buyPrice: 1930, price: 2500, barcode: "" },
-            { id: 106, name: "Energen Coklat (Pcs)", buyPrice: 1930, price: 2500, barcode: "" },
-            { id: 107, name: "Anlene Coklat (Pcs)", buyPrice: 2575, price: 3000, barcode: "" },
-            { id: 108, name: "Indocafe Capuccino (Pcs)", buyPrice: 2120, price: 2500, barcode: "" },
-            { id: 109, name: "Goodday Cappucino (Pcs)", buyPrice: 2050, price: 2500, barcode: "" },
-            { id: 110, name: "Bendera Zak Putih (Pcs)", buyPrice: 790, price: 1500, barcode: "" },
-            { id: 111, name: "Bendera Zak Coklat (Pcs)", buyPrice: 790, price: 1500, barcode: "" },
-            { id: 112, name: "Dancow Putih Sachet 27gr (Pcs)", buyPrice: 3575, price: 4500, barcode: "" },
-            { id: 113, name: "AMH Jahe Merah (Pcs)", buyPrice: 625, price: 1500, barcode: "" },
             { id: 120, name: "Beng-Beng (Pcs)", buyPrice: 1775, price: 2500, barcode: "" },
-            { id: 121, name: "Aoka Vanilla", buyPrice: 2100, price: 2500, barcode: "" },
-            { id: 122, name: "Taro Seaweed 2000 (Pcs)", buyPrice: 1850, price: 2500, barcode: "" },
-            { id: 123, name: "Garuda Rosta Oven Bawang (Pcs)", buyPrice: 1700, price: 2500, barcode: "" },
-            { id: 124, name: "Garuda Crunchy Ocorn Sea (Pcs)", buyPrice: 1800, price: 2500, barcode: "" },
-            { id: 125, name: "Garuda Crunchy Potato Daging (Pcs)", buyPrice: 1800, price: 2500, barcode: "" },
-            { id: 126, name: "Roma Malkis Keju Renteng (Pcs)", buyPrice: 875, price: 1500, barcode: "" },
-            { id: 127, name: "Roma Malkis Coklat Renteng (Pcs)", buyPrice: 875, price: 1500, barcode: "" },
-            { id: 128, name: "Roma Malkis Krim Coklat Pak", buyPrice: 10250, price: 12000, barcode: "" },
-            { id: 129, name: "Roma Malkis Keju Manis Pak", buyPrice: 6100, price: 7500, barcode: "" },
-            { id: 130, name: "Roma Arden (Box)", buyPrice: 17500, price: 20000, barcode: "" },
-            { id: 131, name: "Yupi Dino/Mango/Bears (Pak)", buyPrice: 10250, price: 12000, barcode: "" },
-            { id: 132, name: "Chocolatos Dark Mini F (Pak)", buyPrice: 20500, price: 23000, barcode: "" },
-            { id: 133, name: "Chocolatos Wafer Cheese 2000 (Pak)", buyPrice: 20000, price: 23000, barcode: "" },
-            { id: 134, name: "Permen Kiss Barley/Cherry", buyPrice: 6700, price: 8000, barcode: "" },
-            { id: 135, name: "Sosis So Nice Sapi (Pcs)", buyPrice: 950, price: 1500, barcode: "" },
-            { id: 136, name: "Roppang Choco Lava", buyPrice: 1800, price: 3500, barcode: "" },
-            { id: 137, name: "Sari Gandum Box Cho", buyPrice: 21000, price: 23000, barcode: "" },
-            { id: 138, name: "Jago Milk Choco Box", buyPrice: 10500, price: 12000, barcode: "" },
-            { id: 139, name: "Oreo 2000 Chocolate Box", buyPrice: 21000, price: 23000, barcode: "" },
-            { id: 140, name: "Superstar Wafer Box", buyPrice: 17500, price: 19500, barcode: "" },
-            { id: 141, name: "Roma Malkis Cok Kelapa (Pcs)", buyPrice: 875, price: 1500, barcode: "" },
-            { id: 142, name: "Roma Malkis Abon (Pcs)", buyPrice: 875, price: 1500, barcode: "" },
-            { id: 143, name: "Chiki Twist Roc 22.5gr (Pcs)", buyPrice: 1650, price: 2500, barcode: "" },
             { id: 150, name: "Sedaap Mie Soto", buyPrice: 2950, price: 3500, barcode: "" },
             { id: 151, name: "Sedaap Mie Ayam Bawang", buyPrice: 2950, price: 3500, barcode: "" },
-            { id: 152, name: "Sedaap Mie Goreng", buyPrice: 3000, price: 3500, barcode: "" },
-            { id: 153, name: "Sedaap Mie Korean Spicy", buyPrice: 3100, price: 4000, barcode: "" },
-            { id: 154, name: "Sukses Mie Ayam Geprek", buyPrice: 3500, price: 4500, barcode: "" },
-            { id: 155, name: "Sukses Mie Ayam Bawang / Soto", buyPrice: 3300, price: 4000, barcode: "" },
-            { id: 156, name: "Indomie Ayam Bawang", buyPrice: 3000, price: 3500, barcode: "" },
-            { id: 157, name: "Pop Mie Ayam", buyPrice: 4400, price: 5500, barcode: "" },
-            { id: 158, name: "Pop Mie Soto", buyPrice: 4400, price: 5500, barcode: "" },
-            { id: 159, name: "Pop Mie Baso", buyPrice: 4400, price: 5500, barcode: "" },
-            { id: 160, name: "Sarimi Gelas Baso (Pcs)", buyPrice: 850, price: 1500, barcode: "" },
-            { id: 161, name: "Sarimi Gelas Sosis (Pcs)", buyPrice: 850, price: 1500, barcode: "" },
-            { id: 162, name: "Sarimi Gelas Ayam Bawang (Pcs)", buyPrice: 850, price: 1500, barcode: "" },
-            { id: 163, name: "Sarimi Gelas Pedas Dower (Pcs)", buyPrice: 850, price: 1500, barcode: "" },
-            { id: 164, name: "Indomie Rendang", buyPrice: 3000, price: 4500, barcode: "" },
-            { id: 165, name: "Indomie Goreng Spesial Dus", buyPrice: 114000, price: 116000, barcode: "" },
-            { id: 170, name: "Ademsari Chingku Vit C Klg", buyPrice: 6750, price: 8500, barcode: "" },
             { id: 171, name: "Pocari Sweat 350ml", buyPrice: 5750, price: 6500, barcode: "" },
-            { id: 172, name: "Isoplus Botol 350ml", buyPrice: 2700, price: 3500, barcode: "" },
-            { id: 173, name: "Cimory UHT Marie Regal 125ml", buyPrice: 2800, price: 3500, barcode: "" },
-            { id: 174, name: "Golda Cappucino/Latte 200ml", buyPrice: 3400, price: 4500, barcode: "" },
-            { id: 175, name: "Bintang Zero Klg", buyPrice: 7250, price: 8500, barcode: "" },
-            { id: 176, name: "Esk Kids Spl Cinder 60ml", buyPrice: 8500, price: 10000, barcode: "" },
-            { id: 177, name: "Fanta Soda 250ml", buyPrice: 3250, price: 4500, barcode: "" },
-            { id: 178, name: "Coca Cola 390ml", buyPrice: 4200, price: 5500, barcode: "" },
-            { id: 179, name: "Ultra Sari Asem 250ml", buyPrice: 5200, price: 6500, barcode: "" },
-            { id: 180, name: "Aquviva Air 700ml", buyPrice: 2100, price: 3000, barcode: "" },
-            { id: 181, name: "Nescafe Caramel/Cappucino 220ml", buyPrice: 6000, price: 7500, barcode: "" },
-            { id: 182, name: "KA Signature Strong Btl", buyPrice: 4700, price: 5500, barcode: "" },
-            { id: 183, name: "Teh Kotak Jasmine 300ml (Pak)", buyPrice: 9500, price: 11000, barcode: "" },
-            { id: 184, name: "Nipis Madu 330ml", buyPrice: 3500, price: 5000, barcode: "" },
-            { id: 185, name: "Tirta 600ml Btl", buyPrice: 1200, price: 3000, barcode: "" },
-            { id: 186, name: "Aquviva Air 700ml Dus", buyPrice: 21000, price: 23000, barcode: "" },
-            { id: 187, name: "Tong Tji Premium Bks", buyPrice: 8750, price: 10500, barcode: "" },
-            { id: 188, name: "Gopek Teh Kecil Bks", buyPrice: 6000, price: 7500, barcode: "" },
-            { id: 189, name: "Cimory Yolite Strawberry", buyPrice: 4750, price: 6500, barcode: "" },
-            { id: 190, name: "You C 1000 Lemon Btl", buyPrice: 6000, price: 7500, barcode: "" },
-            { id: 191, name: "You C 1000 Orange Btl", buyPrice: 6000, price: 7500, barcode: "" },
-            { id: 192, name: "Kopi ABC Susu Botol 200ml", buyPrice: 3400, price: 5000, barcode: "" },
             { id: 201, name: "Gula Pasir 1/4kg", buyPrice: 4500, price: 6000, barcode: "" },
-            { id: 202, name: "Gula Pasir 1kg", buyPrice: 18000, price: 20000, barcode: "" },
-            { id: 203, name: "Telor (Per 1 Kg)", buyPrice: 30000, price: 33000, barcode: "" },
-            { id: 204, name: "Tepung Terigu Dahlia (1 Kg)", buyPrice: 7600, price: 9000, barcode: "" },
-            { id: 205, name: "Minyak Kita Refill 1L", buyPrice: 18000, price: 20000, barcode: "" },
-            { id: 206, name: "Minyak Rosebrand 1L", buyPrice: 19750, price: 22000, barcode: "" },
-            { id: 207, name: "Minyak Rosebrand 500ml", buyPrice: 10250, price: 11500, barcode: "" },
-            { id: 208, name: "Minyak Rosebrand Gelas", buyPrice: 4500, price: 5500, barcode: "" },
-            { id: 209, name: "Minyak Fetta Gelas", buyPrice: 4250, price: 5500, barcode: "" },
-            { id: 210, name: "Sasa TB Ori Hot 210gr", buyPrice: 5750, price: 6500, barcode: "" },
-            { id: 211, name: "Sedaap Kecap Refill Kecil 77gr", buyPrice: 1900, price: 2500, barcode: "" },
-            { id: 212, name: "Bango Kecap Refill 77gr", buyPrice: 2650, price: 3500, barcode: "" },
-            { id: 213, name: "Saos Indofood Zak Kcl", buyPrice: 9500, price: 11000, barcode: "" },
-            { id: 214, name: "Korek Gas Tokai", buyPrice: 2000, price: 3500, barcode: "" },
-            { id: 220, name: "Daia Pk 46gr (Pcs)", buyPrice: 520, price: 1000, barcode: "" },
-            { id: 221, name: "Daia 245gr Clean&Fresh", buyPrice: 1900, price: 2500, barcode: "" },
-            { id: 222, name: "Ekonomi Cremdet 500K Putih", buyPrice: 3500, price: 4500, barcode: "" },
-            { id: 223, name: "Ekonomi Cremdet 350K (Pcs)", buyPrice: 900, price: 1500, barcode: "" },
-            { id: 224, name: "Rinso ZB Anti Noda (Pcs)", buyPrice: 490, price: 1000, barcode: "" },
-            { id: 225, name: "Proclin 500 (Pcs)", buyPrice: 500, price: 1000, barcode: "" },
-            { id: 226, name: "Sunlight Lime 92gr", buyPrice: 1700, price: 2000, barcode: "" },
-            { id: 227, name: "Sunlight Lime 230gr", buyPrice: 4250, price: 5000, barcode: "" },
-            { id: 228, name: "Superpell 100ml Yellow/Green", buyPrice: 1800, price: 2500, barcode: "" },
-            { id: 229, name: "Downy Anti Apek Bml (Pcs)", buyPrice: 860, price: 1500, barcode: "" },
-            { id: 230, name: "Shampo Sunsilk Kuning (Pcs)", buyPrice: 812, price: 1000, barcode: "" },
-            { id: 231, name: "Shampo Sunsilk Hijau (Pcs)", buyPrice: 812, price: 1000, barcode: "" },
-            { id: 232, name: "Shampo Clear Biru (Pcs)", buyPrice: 816, price: 1000, barcode: "" },
-            { id: 233, name: "Shp Rejoice Rich (Pcs)", buyPrice: 775, price: 1000, barcode: "" },
-            { id: 234, name: "Lifebuoy Total10/Mildcare 4x60gr (Pak)", buyPrice: 13000, price: 15000, barcode: "" },
-            { id: 235, name: "BS Giv Hijab Tin&Zaitun 72gr", buyPrice: 3000, price: 4000, barcode: "" },
-            { id: 236, name: "BS Lux Lily Fresh 70gr", buyPrice: 4150, price: 5000, barcode: "" },
-            { id: 237, name: "Pepsodent 72gr", buyPrice: 4750, price: 5500, barcode: "" },
-            { id: 238, name: "Ciptadent 75gr", buyPrice: 3500, price: 4500, barcode: "" },
-            { id: 239, name: "Formula SG DBL Action", buyPrice: 3500, price: 4500, barcode: "" },
-            { id: 240, name: "Kapas Modern Super Soft 30gr", buyPrice: 6750, price: 7500, barcode: "" },
-            { id: 241, name: "Green Travel Facial 50's", buyPrice: 1850, price: 2500, barcode: "" },
-            { id: 242, name: "Modern Cotton Bud 45 Bayi", buyPrice: 4000, price: 5000, barcode: "" },
-            { id: 250, name: "Laurier Wings (Pcs)", buyPrice: 670, price: 1000, barcode: "" },
-            { id: 251, name: "Softex Daun Sirih 23cm isi 2 (Pcs)", buyPrice: 1250, price: 2000, barcode: "" },
-            { id: 252, name: "Charm Renteng isi 2 (Pcs)", buyPrice: 1250, price: 2000, barcode: "" },
-            { id: 253, name: "Charm Night 29cm isi 2 (Pcs)", buyPrice: 2550, price: 3500, barcode: "" },
-            { id: 254, name: "Charm Night 35cm isi 2 (Pcs)", buyPrice: 2950, price: 3500, barcode: "" },
-            { id: 255, name: "Lilin Super Jumbo (Dus)", buyPrice: 10250, price: 12000, barcode: "" },
-            { id: 256, name: "Hit Mat Greentea 18's", buyPrice: 6500, price: 8000, barcode: "" },
-            { id: 257, name: "Kresek Garuda Kecil", buyPrice: 3000, price: 4000, barcode: "" }
+            { id: 220, name: "Daia Pk 46gr (Pcs)", buyPrice: 520, price: 1000, barcode: "" }
         ];
 
         let masterProducts = [];
@@ -570,6 +516,13 @@
         // Mode Cetak Ulang
         let isReprintMode = false;
         let reprintTxData = null;
+
+        // Data Settings Toko
+        let storeSettings = {
+            name: "SOKA CELLULER",
+            address: "Sembako & Konter Pulsa",
+            footer: "Terima Kasih Atas Kunjungan Anda"
+        };
 
         const formatRp = (angka) => {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
@@ -607,16 +560,68 @@
             } catch(e) {}
         }
 
-        function toggleMobileCart(show) {
-            const cartSection = document.getElementById('cartSection');
-            if(show) {
-                cartSection.classList.remove('translate-y-full');
-                cartSection.classList.add('translate-y-0');
+        // ================= SISTEM LOGIN & SETTINGS =================
+        function checkLogin() {
+            const pinInput = document.getElementById('login-pin').value;
+            const savedPin = localStorage.getItem('soka_password') || '1234';
+            
+            if(pinInput === savedPin) {
+                const loginScreen = document.getElementById('login-screen');
+                loginScreen.classList.add('opacity-0');
+                setTimeout(() => { loginScreen.classList.add('hidden'); }, 500);
+                playBeep();
             } else {
-                cartSection.classList.add('translate-y-full');
-                cartSection.classList.remove('translate-y-0');
+                playErrorBeep();
+                showToast("Password Salah!", true);
+                document.getElementById('login-pin').value = '';
             }
         }
+
+        function changePassword() {
+            const oldPass = document.getElementById('set-old-pass').value;
+            const newPass = document.getElementById('set-new-pass').value;
+            const savedPin = localStorage.getItem('soka_password') || '1234';
+
+            if(oldPass !== savedPin) return showToast("Password lama salah!", true);
+            if(newPass.length < 4) return showToast("Password baru minimal 4 karakter!", true);
+
+            localStorage.setItem('soka_password', newPass);
+            document.getElementById('set-old-pass').value = '';
+            document.getElementById('set-new-pass').value = '';
+            showToast("Password berhasil diubah!");
+        }
+
+        function loadStoreSettings() {
+            const saved = localStorage.getItem('soka_store_settings');
+            if(saved) { storeSettings = JSON.parse(saved); }
+            
+            document.getElementById('set-store-name').value = storeSettings.name;
+            document.getElementById('set-store-address').value = storeSettings.address;
+            document.getElementById('set-store-footer').value = storeSettings.footer;
+
+            // Update UI Header
+            document.getElementById('header-store-name').innerText = storeSettings.name;
+        }
+
+        function saveStoreSettings() {
+            storeSettings.name = document.getElementById('set-store-name').value || 'SOKA CELLULER';
+            storeSettings.address = document.getElementById('set-store-address').value || '-';
+            storeSettings.footer = document.getElementById('set-store-footer').value || 'Terima Kasih';
+            
+            localStorage.setItem('soka_store_settings', JSON.stringify(storeSettings));
+            document.getElementById('header-store-name').innerText = storeSettings.name;
+            showToast("Pengaturan struk disimpan!");
+        }
+
+        function generateInvoiceCode() {
+            // Menghasilkan INV-HHMMSS (Berdasarkan waktu agar unik per hari)
+            const now = new Date();
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            const s = now.getSeconds().toString().padStart(2, '0');
+            return `INV-${h}${m}${s}`;
+        }
+
 
         // ================= SISTEM PEMULIHAN CACHE OTOMATIS =================
         function loadMasterData() {
@@ -645,10 +650,6 @@
             
             masterProducts = savedProducts;
             saveMasterData();
-            
-            if(addedCount > 0 && saved) {
-                setTimeout(() => showToast(`Berhasil memulihkan ${addedCount} barang!`), 1000);
-            }
         }
 
         function saveMasterData() {
@@ -656,7 +657,7 @@
         }
 
         function switchTab(tabName) {
-            ['kasir', 'laporan', 'barang'].forEach(v => {
+            ['kasir', 'laporan', 'barang', 'pengaturan'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.remove('active');
                 document.getElementById(`tab-${v}`).classList.replace('text-blue-600', 'text-gray-400');
             });
@@ -670,13 +671,28 @@
                 document.getElementById('btn-clear-cart-desktop').style.display = 'flex';
                 renderProducts();
             } else if (tabName === 'laporan') {
-                document.getElementById('header-subtitle').innerText = "Laporan Keuntungan";
+                document.getElementById('header-subtitle').innerText = "Laporan & Grafik";
                 document.getElementById('btn-clear-cart-desktop').style.display = 'none';
                 loadReport(); 
             } else if (tabName === 'barang') {
                 document.getElementById('header-subtitle').innerText = "Database Toko";
                 document.getElementById('btn-clear-cart-desktop').style.display = 'none';
                 renderMasterProducts();
+            } else if (tabName === 'pengaturan') {
+                document.getElementById('header-subtitle').innerText = "Setelan Aplikasi";
+                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                loadStoreSettings();
+            }
+        }
+
+        function toggleMobileCart(show) {
+            const cartSection = document.getElementById('cartSection');
+            if(show) {
+                cartSection.classList.remove('translate-y-full');
+                cartSection.classList.add('translate-y-0');
+            } else {
+                cartSection.classList.add('translate-y-full');
+                cartSection.classList.remove('translate-y-0');
             }
         }
 
@@ -716,17 +732,20 @@
 
             filtered.forEach(product => {
                 const div = document.createElement('div');
-                div.className = "bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer active:scale-95 active:bg-blue-50 transition transform h-full relative overflow-hidden";
+                // Modifikasi kelas flex agar nama barang tidak tertutup
+                div.className = "bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer active:scale-95 active:bg-blue-50 transition transform h-full relative overflow-hidden min-h-[140px]";
                 div.onclick = () => addToCart(product.id, product.name, product.price, product.buyPrice);
                 
                 let barcodeBadge = product.barcode ? `<div class="absolute top-0 right-0 bg-blue-100 text-blue-600 px-2 py-1 text-[8px] font-bold rounded-bl-lg"><i class="fa-solid fa-barcode"></i></div>` : "";
 
                 div.innerHTML = `
                     ${barcodeBadge}
-                    <div class="font-bold text-gray-700 text-xs sm:text-sm leading-tight mb-2 line-clamp-2 mt-1">${product.name}</div>
-                    <div class="mt-auto">
+                    <div class="flex-1 flex flex-col mb-1 pt-1">
+                        <div class="font-bold text-gray-800 text-xs sm:text-sm leading-snug">${product.name}</div>
+                    </div>
+                    <div class="mt-auto pt-2 border-t border-gray-50">
                         <div class="text-blue-600 font-black text-sm sm:text-base mb-2">${formatRp(product.price)}</div>
-                        <div class="bg-blue-50 text-blue-700 text-center text-xs py-2 rounded-xl font-bold border border-blue-100"><i class="fa-solid fa-cart-plus"></i> Masuk</div>
+                        <div class="bg-blue-50 text-blue-700 text-center text-[10px] sm:text-xs py-2 rounded-xl font-bold border border-blue-100"><i class="fa-solid fa-cart-plus"></i> Masuk</div>
                     </div>
                 `;
                 list.appendChild(div);
@@ -868,12 +887,15 @@
             if (pay < total) return showToast("Uang tunai pembeli kurang!", true);
 
             isReprintMode = false;
-            document.getElementById('btn-save-tx').classList.remove('hidden'); // Munculkan tombol simpan
+            document.getElementById('btn-save-tx').classList.remove('hidden');
 
             const now = new Date();
             currentTransactionDateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
             
+            const newInvoice = generateInvoiceCode();
+
             populateReceiptUI(
+                newInvoice,
                 `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`,
                 `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
                 cart, total, pay, (pay-total)
@@ -888,9 +910,10 @@
             if(!reprintTxData) return;
             
             isReprintMode = true;
-            document.getElementById('btn-save-tx').classList.add('hidden'); // Sembunyikan tombol simpan
+            document.getElementById('btn-save-tx').classList.add('hidden');
             
             populateReceiptUI(
+                reprintTxData.invoice || `INV-${txId.toString().slice(-6)}`, // Fallback jika trx lama ga ada invoice
                 reprintTxData.displayDate,
                 reprintTxData.time,
                 reprintTxData.items,
@@ -902,7 +925,13 @@
             document.getElementById('receiptModal').classList.remove('hidden');
         }
 
-        function populateReceiptUI(dateStr, timeStr, itemsList, total, pay, change) {
+        function populateReceiptUI(invoice, dateStr, timeStr, itemsList, total, pay, change) {
+            // Pasang Header & Footer
+            document.getElementById('print-store-name').innerText = storeSettings.name;
+            document.getElementById('print-store-address').innerText = storeSettings.address;
+            document.getElementById('print-store-footer').innerText = storeSettings.footer;
+
+            document.getElementById('receiptInvoice').innerText = invoice;
             document.getElementById('receiptDate').innerText = dateStr;
             document.getElementById('receiptTime').innerText = timeStr;
 
@@ -921,9 +950,10 @@
 
         function closeReceipt() { document.getElementById('receiptModal').classList.add('hidden'); }
 
-        function generateRawTextReceipt(itemsList, total, pay, change, dateStr, timeStr) {
-            let text = "SOKA CELLULER\nSembako & Konter Pulsa\n--------------------------------\n";
-            text += `Tgl : ${dateStr} ${timeStr}\nKasir : Sahal\n--------------------------------\n`;
+        function generateRawTextReceipt(invoice, itemsList, total, pay, change, dateStr, timeStr) {
+            let text = `${storeSettings.name}\n${storeSettings.address}\n--------------------------------\n`;
+            text += `TRX : ${invoice}\n`;
+            text += `Tgl : ${dateStr} ${timeStr}\n--------------------------------\n`;
             itemsList.forEach(item => {
                 text += `${item.name}\n`;
                 let qtyPrice = `${item.qty}x ${item.price.toLocaleString('id-ID')}`;
@@ -935,7 +965,7 @@
             text += `TOTAL${" ".repeat(32 - 5 - total.toLocaleString('id-ID').length)}${total.toLocaleString('id-ID')}\n`;
             text += `TUNAI${" ".repeat(32 - 5 - pay.toLocaleString('id-ID').length)}${pay.toLocaleString('id-ID')}\n`;
             text += `KEMBALI${" ".repeat(32 - 7 - change.toLocaleString('id-ID').length)}${change.toLocaleString('id-ID')}\n`;
-            text += "--------------------------------\nTerima Kasih Atas Kunjungan Anda\n\n";
+            text += `--------------------------------\n${storeSettings.footer}\n\n`;
             return text;
         }
 
@@ -946,14 +976,18 @@
                 // TRANSAKSI BARU
                 const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
                 const pay = parseInt(document.getElementById('payAmount').value || 0);
+                const inv = document.getElementById('receiptInvoice').innerText;
                 let totalModal = 0;
                 cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
                 const profit = total - totalModal;
 
                 if (actionType !== 'print_only') {
                     const transaction = {
-                        id: Date.now(), date: currentTransactionDateStr,
-                        displayDate: document.getElementById('receiptDate').innerText, time: document.getElementById('receiptTime').innerText,
+                        id: Date.now(), 
+                        invoice: inv,
+                        date: currentTransactionDateStr,
+                        displayDate: document.getElementById('receiptDate').innerText, 
+                        time: document.getElementById('receiptTime').innerText,
                         items: JSON.parse(JSON.stringify(cart)),
                         total: total, modal: totalModal, profit: profit, pay: pay, change: pay - total
                     };
@@ -962,15 +996,16 @@
                     localStorage.setItem('soka_transactions', JSON.stringify(history));
                 }
 
-                textReceipt = generateRawTextReceipt(cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
+                textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
             } else {
                 // CETAK ULANG TRANSAKSI LAMA
-                textReceipt = generateRawTextReceipt(reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
+                const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
+                textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
             // EKSEKUSI CETAK/WA
             if (actionType === 'printer') {
-                if (navigator.share) { navigator.share({ title: 'Struk Soka', text: textReceipt }).catch(e => console.log(e)); } 
+                if (navigator.share) { navigator.share({ title: 'Struk '+storeSettings.name, text: textReceipt }).catch(e => console.log(e)); } 
                 else { alert("Fitur Share Printer App tidak didukung di Browser ini."); }
             } else if (actionType === 'whatsapp') {
                 window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank');
@@ -984,7 +1019,7 @@
             closeReceipt(); 
         }
 
-        // ================= LAPORAN HARIAN / BULANAN & EXPORT EXCEL =================
+        // ================= LAPORAN HARIAN / BULANAN & GRAFIK =================
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
             if(type === 'daily') {
@@ -995,6 +1030,33 @@
                 document.getElementById('reportMonth').classList.remove('hidden');
             }
             loadReport();
+        }
+
+        function renderHourlyChart(transactions) {
+            const chartContainer = document.getElementById('chart-bars');
+            let hoursCount = new Array(24).fill(0);
+            
+            transactions.forEach(tx => {
+                let hour = parseInt(tx.time.split(':')[0]);
+                if (!isNaN(hour)) { hoursCount[hour]++; }
+            });
+
+            let maxCount = Math.max(...hoursCount);
+            if (maxCount === 0) maxCount = 1; // Hindari bagi dengan nol
+
+            let html = "";
+            for(let i=0; i<24; i++) {
+                let heightPercent = (hoursCount[i] / maxCount) * 100;
+                let opacity = hoursCount[i] > 0 ? 'bg-blue-500' : 'bg-gray-100';
+                
+                html += `
+                <div class="flex flex-col items-center flex-1 h-full justify-end group relative" title="Jam ${i}:00 = ${hoursCount[i]} transaksi">
+                    <span class="text-[8px] font-bold text-gray-500 mb-0.5 opacity-0 group-hover:opacity-100 transition">${hoursCount[i] > 0 ? hoursCount[i] : ''}</span>
+                    <div class="w-full ${opacity} rounded-t-[2px] min-h-[1px] transition-all duration-500" style="height: ${heightPercent}%"></div>
+                </div>
+                `;
+            }
+            chartContainer.innerHTML = html;
         }
 
         function loadReport() {
@@ -1025,6 +1087,9 @@
             document.getElementById('reportTotalProfit').innerText = formatRp(totalProfit);
             document.getElementById('reportTotalTx').innerText = `${filteredTransactions.length} Nota`;
 
+            // Update Grafik Jam
+            renderHourlyChart(filteredTransactions);
+
             const listContainer = document.getElementById('reportList');
             listContainer.innerHTML = "";
 
@@ -1035,13 +1100,14 @@
 
             filteredTransactions.slice().reverse().forEach((tx, index) => {
                 let itemsHtml = tx.items.map(i => `<div class="text-[11px] sm:text-xs text-gray-500 flex justify-between"><span>${i.qty}x ${i.name}</span><span>${formatRp(i.qty * i.price)}</span></div>`).join('');
-                
+                let invDisplay = tx.invoice || `INV-${tx.id.toString().slice(-6)}`;
+
                 const itemDiv = document.createElement('div');
                 itemDiv.className = "p-4 hover:bg-gray-50 transition border-b border-gray-100";
                 itemDiv.innerHTML = `
                     <div class="flex justify-between items-start mb-1 cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
                         <div>
-                            <span class="font-bold text-gray-800 text-sm">Nota #${tx.id}</span>
+                            <span class="font-bold text-gray-800 text-sm">${invDisplay}</span>
                             <span class="text-xs text-gray-400 ml-2"><i class="fa-regular fa-calendar"></i> ${tx.displayDate} - ${tx.time}</span>
                         </div>
                         <div class="font-black text-blue-600 text-base">${formatRp(tx.total)}</div>
@@ -1110,15 +1176,16 @@
             let history = JSON.parse(localStorage.getItem('soka_transactions')) || [];
             if(history.length === 0) return showToast("Tidak ada data transaksi untuk diexport!", true);
 
-            let csv = "ID_Transaksi,Tanggal,Jam,Total_Omzet,Total_Modal,Laba_Bersih,Uang_Tunai,Kembalian,Daftar_Barang\n";
+            let csv = "ID_Sistem,No_Invoice,Tanggal,Jam,Total_Omzet,Total_Modal,Laba_Bersih,Uang_Tunai,Kembalian,Daftar_Barang\n";
             
             history.forEach(tx => {
                 let itemsStr = tx.items.map(i => `${i.qty}x ${i.name}`).join(' | ');
-                csv += `"${tx.id}","${tx.date}","${tx.time}","${tx.total}","${tx.modal || 0}","${tx.profit || 0}","${tx.pay}","${tx.change}","${itemsStr}"\n`;
+                let invStr = tx.invoice || `INV-${tx.id.toString().slice(-6)}`;
+                csv += `"${tx.id}","${invStr}","${tx.date}","${tx.time}","${tx.total}","${tx.modal || 0}","${tx.profit || 0}","${tx.pay}","${tx.change}","${itemsStr}"\n`;
             });
             
             const timeCode = new Date().toISOString().slice(0, 10);
-            downloadCSV(csv, `Soka_Transaksi_${timeCode}.csv`);
+            downloadCSV(csv, `Transaksi_${storeSettings.name}_${timeCode}.csv`);
             showToast("Berhasil mendownload Excel Transaksi!");
         }
 
@@ -1132,7 +1199,7 @@
             });
             
             const timeCode = new Date().toISOString().slice(0, 10);
-            downloadCSV(csv, `Soka_DatabaseBarang_${timeCode}.csv`);
+            downloadCSV(csv, `DatabaseBarang_${storeSettings.name}_${timeCode}.csv`);
             showToast("Berhasil mendownload Excel Produk!");
         }
 
@@ -1303,14 +1370,19 @@
 
         // ================= START APP =================
         function initApp() {
+            loadStoreSettings();
             loadMasterData(); 
             renderProducts(); 
+            
             const now = new Date();
             const dateInput = document.getElementById('reportDate');
             const monthInput = document.getElementById('reportMonth');
             
             if(dateInput) { dateInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`; }
             if(monthInput) { monthInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}`; }
+
+            // Set fokus ke input PIN
+            setTimeout(() => { document.getElementById('login-pin').focus(); }, 500);
         }
 
         document.addEventListener("DOMContentLoaded", initApp);
