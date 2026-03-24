@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mesin Kasir Pintar - POS Cloud</title>
+    <title>Soka POS Cloud - Multi User</title>
     
     <link rel="manifest" href="manifest.json">
 
@@ -14,7 +14,7 @@
     <!-- Library Barcode Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 
-    <!-- FIREBASE SDK COMPAT (CLOUD DATABASE & AUTH) -->
+    <!-- FIREBASE SDK COMPAT -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
@@ -37,35 +37,35 @@
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
 
-    <!-- LOADING OVERLAY -->
+    <!-- LOADING OVERLAY RESTORE -->
     <div id="loading-overlay" class="fixed inset-0 bg-blue-900 bg-opacity-95 z-[99999] flex flex-col items-center justify-center text-white backdrop-blur-md">
         <i class="fa-solid fa-cloud-arrow-up text-6xl mb-4 animate-bounce"></i>
         <h2 class="text-2xl font-black mb-2" id="loading-title">Memproses Data...</h2>
-        <p class="text-blue-200 font-medium text-center px-6" id="loading-desc">Memasukkan data ke memori lokal. Jangan tutup layar ini.</p>
+        <p class="text-blue-200 font-medium text-center px-6" id="loading-desc">Data sedang dimasukkan ke akun Cloud Anda. Jangan tutup layar.</p>
     </div>
 
-    <!-- ================= LAYAR LOGIN GOOGLE (MULTI-USER) ================= -->
-    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-indigo-800 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm text-gray-800 relative overflow-hidden">
+    <!-- ================= LAYAR LOGIN GOOGLE ================= -->
+    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-blue-700 to-indigo-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm text-gray-800">
             <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner border border-blue-100">
                 <i class="fa-solid fa-store"></i>
             </div>
             <h1 class="text-2xl font-black mb-1 text-center">POS Pintar Cloud</h1>
-            <p class="text-gray-500 text-[11px] mb-8 text-center font-medium px-4">Sistem kasir multi-user. Data Anda tersimpan aman di server Cloud pribadi.</p>
+            <p class="text-gray-500 text-[11px] mb-8 text-center font-medium px-4">Satu Akun Google untuk satu database warung pribadi Anda.</p>
             
-            <button id="btn-login-google" onclick="loginWithGoogle()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-base py-3.5 rounded-2xl shadow-sm transition active:scale-95 flex items-center justify-center gap-3">
+            <button id="btn-login-google" onclick="loginWithGoogle()" class="w-full bg-white border-2 border-gray-100 hover:bg-gray-50 text-gray-700 font-bold text-base py-4 rounded-2xl shadow-sm transition active:scale-95 flex items-center justify-center gap-3">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6 h-6" alt="Google">
                 <span id="txt-btn-google">Masuk dengan Google</span>
             </button>
-            <p id="auth-status" class="text-xs text-gray-400 font-bold mt-5 text-center"><i class="fa-solid fa-shield-halved mr-1"></i> Aman & Terenkripsi</p>
+            <p id="auth-status" class="text-xs text-gray-400 font-bold mt-5 text-center"><i class="fa-solid fa-shield-halved mr-1"></i> Data Tersimpan Aman di Cloud</p>
         </div>
     </div>
 
     <!-- HEADER UTAMA -->
     <header class="h-[65px] flex-none bg-blue-600 text-white shadow-md flex justify-between items-center px-4 z-40">
         <div>
-            <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-store mr-2"></i><span id="header-store-name">Toko Saya</span></h1>
-            <p class="text-[10px] text-blue-200 font-medium" id="header-user-email">Memuat akun...</p>
+            <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-store mr-2"></i><span id="header-store-name">Soka POS</span></h1>
+            <p class="text-[9px] text-blue-200 font-medium truncate max-w-[150px]" id="header-user-email">Memuat akun...</p>
         </div>
         <button id="btn-clear-cart-desktop" onclick="clearCart(false)" class="hidden md:flex bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold shadow transition items-center">
             <i class="fa-solid fa-trash mr-2"></i> Kosongkan
@@ -75,589 +75,267 @@
     <!-- AREA KONTEN TENGAH -->
     <div class="flex-1 relative w-full h-full overflow-hidden">
 
-        <!-- ================= 1. VIEW KASIR ================= -->
+        <!-- 1. VIEW KASIR -->
         <main id="view-kasir" class="tab-content active absolute inset-0 flex-col md:flex-row bg-white z-10 w-full h-full">
             <section class="w-full md:w-[60%] lg:w-2/3 h-full flex flex-col relative border-r border-gray-200">
-                <div class="flex-none p-3 border-b bg-white shadow-sm flex flex-col sm:flex-row gap-2 z-10">
+                <div class="flex-none p-3 border-b bg-white flex flex-col sm:flex-row gap-2 z-10">
                     <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                            <i class="fa-solid fa-search"></i>
-                        </span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-search"></i></span>
                         <input type="text" id="searchInput" onkeyup="filterProducts()" onkeypress="handleBarcodeEnter(event)" placeholder="Cari nama atau scan barcode..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium bg-gray-50">
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="openScanner('kasir')" class="flex-1 bg-black hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center">
-                            <i class="fa-solid fa-barcode md:mr-2 text-lg"></i>
-                            <span class="hidden md:inline">Scan</span>
+                        <button onclick="openScanner('kasir')" class="flex-1 bg-black text-white px-4 py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center">
+                            <i class="fa-solid fa-barcode md:mr-2"></i><span class="hidden md:inline">Scan</span>
                         </button>
-                        <button onclick="openManualModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center">
-                            <i class="fa-solid fa-keyboard md:mr-2 text-lg"></i>
-                            <span class="hidden md:inline">Manual</span>
+                        <button onclick="openManualModal()" class="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center">
+                            <i class="fa-solid fa-keyboard md:mr-2"></i><span class="hidden md:inline">Manual</span>
                         </button>
                     </div>
                 </div>
-                
-                <div id="productList" class="flex-1 overflow-y-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-[90px] md:pb-4 bg-gray-100">
-                    <!-- Produk dimuat di sini -->
-                </div>
-
+                <div id="productList" class="flex-1 overflow-y-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-[90px] md:pb-4 bg-gray-100"></div>
                 <div class="md:hidden absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-gray-100 via-gray-100 to-transparent z-20 pb-4">
-                    <button onclick="toggleMobileCart(true)" class="w-full bg-blue-700 text-white shadow-[0_8px_20px_rgba(29,78,216,0.4)] rounded-2xl p-4 flex justify-between items-center active:scale-95 transition-transform border border-blue-500">
+                    <button onclick="toggleMobileCart(true)" class="w-full bg-blue-700 text-white shadow-xl rounded-2xl p-4 flex justify-between items-center active:scale-95 transition-transform">
                         <div class="flex items-center gap-4">
                             <div class="relative bg-blue-800 p-2 rounded-xl">
                                 <i class="fa-solid fa-cart-shopping text-xl"></i>
-                                <span id="floatingCartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-sm hidden">0</span>
+                                <span id="floatingCartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full hidden">0</span>
                             </div>
-                            <div class="text-left leading-tight">
-                                <p class="text-xs text-blue-200 font-semibold mb-0.5">Total Belanja</p>
-                                <p id="floatingCartTotal" class="text-lg font-black tracking-wide">Rp 0</p>
-                            </div>
+                            <div class="text-left"><p class="text-[10px] text-blue-200 font-semibold">Total</p><p id="floatingCartTotal" class="text-base font-black">Rp 0</p></div>
                         </div>
-                        <div class="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm shadow flex items-center">
-                            Bayar <i class="fa-solid fa-chevron-up ml-2 text-xs"></i>
-                        </div>
+                        <div class="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm">Bayar <i class="fa-solid fa-chevron-up ml-1 text-xs"></i></div>
                     </button>
                 </div>
             </section>
-
-            <section id="cartSection" class="fixed inset-0 bg-gray-50 z-[80] transform translate-y-full transition-transform duration-300 md:static md:translate-y-0 md:z-auto md:w-[40%] lg:w-1/3 md:h-full flex flex-col shadow-2xl md:shadow-none">
-                <div class="md:hidden h-[65px] flex-none bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm z-20">
-                    <h2 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-cart-shopping mr-2 text-blue-600"></i>Keranjang Kasir</h2>
+            <section id="cartSection" class="fixed inset-0 bg-gray-50 z-[80] transform translate-y-full transition-transform duration-300 md:static md:translate-y-0 md:z-auto md:w-[40%] lg:w-1/3 flex flex-col">
+                <div class="md:hidden h-[60px] flex-none bg-white border-b flex items-center justify-between px-4 z-20">
+                    <h2 class="font-bold text-gray-800">Keranjang Kasir</h2>
                     <div class="flex gap-2">
-                        <button onclick="clearCart(false)" class="bg-red-50 text-red-600 w-10 h-10 rounded-full flex items-center justify-center font-bold active:scale-95"><i class="fa-solid fa-trash"></i></button>
-                        <button onclick="toggleMobileCart(false)" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 h-10 rounded-full font-bold text-sm transition active:scale-95 flex items-center">
-                            Tutup <i class="fa-solid fa-chevron-down ml-2"></i>
-                        </button>
+                        <button onclick="clearCart(false)" class="text-red-600 px-3"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="toggleMobileCart(false)" class="bg-gray-100 px-4 py-2 rounded-full font-bold text-xs">Tutup</button>
                     </div>
                 </div>
-
-                <div class="hidden md:flex h-[65px] flex-none bg-gray-800 text-white items-center justify-between px-5 shadow-sm z-10">
-                    <span class="font-bold text-lg"><i class="fa-solid fa-cart-shopping mr-2"></i>Keranjang</span>
-                    <span id="cartCountDesktop" class="bg-blue-500 text-xs px-3 py-1.5 rounded-full font-bold">0 Barang</span>
-                </div>
-                
-                <div id="cartItems" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-100 pb-4">
-                    <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60">
-                        <i class="fa-solid fa-basket-shopping text-6xl mb-4"></i>
-                        <p class="font-medium text-lg">Keranjang Masih Kosong</p>
-                    </div>
-                </div>
-
-                <div class="flex-none p-4 sm:p-5 bg-white border-t border-gray-200 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-20 pb-12 md:pb-5">
-                    <div class="flex justify-between font-black text-xl mb-3">
-                        <span class="text-gray-700">Total Tagihan:</span>
-                        <span id="totalPrice" class="text-blue-600">Rp 0</span>
-                    </div>
-                    
+                <div id="cartItems" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-100"></div>
+                <div class="flex-none p-4 bg-white border-t z-20 pb-12 md:pb-5 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                    <div class="flex justify-between font-black text-lg mb-3"><span>Tagihan:</span><span id="totalPrice" class="text-blue-600">Rp 0</span></div>
                     <div class="mb-4">
-                        <label class="block text-gray-500 text-xs font-bold mb-1.5 uppercase tracking-wider">Uang Tunai Pelanggan</label>
+                        <label class="block text-gray-500 text-[10px] font-bold mb-1 uppercase tracking-wider">Tunai Pelanggan</label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400 text-xl">Rp</span>
-                            <input type="number" id="payAmount" oninput="calculateChange()" class="w-full pl-14 pr-4 py-3.5 border-2 border-gray-300 rounded-2xl text-2xl font-black text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition" placeholder="0">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400">Rp</span>
+                            <input type="number" id="payAmount" oninput="calculateChange()" class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-xl font-black text-gray-800 outline-none focus:border-blue-500">
                         </div>
                     </div>
-
-                    <div class="flex justify-between font-bold text-sm mb-5 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center">
-                        <span class="text-gray-600">Uang Kembali:</span>
-                        <span id="changeAmount" class="text-gray-400 text-xl">Rp 0</span>
+                    <div class="flex justify-between font-bold text-sm mb-5 bg-gray-50 p-3 rounded-xl border items-center">
+                        <span class="text-gray-500 text-xs">Kembali:</span><span id="changeAmount" class="text-gray-400 text-xl font-black">Rp 0</span>
                     </div>
-
-                    <button onclick="showReceipt()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-2xl text-lg transition shadow-[0_5px_15px_rgba(34,197,94,0.4)] flex justify-center items-center">
-                        <i class="fa-solid fa-money-bill-wave mr-2 text-xl"></i> LANJUT PEMBAYARAN
-                    </button>
+                    <button onclick="showReceipt()" class="w-full bg-green-500 text-white font-black py-4 rounded-2xl shadow-lg transition active:scale-95 flex justify-center items-center">LANJUT PEMBAYARAN</button>
                 </div>
             </section>
         </main>
 
-        <!-- ================= 2. VIEW LAPORAN ================= -->
+        <!-- 2. VIEW LAPORAN -->
         <main id="view-laporan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
-                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <select id="reportType" onchange="toggleReportFilter()" class="border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-bold text-gray-700 bg-white">
-                                <option value="daily">Harian</option>
-                                <option value="monthly">Bulanan</option>
-                            </select>
-                            <input type="date" id="reportDate" onchange="loadReport()" class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-bold text-gray-700">
-                            <input type="month" id="reportMonth" onchange="loadReport()" class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-bold text-gray-700 hidden">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border flex flex-col gap-3">
+                    <div class="flex flex-col sm:flex-row justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <select id="reportType" onchange="toggleReportFilter()" class="border rounded-xl p-2 font-bold text-gray-700"><option value="daily">Harian</option><option value="monthly">Bulanan</option></select>
+                            <input type="date" id="reportDate" onchange="loadReport()" class="border rounded-xl p-2 font-bold text-gray-700">
+                            <input type="month" id="reportMonth" onchange="loadReport()" class="border rounded-xl p-2 font-bold text-gray-700 hidden">
                         </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="exportTransactionsToCSV()" class="flex-1 sm:flex-none text-green-700 bg-green-50 hover:bg-green-100 font-bold py-2.5 px-4 rounded-xl border border-green-200 transition">
-                                <i class="fa-solid fa-file-excel mr-1"></i> Excel
-                            </button>
-                            <button onclick="clearReportData()" class="flex-1 sm:flex-none text-red-600 bg-white hover:bg-red-50 font-bold py-2.5 px-4 rounded-xl border border-red-200 transition">
-                                <i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua
-                            </button>
+                        <div class="flex gap-2">
+                            <button onclick="exportTransactionsToCSV()" class="bg-green-50 text-green-700 font-bold px-4 py-2 rounded-xl border border-green-200"><i class="fa-solid fa-file-excel"></i></button>
+                            <button onclick="clearReportData()" class="bg-red-50 text-red-600 font-bold px-4 py-2 rounded-xl border border-red-200"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-3 gap-2 sm:gap-4">
-                    <div class="bg-blue-600 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                        <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">OMZET KOTOR</p>
-                        <h3 id="reportTotalOmzet" class="text-sm sm:text-2xl font-black truncate">Rp 0</h3>
-                    </div>
-                    <div class="bg-emerald-500 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                        <p class="text-[9px] sm:text-xs font-bold opacity-90 mb-1">LABA BERSIH</p>
-                        <h3 id="reportTotalProfit" class="text-sm sm:text-2xl font-black truncate">Rp 0</h3>
-                    </div>
-                    <div class="bg-indigo-600 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                        <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">TRANSAKSI</p>
-                        <h3 id="reportTotalTx" class="text-sm sm:text-2xl font-black truncate">0 Nota</h3>
-                    </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-blue-600 p-3 rounded-2xl text-white"><p class="text-[8px] font-bold opacity-80 mb-1">OMZET</p><h3 id="reportTotalOmzet" class="text-xs font-black truncate">Rp 0</h3></div>
+                    <div class="bg-emerald-500 p-3 rounded-2xl text-white"><p class="text-[8px] font-bold opacity-80 mb-1">LABA</p><h3 id="reportTotalProfit" class="text-xs font-black truncate">Rp 0</h3></div>
+                    <div class="bg-indigo-600 p-3 rounded-2xl text-white"><p class="text-[8px] font-bold opacity-80 mb-1">NOTA</p><h3 id="reportTotalTx" class="text-xs font-black truncate">0</h3></div>
                 </div>
-
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                    <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-simple text-blue-500 mr-2"></i>Analisis Jam Sibuk</h3>
-                    <p class="text-[10px] text-gray-400 mb-4">Grafik frekuensi transaksi berdasarkan jam</p>
-                    <div class="relative h-32 w-full flex items-end border-b border-gray-200">
-                        <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-0.5 px-1 pb-1">
-                            <!-- Batang grafik akan dirender disini -->
-                        </div>
-                    </div>
-                    <div class="flex justify-between text-[10px] text-gray-400 mt-2 font-bold px-1">
-                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
-                    <div class="p-4 bg-gray-50 border-b font-bold text-gray-800 flex justify-between items-center">
-                        <span><i class="fa-solid fa-clock-rotate-left mr-2 text-blue-500"></i>Riwayat Transaksi</span>
-                    </div>
-                    <div id="reportList" class="divide-y divide-gray-100"></div>
-                </div>
+                <div id="reportList" class="bg-white rounded-2xl shadow-sm divide-y"></div>
             </div>
         </main>
 
-        <!-- ================= 3. VIEW MASTER BARANG ================= -->
+        <!-- 3. VIEW MASTER BARANG -->
         <main id="view-barang" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-3">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                            <i class="fa-solid fa-search"></i>
-                        </span>
-                        <input type="text" id="searchMaster" onkeyup="renderMasterProducts()" placeholder="Cari nama atau barcode..." class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium">
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="exportProductsToCSV()" class="bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 px-4 py-3 rounded-xl font-bold transition flex justify-center items-center">
-                            <i class="fa-solid fa-file-excel"></i>
-                        </button>
-                        <button onclick="openProductModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold shadow-md transition flex justify-center items-center">
-                            <i class="fa-solid fa-plus mr-2"></i> Tambah Barang
-                        </button>
-                    </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border flex flex-col sm:flex-row justify-between gap-3">
+                    <input type="text" id="searchMaster" onkeyup="renderMasterProducts()" placeholder="Cari nama atau barcode..." class="flex-1 px-4 py-3 border rounded-xl font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="openProductModal()" class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold"><i class="fa-solid fa-plus mr-1"></i> Tambah</button>
                 </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
-                    <div class="p-4 bg-gray-800 text-white font-bold flex justify-between items-center">
-                        <span><i class="fa-solid fa-box-open mr-2 text-blue-400"></i>Database Toko</span>
-                        <span id="masterTotalItems" class="bg-gray-600 text-xs px-3 py-1 rounded-full">0 Item</span>
-                    </div>
-                    <div id="masterList" class="divide-y divide-gray-200"></div>
-                </div>
+                <div id="masterList" class="bg-white rounded-2xl shadow-sm divide-y overflow-hidden"></div>
             </div>
         </main>
 
-        <!-- ================= 4. VIEW HUTANG (KASBON) ================= -->
+        <!-- 4. VIEW HUTANG -->
         <main id="view-hutang" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
-                <div class="bg-gradient-to-r from-red-500 to-red-600 p-5 rounded-2xl shadow-md text-white flex flex-col justify-center items-center relative overflow-hidden">
-                    <i class="fa-solid fa-book absolute -right-4 -bottom-4 text-7xl opacity-20"></i>
-                    <p class="text-xs font-bold opacity-90 mb-1">TOTAL PIUTANG (BELUM LUNAS)</p>
-                    <h3 id="debtTotalAmount" class="text-3xl font-black">Rp 0</h3>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-3">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                            <i class="fa-solid fa-search"></i>
-                        </span>
-                        <input type="text" id="searchDebt" onkeyup="renderDebts()" placeholder="Cari nama pelanggan..." class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-medium">
-                    </div>
-                    <button onclick="openDebtModal()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-bold shadow-md transition flex justify-center items-center">
-                        <i class="fa-solid fa-plus mr-2"></i> Catat Hutang
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
-                    <div class="p-4 bg-gray-50 border-b font-bold text-gray-800 flex justify-between items-center">
-                        <span><i class="fa-solid fa-list-ul mr-2 text-red-500"></i>Buku Catatan Hutang</span>
-                        <span id="debtTotalItems" class="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-bold">0 Catatan</span>
-                    </div>
-                    <div id="debtList" class="divide-y divide-gray-100"></div>
-                </div>
+                <div class="bg-red-600 p-5 rounded-2xl text-white text-center"><p class="text-xs font-bold opacity-90">TOTAL PIUTANG AKTIF</p><h3 id="debtTotalAmount" class="text-3xl font-black">Rp 0</h3></div>
+                <button onclick="openDebtModal()" class="w-full bg-white text-red-600 font-bold py-4 rounded-2xl border-2 border-dashed border-red-200"><i class="fa-solid fa-plus-circle mr-1"></i> Tambah Catatan Hutang</button>
+                <div id="debtList" class="bg-white rounded-2xl shadow-sm divide-y overflow-hidden"></div>
             </div>
         </main>
 
-        <!-- ================= 5. VIEW REKAP UANG (TUTUP KASIR) ================= -->
+        <!-- 5. VIEW REKAP -->
         <main id="view-rekap" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
-                
-                <div class="bg-gradient-to-r from-teal-500 to-emerald-600 p-5 rounded-2xl shadow-md text-white flex justify-between items-center relative overflow-hidden">
-                    <i class="fa-solid fa-vault absolute -right-2 -bottom-2 text-7xl opacity-20"></i>
-                    <div>
-                        <h2 class="text-xl font-black mb-1">Rekap Kas & Saldo</h2>
-                        <p class="text-xs font-medium opacity-90">Catat fisik uang & saldo digital saat tutup laci</p>
-                    </div>
-                    <button onclick="openRekapModal()" class="bg-white text-teal-600 px-4 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-50 active:scale-95 transition z-10 flex items-center">
-                        <i class="fa-solid fa-calculator mr-2"></i> Buat Rekap
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-4">
-                    <div class="p-4 bg-gray-50 border-b font-bold text-gray-800 flex justify-between items-center">
-                        <span><i class="fa-solid fa-clock-rotate-left mr-2 text-teal-500"></i>Riwayat Rekapitulasi</span>
-                        <button onclick="clearRekapHistory()" class="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded"><i class="fa-solid fa-trash"></i> Bersihkan</button>
-                    </div>
-                    <div id="rekapList" class="divide-y divide-gray-100"></div>
-                </div>
-
+                <button onclick="openRekapModal()" class="w-full bg-teal-600 text-white font-black py-4 rounded-2xl shadow-md"><i class="fa-solid fa-calculator mr-2"></i>BUAT REKAP SALDO & KAS</button>
+                <div id="rekapList" class="bg-white rounded-2xl shadow-sm divide-y overflow-hidden"></div>
             </div>
         </main>
 
-        <!-- ================= 6. VIEW PENGATURAN ================= -->
+        <!-- 6. VIEW PENGATURAN -->
         <main id="view-pengaturan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-lg mx-auto space-y-6">
                 <!-- Akun Info -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-brands fa-google text-red-500 mr-2"></i>Akun Cloud Saya</h2>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2">Akun Cloud Saya</h2>
                     <div class="flex items-center gap-4 mb-4">
-                        <img id="user-photo" src="https://www.gravatar.com/avatar/?d=mp" class="w-12 h-12 rounded-full border border-gray-200">
-                        <div>
-                            <p id="user-name-display" class="font-black text-gray-800 text-lg leading-tight">-</p>
-                            <p id="user-email-display" class="text-xs text-gray-500 font-medium">-</p>
-                        </div>
+                        <img id="user-photo" src="https://www.gravatar.com/avatar/?d=mp" class="w-12 h-12 rounded-full">
+                        <div><p id="user-name-display" class="font-black text-gray-800 leading-tight">-</p><p id="user-email-display" class="text-xs text-gray-500 font-medium">-</p></div>
                     </div>
-                    <button onclick="logoutGoogle()" class="w-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold py-3 rounded-xl shadow-sm transition active:scale-95">
-                        <i class="fa-solid fa-right-from-bracket mr-2"></i>Keluar / Ganti Akun
-                    </button>
+                    <button onclick="logoutGoogle()" class="w-full bg-red-50 text-red-600 border border-red-100 font-bold py-3 rounded-xl">Keluar Akun</button>
                 </div>
-
-                <!-- Pengaturan Struk -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-receipt text-blue-500 mr-2"></i>Pengaturan Struk Toko</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-gray-600 text-xs font-bold mb-1">Nama Toko</label>
-                            <input type="text" id="set-store-name" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-gray-600 text-xs font-bold mb-1">Alamat / Tagline (Header)</label>
-                            <input type="text" id="set-store-address" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-gray-600 text-xs font-bold mb-1">Pesan Penutup (Footer)</label>
-                            <input type="text" id="set-store-footer" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
-                        </div>
-                        <button onclick="saveStoreSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition">
-                            <i class="fa-solid fa-save mr-2"></i>Simpan Pengaturan Struk
-                        </button>
+                <!-- Struk -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h2 class="font-bold text-gray-800 border-b pb-2">Info Struk</h2>
+                    <input type="text" id="set-store-name" placeholder="Nama Toko" class="w-full p-2 border rounded-xl font-bold">
+                    <input type="text" id="set-store-address" placeholder="Alamat" class="w-full p-2 border rounded-xl text-sm">
+                    <input type="text" id="set-store-footer" placeholder="Pesan Penutup" class="w-full p-2 border rounded-xl text-sm">
+                    <button onclick="saveStoreSettings()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Simpan</button>
+                </div>
+                <!-- Backup -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border">
+                    <h2 class="font-bold text-gray-800 mb-2">Pencadangan Data</h2>
+                    <div class="flex gap-2">
+                        <button onclick="backupData()" class="flex-1 bg-emerald-100 text-emerald-700 font-bold py-3 rounded-xl">Backup</button>
+                        <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-amber-100 text-amber-700 font-bold py-3 rounded-xl">Restore</button>
+                        <input type="file" id="restore-file" class="hidden" onchange="restoreData(event)">
                     </div>
                 </div>
-
-                <!-- Backup & Restore Data -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-arrow-down text-emerald-500 mr-2"></i>Backup & Restore Cloud Data</h2>
-                    <div class="space-y-4">
-                        <p class="text-[11px] text-gray-500 font-medium">Download seluruh data yang ada di server Firebase Cloud ke file JSON, atau Timpa data Cloud dengan file JSON lama.</p>
-                        <div class="flex gap-3">
-                            <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-                                <i class="fa-solid fa-download mr-2"></i> Backup
-                            </button>
-                            <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-                                <i class="fa-solid fa-upload mr-2"></i> Restore
-                            </button>
-                            <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </main>
     </div>
 
     <!-- BOTTOM NAVIGATION -->
-    <nav class="h-[65px] flex-none bg-white border-t border-gray-300 w-full flex overflow-x-auto no-scrollbar items-center z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.15)] relative">
-        <button onclick="switchTab('kasir')" id="tab-kasir" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-blue-600 transition pt-1 h-full">
-            <i class="fa-solid fa-cash-register text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Kasir</span>
-        </button>
-        <button onclick="switchTab('laporan')" id="tab-laporan" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
-            <i class="fa-solid fa-chart-pie text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Laporan</span>
-        </button>
-        <button onclick="switchTab('barang')" id="tab-barang" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
-            <i class="fa-solid fa-boxes-stacked text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Barang</span>
-        </button>
-        <button onclick="switchTab('hutang')" id="tab-hutang" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-gray-400 hover:text-red-500 transition pt-1 border-l border-gray-100 h-full">
-            <i class="fa-solid fa-book-open text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Hutang</span>
-        </button>
-        <button onclick="switchTab('rekap')" id="tab-rekap" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-gray-400 hover:text-teal-500 transition pt-1 border-l border-gray-100 h-full">
-            <i class="fa-solid fa-vault text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Rekap</span>
-        </button>
-        <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition pt-1 border-l border-gray-100 h-full">
-            <i class="fa-solid fa-gear text-[18px] mb-1"></i>
-            <span class="text-[9px] font-bold">Setelan</span>
-        </button>
+    <nav class="h-[65px] flex-none bg-white border-t flex overflow-x-auto no-scrollbar items-center z-50 shadow-lg">
+        <button onclick="switchTab('kasir')" id="tab-kasir" class="flex-1 flex flex-col items-center text-blue-600"><i class="fa-solid fa-cash-register text-lg"></i><span class="text-[9px] font-bold">Kasir</span></button>
+        <button onclick="switchTab('laporan')" id="tab-laporan" class="flex-1 flex flex-col items-center text-gray-400"><i class="fa-solid fa-chart-pie text-lg"></i><span class="text-[9px] font-bold">Laporan</span></button>
+        <button onclick="switchTab('barang')" id="tab-barang" class="flex-1 flex flex-col items-center text-gray-400"><i class="fa-solid fa-boxes-stacked text-lg"></i><span class="text-[9px] font-bold">Barang</span></button>
+        <button onclick="switchTab('hutang')" id="tab-hutang" class="flex-1 flex flex-col items-center text-gray-400"><i class="fa-solid fa-book-open text-lg"></i><span class="text-[9px] font-bold">Hutang</span></button>
+        <button onclick="switchTab('rekap')" id="tab-rekap" class="flex-1 flex flex-col items-center text-gray-400"><i class="fa-solid fa-vault text-lg"></i><span class="text-[9px] font-bold">Rekap</span></button>
+        <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="flex-1 flex flex-col items-center text-gray-400"><i class="fa-solid fa-gear text-lg"></i><span class="text-[9px] font-bold">Setelan</span></button>
     </nav>
 
-    <!-- ================= MODALS ================= -->
-
-    <!-- Modal Tambah Stok Kulakan & Update Harga -->
-    <div id="restockModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <h2 class="font-black text-xl text-gray-800 border-b pb-3 mb-4"><i class="fa-solid fa-boxes-packing text-blue-600 mr-2"></i>Update Stok & Harga</h2>
+    <!-- MODAL RESTOCK -->
+    <div id="restockModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm">
+            <h2 class="font-black text-xl mb-4 border-b pb-2">Update Stok & Harga</h2>
             <input type="hidden" id="restockProductId">
-            <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                <p class="text-xs text-gray-500 font-bold">Nama Barang:</p>
-                <p id="restockProductName" class="text-base font-black text-gray-800 leading-tight">-</p>
-                <p class="text-xs text-gray-500 mt-1">Sisa Stok Lama: <span id="restockCurrentStock" class="font-bold text-black">0</span></p>
-            </div>
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block text-gray-600 text-xs font-bold mb-1">Tambah Jumlah Stok Masuk</label>
-                    <input type="number" id="restockAddQty" placeholder="Isi 0 jika hanya ubah harga" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-black font-black text-lg">
-                </div>
-                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-dashed border-gray-300">
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Modal Baru</label>
-                        <input type="number" id="restockBuyPrice" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Jual Baru</label>
-                        <input type="number" id="restockSellPrice" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-600 font-bold">
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 border-t pt-5">
-                <button onclick="closeRestockModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button>
-                <button onclick="saveRestockData()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Form Rekap Uang -->
-    <div id="rekapModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-        <div class="bg-gray-50 sm:rounded-3xl rounded-t-3xl p-5 w-full max-w-2xl flex flex-col shadow-2xl relative h-[90vh] sm:max-h-[95vh]">
-            <div class="flex justify-between items-center border-b pb-3 mb-4 flex-none">
-                <h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-calculator mr-2 text-teal-600"></i>Form Rekap Uang</h2>
-                <button onclick="closeRekapModal()" class="text-gray-400 hover:text-red-500 bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <div class="overflow-y-auto flex-1 pr-1 space-y-5 pb-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                    <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
-                        <span><i class="fa-solid fa-money-bill-wave text-green-500 mr-2"></i>Uang Tunai (Laci)</span>
-                        <span id="lbl-sub-tunai" class="text-green-600 font-black">Rp 0</span>
-                    </h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 100.000 (Lembar)</label><input type="number" id="rkp-100" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 50.000 (Lembar)</label><input type="number" id="rkp-50" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 20.000 (Lembar)</label><input type="number" id="rkp-20" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 10.000 (Lembar)</label><input type="number" id="rkp-10" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 5.000 (Lembar)</label><input type="number" id="rkp-5" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-500 mb-1">Rp 2.000 (Lembar)</label><input type="number" id="rkp-2" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border rounded-xl font-bold bg-gray-50 focus:border-teal-500 outline-none"></div>
-                        <div class="col-span-2"><label class="block text-[10px] font-bold text-gray-500 mb-1">Koin / Receh (Total Nominal Rp)</label><input type="number" id="rkp-koin" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl font-bold text-gray-700 outline-none focus:border-teal-500 text-lg"></div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                    <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
-                        <span><i class="fa-solid fa-mobile-screen text-blue-500 mr-2"></i>Saldo Digital (Aplikasi)</span>
-                        <span id="lbl-sub-digital" class="text-blue-600 font-black">Rp 0</span>
-                    </h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">Order Kuota (Total Rp)</label><input type="number" id="rkp-kuota" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-blue-700 outline-none focus:border-teal-500"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">Digipos (Total Rp)</label><input type="number" id="rkp-digipos" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-red-600 outline-none focus:border-teal-500"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">DANA E-Wallet (Total Rp)</label><input type="number" id="rkp-dana" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-blue-500 outline-none focus:border-teal-500"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">SeaBank (Total Rp)</label><input type="number" id="rkp-seabank" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-orange-500 outline-none focus:border-teal-500"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">Bank BNI (Total Rp)</label><input type="number" id="rkp-bni" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-orange-600 outline-none focus:border-teal-500"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">QRIS (Total Rp)</label><input type="number" id="rkp-qris" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl font-bold text-purple-600 outline-none focus:border-teal-500"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-none pt-4 border-t border-gray-200 mt-2 bg-gray-50">
-                <div class="flex justify-between items-end mb-4">
-                    <span class="text-gray-500 font-bold text-sm">TOTAL KESELURUHAN</span>
-                    <span id="lbl-grand-rekap" class="text-3xl font-black text-teal-600">Rp 0</span>
-                </div>
-                <button onclick="saveRekapData()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-xl shadow-lg transition active:scale-95 text-lg">
-                    <i class="fa-solid fa-floppy-disk mr-2"></i> SIMPAN REKAP HARI INI
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Scanner Kamera -->
-    <div id="scannerModal" class="fixed inset-0 bg-black z-[150] hidden flex flex-col">
-        <div class="flex justify-between items-center p-4 bg-gray-900 text-white shadow-md z-10 flex-none">
-            <h2 class="font-bold text-lg"><i class="fa-solid fa-barcode mr-2"></i>Scan Barcode Kamera</h2>
-            <button onclick="closeScanner()" class="text-gray-300 hover:text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-        </div>
-        <div class="flex-1 w-full bg-black relative flex justify-center items-center overflow-hidden">
-            <div id="reader" class="w-full h-full max-w-lg mx-auto"></div>
-            <div class="absolute inset-0 pointer-events-none border-[40px] border-black border-opacity-50"></div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40 border-2 border-green-500 rounded-lg pointer-events-none flex justify-center items-center">
-                <div class="w-full h-0.5 bg-green-500 bg-opacity-50 absolute animate-pulse"></div>
-            </div>
-            <div class="absolute bottom-10 left-0 right-0 text-center text-white text-sm font-medium z-10 drop-shadow-md">Arahkan garis ke barcode produk</div>
-        </div>
-    </div>
-
-    <!-- Modal Input Manual -->
-    <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
-            <div class="flex justify-between items-center mb-5 border-b pb-3">
-                <h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-keyboard mr-2 text-indigo-600"></i>Input Manual</h2>
-                <button onclick="closeManualModal()" class="text-gray-400 hover:text-red-500 text-2xl"><i class="fa-solid fa-circle-xmark"></i></button>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang / Transaksi</label>
-                    <input type="text" id="manName" placeholder="Contoh: Pulsa Tsel 20" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Modal (Beli)</label>
-                        <input type="number" id="manBuy" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-red-600">
-                    </div>
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Tagihan (Jual)</label>
-                        <input type="number" id="manSell" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-indigo-600">
-                    </div>
-                </div>
-            </div>
-            <button onclick="submitManualItem()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg transition active:scale-95">
-                Tambahkan ke Keranjang
-            </button>
-        </div>
-    </div>
-
-    <!-- Modal Pratinjau & Cetak Struk -->
-    <div id="receiptModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col max-h-[95vh] shadow-2xl relative">
-            <div class="flex justify-between items-center border-b pb-3 mb-4 flex-none">
-                <h2 class="font-black text-xl text-gray-800">Penyelesaian</h2>
-                <button onclick="closeReceipt()" class="text-gray-400 hover:text-red-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <div class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
-                <!-- Area ini hanya pratinjau kasat mata -->
-                <div id="receipt-area" class="font-receipt text-xs text-black w-full max-w-[58mm] bg-white p-4 shadow-md">
-                    <div class="text-center font-bold text-sm mb-1 uppercase" id="print-store-name">SOKA CELLULER</div>
-                    <div class="text-center mb-2" id="print-store-address">Sembako & Konter Pulsa</div>
-                    <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div class="flex justify-between text-[10px]">
-                        <span>TRX: <span id="receiptInvoice">INV-000000</span></span>
-                    </div>
-                    <div class="flex justify-between text-[10px]">
-                        <span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span>
-                    </div>
-                    <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div id="receiptItems" class="mb-2"></div>
-                    <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div class="flex justify-between font-bold text-sm">
-                        <span>TOTAL</span><span id="receiptTotal">Rp 0</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>TUNAI</span><span id="receiptPay">Rp 0</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>KEMBALI</span><span id="receiptChange">Rp 0</span>
-                    </div>
-                    <div class="border-t border-dashed border-gray-500 my-1 mt-2"></div>
-                    <div class="text-center mt-2" id="print-store-footer">Terima Kasih</div>
-                </div>
-            </div>
-
-            <div class="space-y-2 flex-none">
-                <button id="btn-save-tx" onclick="processTransaction('save_only')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition active:scale-95">
-                    <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Transaksi Saja
-                </button>
+            <div class="bg-gray-50 p-3 rounded-xl mb-4 text-xs font-bold text-gray-600" id="restockProductName">Nama Barang</div>
+            <div class="space-y-3">
+                <div><label class="text-[10px] font-bold">Tambah Stok</label><input type="number" id="restockAddQty" class="w-full p-3 border rounded-xl font-black text-lg"></div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="processTransaction('share_text')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
-                        <i class="fa-solid fa-share-nodes mr-2"></i> Bagikan Teks
-                    </button>
-                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
-                        <i class="fa-brands fa-whatsapp mr-2 text-lg"></i> Kirim WA
-                    </button>
+                    <div><label class="text-[10px] font-bold">Modal Baru</label><input type="number" id="restockBuyPrice" class="w-full p-2 border rounded-xl text-red-600 font-bold"></div>
+                    <div><label class="text-[10px] font-bold">Jual Baru</label><input type="number" id="restockSellPrice" class="w-full p-2 border rounded-xl text-blue-600 font-bold"></div>
                 </div>
+            </div>
+            <div class="flex gap-2 mt-6"><button onclick="closeRestockModal()" class="flex-1 py-3 bg-gray-100 font-bold rounded-xl">Batal</button><button onclick="saveRestockData()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">Simpan</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL REKAP -->
+    <div id="rekapModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h2 class="font-black text-xl text-teal-600">Form Rekap</h2><button onclick="closeRekapModal()" class="text-gray-400 text-xl"><i class="fa-solid fa-times"></i></button></div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-[9px] font-bold">100rb</label><input type="number" id="rkp-100" oninput="calculateRekapTotal()" class="w-full p-2 border rounded-lg"></div>
+                    <div><label class="text-[9px] font-bold">50rb</label><input type="number" id="rkp-50" oninput="calculateRekapTotal()" class="w-full p-2 border rounded-lg"></div>
+                    <div><label class="text-[9px] font-bold">20rb</label><input type="number" id="rkp-20" oninput="calculateRekapTotal()" class="w-full p-2 border rounded-lg"></div>
+                    <div><label class="text-[9px] font-bold">10rb</label><input type="number" id="rkp-10" oninput="calculateRekapTotal()" class="w-full p-2 border rounded-lg"></div>
+                    <div class="col-span-2"><label class="text-[9px] font-bold">Kuota/Saldo Digital (Total Rp)</label><input type="number" id="rkp-digital-total" oninput="calculateRekapTotal()" class="w-full p-2 border rounded-lg font-bold text-blue-600"></div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-2xl text-center"><p class="text-xs font-bold text-gray-400">GRAND TOTAL REKAP</p><h1 id="lbl-grand-rekap" class="text-2xl font-black text-teal-600">Rp 0</h1></div>
+                <button onclick="saveRekapData()" class="w-full bg-teal-600 text-white font-black py-4 rounded-xl">Simpan Rekap</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Form Tambah/Edit Master Barang -->
-    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[95vh] overflow-y-auto">
-            <h2 id="modalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5">Tambah Barang</h2>
+    <!-- MODAL RECEIPT / STRUK -->
+    <div id="receiptModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-5 w-full max-w-sm">
+            <h2 class="font-black text-xl mb-4 text-center">Selesai!</h2>
+            <div id="receipt-area" class="font-receipt text-[10px] bg-gray-50 p-4 rounded-xl border border-dashed mb-4 whitespace-pre-wrap"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="processTransaction('share_text')" class="bg-blue-600 text-white font-bold py-3 rounded-xl text-xs"><i class="fa-solid fa-share-nodes"></i> Share Teks</button>
+                <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                <button onclick="closeReceipt()" class="col-span-2 bg-gray-100 py-3 rounded-xl font-bold mt-2">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FORM BARANG -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+            <h2 id="modalTitle" class="font-black text-xl mb-5">Tambah Barang</h2>
             <input type="hidden" id="editProductId">
-            
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block text-gray-600 text-xs font-bold mb-1">Nomor Barcode (Opsional)</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="editProductBarcode" placeholder="Scan atau Ketik Manual" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold font-mono">
-                        <button onclick="openScanner('edit')" class="bg-black text-white px-4 py-3 rounded-xl font-bold shadow transition"><i class="fa-solid fa-barcode"></i></button>
-                    </div>
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="editProductBarcode" placeholder="Barcode" class="flex-1 p-3 border rounded-xl font-mono">
+                    <button onclick="openScanner('edit')" class="bg-black text-white px-4 rounded-xl"><i class="fa-solid fa-barcode"></i></button>
                 </div>
-                <div>
-                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang</label>
-                    <input type="text" id="editProductName" placeholder="Misal: Rokok Gudang Garam" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold">
+                <input type="text" id="editProductName" placeholder="Nama Barang" class="w-full p-3 border rounded-xl font-bold">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="editProductModal" placeholder="Modal" class="w-full p-3 border rounded-xl text-red-600 font-bold">
+                    <input type="number" id="editProductJual" placeholder="Jual" class="w-full p-3 border rounded-xl text-blue-600 font-bold">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Modal</label>
-                        <input type="number" id="editProductModal" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Jual</label>
-                        <input type="number" id="editProductJual" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-600 font-bold">
-                    </div>
-                    <div class="col-span-2" id="divStokAwal">
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Stok Awal (Saat ini)</label>
-                        <input type="number" id="editProductStock" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold">
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 border-t pt-5">
-                <button onclick="closeProductModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button>
-                <button onclick="saveProductData()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button>
+                <div id="divStokAwal"><input type="number" id="editProductStock" placeholder="Stok Saat Ini" class="w-full p-3 border rounded-xl font-bold"></div>
+                <div class="flex gap-2 pt-4"><button onclick="closeProductModal()" class="flex-1 py-3 bg-gray-100 rounded-xl">Batal</button><button onclick="saveProductData()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">Simpan</button></div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Form Hutang -->
-    <div id="debtModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative">
-            <h2 id="debtModalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5"><i class="fa-solid fa-book-medical text-red-500 mr-2"></i>Catat Hutang</h2>
+    <!-- MODAL FORM HUTANG -->
+    <div id="debtModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm">
+            <h2 id="debtModalTitle" class="font-black text-xl mb-5">Catat Hutang</h2>
             <input type="hidden" id="editDebtId">
-            <div class="space-y-4 mb-6">
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Nama Pelanggan</label><input type="text" id="debtName" placeholder="Contoh: Budi" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold"></div>
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Jumlah Hutang (Rp)</label><input type="number" id="debtAmount" placeholder="50000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold text-lg"></div>
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Keterangan / Rincian (Opsional)</label><input type="text" id="debtDesc" placeholder="Contoh: Rokok 2, Kopi 1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm"></div>
+            <div class="space-y-4">
+                <input type="text" id="debtName" placeholder="Nama Pelanggan" class="w-full p-3 border rounded-xl font-bold">
+                <input type="number" id="debtAmount" placeholder="Jumlah (Rp)" class="w-full p-3 border rounded-xl text-red-600 font-black text-xl">
+                <input type="text" id="debtDesc" placeholder="Keterangan (Opsional)" class="w-full p-3 border rounded-xl text-sm">
+                <div class="flex gap-2 pt-4"><button onclick="closeDebtModal()" class="flex-1 py-3 bg-gray-100 rounded-xl">Batal</button><button onclick="saveDebtData()" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl">Simpan</button></div>
             </div>
-            <div class="flex justify-end gap-3 border-t pt-5"><button onclick="closeDebtModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button><button onclick="saveDebtData()" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button></div>
         </div>
     </div>
 
-    <!-- Toast Notifikasi -->
-    <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-2xl text-sm font-bold z-[200] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center">
-        <i class="fa-solid fa-circle-check text-green-400 mr-3 text-xl" id="toast-icon"></i>
-        <span id="toast-msg">Pesan</span>
+    <!-- MODAL SCANNER -->
+    <div id="scannerModal" class="fixed inset-0 bg-black z-[200] hidden flex flex-col">
+        <div class="p-4 flex justify-between items-center text-white flex-none"><h2 class="font-bold">Scan Barcode</h2><button onclick="closeScanner()" class="text-2xl">&times;</button></div>
+        <div class="flex-1 relative bg-black"><div id="reader"></div></div>
     </div>
 
-    <!-- =============== SCRIPT LOGIKA + FIREBASE CLOUD MULTI-USER =============== -->
+    <!-- MODAL MANUAL ITEM -->
+    <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm">
+            <h2 class="font-black text-xl mb-5 text-indigo-600">Input Manual</h2>
+            <div class="space-y-4">
+                <input type="text" id="manName" placeholder="Nama Barang/Jasa" class="w-full p-3 border rounded-xl font-bold">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="manBuy" placeholder="Modal" class="w-full p-3 border rounded-xl text-red-600 font-bold">
+                    <input type="number" id="manSell" placeholder="Jual" class="w-full p-3 border rounded-xl text-indigo-600 font-bold">
+                </div>
+                <button onclick="submitManualItem()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl mt-4">Tambahkan ke Keranjang</button>
+                <button onclick="closeManualModal()" class="w-full py-2 text-gray-400 font-bold">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT UTAMA -->
     <script>
-        // --- 1. INISIALISASI FIREBASE ---
+        // INISIALISASI FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDCZ9HE0axsmlYFbSgAa8I_CEInHRPWQdk",
             authDomain: "soka-pos.firebaseapp.com",
@@ -666,488 +344,415 @@
             messagingSenderId: "414884226943",
             appId: "1:414884226943:web:8e5eadaa3d177007059c4a"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        
-        // Aktifkan Mode Offline
-        db.enablePersistence().catch(function(err) { console.log("Offline mode error:", err); });
+        db.enablePersistence().catch(() => {});
 
-        // Variabel Global
+        // STATE GLOBAL
         let currentUser = null;
-        let unsubscribeProducts = null; let unsubscribeTransactions = null; let unsubscribeDebts = null; let unsubscribeRekaps = null;
+        let masterProducts = [], cart = [], debtsData = [], rekapHistory = [], transactionsHistory = [];
+        let subs = []; 
+        let storeSettings = { name: "Soka POS", address: "Alamat Toko", footer: "Terima Kasih" };
 
-        let scanMode = ''; let html5QrcodeScanner = null; let lastScanTime = 0; let lastScannedCode = '';
-        let masterProducts = []; let cart = []; let debtsData = []; let rekapHistory = []; let transactionsHistory = []; let currentTransactionDateStr = "";
-        let isReprintMode = false; let reprintTxData = null;
+        const formatRp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
+        function showToast(m, e) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = m; document.getElementById('toast-icon').className = e ? "fa-solid fa-circle-exclamation text-red-500 mr-2" : "fa-solid fa-check-circle text-green-400 mr-2"; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 2000); }
 
-        let storeSettings = { name: "Toko Saya", address: "Alamat Toko", footer: "Terima Kasih" };
-
-        const formatRp = (angka) => { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0); };
-
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast'); document.getElementById('toast-msg').innerText = message;
-            document.getElementById('toast-icon').className = isError ? "fa-solid fa-triangle-exclamation text-red-500 mr-3 text-xl" : "fa-solid fa-circle-check text-green-400 mr-3 text-xl";
-            toast.classList.remove('opacity-0'); setTimeout(() => { toast.classList.add('opacity-0'); }, 2500);
-        }
-
-        function playBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gainNode = ctx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); gainNode.gain.setValueAtTime(0.1, ctx.currentTime); osc.connect(gainNode); gainNode.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} }
-        function playErrorBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gainNode = ctx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, ctx.currentTime); gainNode.gain.setValueAtTime(0.1, ctx.currentTime); osc.connect(gainNode); gainNode.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.3); } catch(e) {} }
-
-        // ================= SISTEM LOGIN GOOGLE (REDIRECT) =================
+        // AUTH LOGIC
         function loginWithGoogle() {
-            document.getElementById('txt-btn-google').innerText = "Memuat...";
-            document.getElementById('auth-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyambungkan ke Google...';
-            
+            document.getElementById('txt-btn-google').innerText = "Memproses...";
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider).catch((error) => {
-                showToast("Gagal Login: " + error.message, true);
-                document.getElementById('txt-btn-google').innerText = "Masuk dengan Google";
-                document.getElementById('auth-status').innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Aman & Terenkripsi';
-            });
+            // Gunakan Redirect agar tidak macet di browser HP
+            auth.signInWithRedirect(provider);
         }
 
-        auth.getRedirectResult().catch((error) => {
-            if (error) showToast("Kesalahan Autentikasi: " + error.message, true);
-        });
-
-        function logoutGoogle() {
-            if(confirm("Yakin ingin keluar dari akun ini? Data keranjang saat ini akan dikosongkan.")) {
-                auth.signOut().then(() => {
-                    masterProducts = []; transactionsHistory = []; debtsData = []; rekapHistory = []; cart = [];
-                    updateCartUI();
-                    window.location.reload();
-                });
-            }
-        }
-
-        // Pantau Status Login
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // User is logged in
                 currentUser = user;
-                document.getElementById('login-screen').classList.add('opacity-0');
-                setTimeout(() => { document.getElementById('login-screen').classList.add('hidden'); }, 500);
-                
-                // Update UI Header & Settings
-                document.getElementById('user-photo').src = user.photoURL || "https://www.gravatar.com/avatar/?d=mp";
-                document.getElementById('user-name-display').innerText = user.displayName || "Pengguna";
-                document.getElementById('user-email-display').innerText = user.email || "Email tidak tersedia";
+                document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('header-user-email').innerText = user.email;
-
-                loadStoreSettings();
-                initDataListeners(); // Mulai tarik data khusus user ini
-            } else {
-                // User is logged out
-                currentUser = null;
-                document.getElementById('login-screen').classList.remove('hidden', 'opacity-0');
+                document.getElementById('user-photo').src = user.photoURL || "";
+                document.getElementById('user-name-display').innerText = user.displayName;
+                document.getElementById('user-email-display').innerText = user.email;
                 
-                // Matikan pendengar data lama jika ada
-                if(unsubscribeProducts) unsubscribeProducts();
-                if(unsubscribeTransactions) unsubscribeTransactions();
-                if(unsubscribeDebts) unsubscribeDebts();
-                if(unsubscribeRekaps) unsubscribeRekaps();
+                loadStoreSettings();
+                initDataStreams();
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                subs.forEach(s => s());
             }
         });
 
-        // ================= SISTEM REFERENSI DATABASE PER USER =================
-        const getProductsRef = () => db.collection("users").doc(currentUser.uid).collection("products");
-        const getTransactionsRef = () => db.collection("users").doc(currentUser.uid).collection("transactions");
-        const getDebtsRef = () => db.collection("users").doc(currentUser.uid).collection("debts");
-        const getRekapsRef = () => db.collection("users").doc(currentUser.uid).collection("rekaps");
+        function logoutGoogle() { if(confirm("Keluar dari akun?")) auth.signOut().then(() => window.location.reload()); }
 
-        function loadStoreSettings() { 
-            const saved = localStorage.getItem(`soka_store_${currentUser.uid}`); 
-            if(saved) { storeSettings = JSON.parse(saved); } 
-            document.getElementById('set-store-name').value = storeSettings.name; 
-            document.getElementById('set-store-address').value = storeSettings.address; 
-            document.getElementById('set-store-footer').value = storeSettings.footer; 
-            document.getElementById('header-store-name').innerText = storeSettings.name; 
-        }
-        function saveStoreSettings() { 
-            storeSettings.name = document.getElementById('set-store-name').value || 'Toko Saya'; 
-            storeSettings.address = document.getElementById('set-store-address').value || '-'; 
-            storeSettings.footer = document.getElementById('set-store-footer').value || 'Terima Kasih'; 
-            localStorage.setItem(`soka_store_${currentUser.uid}`, JSON.stringify(storeSettings)); 
-            document.getElementById('header-store-name').innerText = storeSettings.name; 
-            showToast("Pengaturan struk disimpan!"); 
-        }
-        function generateInvoiceCode() { const now = new Date(); const h = now.getHours().toString().padStart(2, '0'); const m = now.getMinutes().toString().padStart(2, '0'); const s = now.getSeconds().toString().padStart(2, '0'); return `INV-${h}${m}${s}`; }
+        // DATABASE REFS
+        const userDoc = () => db.collection("users").doc(currentUser.uid);
+        const prodCol = () => userDoc().collection("products");
+        const txCol = () => userDoc().collection("transactions");
+        const debtCol = () => userDoc().collection("debts");
+        const rekapCol = () => userDoc().collection("rekaps");
 
-        // ================= SISTEM BACKUP & RESTORE =================
-        function backupData() {
-            const data = {
-                soka_master_products: JSON.stringify(masterProducts), soka_transactions: JSON.stringify(transactionsHistory),
-                soka_debts: JSON.stringify(debtsData), soka_rekap_history: JSON.stringify(rekapHistory),
-                soka_store_settings: JSON.stringify(storeSettings)
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `Backup_${storeSettings.name.replace(/\s+/g, '')}_${new Date().toISOString().slice(0, 10)}.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-            showToast("Backup data berhasil diunduh!");
+        function initDataStreams() {
+            subs.push(prodCol().onSnapshot(s => { masterProducts = s.docs.map(d => d.data()); renderProducts(); renderMasterProducts(); }));
+            subs.push(txCol().onSnapshot(s => { transactionsHistory = s.docs.map(d => d.data()); loadReport(); }));
+            subs.push(debtCol().onSnapshot(s => { debtsData = s.docs.map(d => d.data()); renderDebts(); }));
+            subs.push(rekapCol().onSnapshot(s => { rekapHistory = s.docs.map(d => d.data()); renderRekapList(); }));
         }
 
-        function restoreData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(confirm("PERINGATAN: Data JSON ini akan ditambahkan ke akun Cloud Anda. Lanjutkan?")) {
-                        document.getElementById('loading-overlay').classList.add('active');
-                        
-                        const writeDataInstantly = (refFunc, dataString) => {
-                            if(!dataString) return;
-                            let arr = typeof dataString === 'string' ? JSON.parse(dataString) : dataString;
-                            arr.forEach(item => { refFunc().doc(String(item.id)).set(item); });
-                        };
-
-                        writeDataInstantly(getProductsRef, data.soka_master_products);
-                        writeDataInstantly(getTransactionsRef, data.soka_transactions);
-                        writeDataInstantly(getDebtsRef, data.soka_debts);
-                        writeDataInstantly(getRekapsRef, data.soka_rekap_history);
-                        
-                        if(data.soka_store_settings) localStorage.setItem(`soka_store_${currentUser.uid}`, typeof data.soka_store_settings === 'string' ? data.soka_store_settings : JSON.stringify(data.soka_store_settings));
-                        
-                        setTimeout(() => {
-                            document.getElementById('loading-title').innerText = "Proses Selesai!";
-                            document.getElementById('loading-desc').innerText = "Aplikasi akan memuat ulang...";
-                            setTimeout(() => { window.location.reload(); }, 1500);
-                        }, 4000);
-                    }
-                } catch (err) {
-                    document.getElementById('loading-overlay').classList.remove('active');
-                    showToast("Gagal membaca file backup!", true);
-                }
-                event.target.value = ""; 
-            };
-            reader.readAsText(file);
+        // UI LOGIC KASIR
+        function switchTab(t) {
+            ['kasir','laporan','barang','hutang','rekap','pengaturan'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.remove('active');
+                document.getElementById(`tab-${v}`).classList.remove('text-blue-600','text-red-600','text-teal-600');
+                document.getElementById(`tab-${v}`).classList.add('text-gray-400');
+            });
+            document.getElementById(`view-${t}`).classList.add('active');
+            let color = 'text-blue-600'; if(t==='hutang') color='text-red-600'; if(t==='rekap') color='text-teal-600';
+            document.getElementById(`tab-${t}`).classList.replace('text-gray-400', color);
+            toggleMobileCart(false);
         }
 
-        // ================= SWITCH TABS UTAMA =================
-        function switchTab(tabName) {
-            ['kasir', 'laporan', 'barang', 'hutang', 'rekap', 'pengaturan'].forEach(v => { document.getElementById(`view-${v}`).classList.remove('active'); document.getElementById(`tab-${v}`).classList.remove('text-blue-600', 'text-red-500', 'text-teal-500'); document.getElementById(`tab-${v}`).classList.add('text-gray-400'); });
-            document.getElementById(`view-${tabName}`).classList.add('active');
-            let activeColor = 'text-blue-600'; if(tabName === 'hutang') activeColor = 'text-red-500'; if(tabName === 'rekap') activeColor = 'text-teal-500';
-            document.getElementById(`tab-${tabName}`).classList.replace('text-gray-400', activeColor); toggleMobileCart(false);
-            if (tabName === 'kasir') { document.getElementById('header-subtitle').innerText = "Mesin Kasir Pintar (Cloud)"; document.getElementById('btn-clear-cart-desktop').style.display = 'flex'; renderProducts(); } 
-            else if (tabName === 'laporan') { document.getElementById('header-subtitle').innerText = "Laporan & Grafik (Cloud)"; document.getElementById('btn-clear-cart-desktop').style.display = 'none'; loadReport(); } 
-            else if (tabName === 'barang') { document.getElementById('header-subtitle').innerText = "Database Toko (Cloud)"; document.getElementById('btn-clear-cart-desktop').style.display = 'none'; renderMasterProducts(); } 
-            else if (tabName === 'hutang') { document.getElementById('header-subtitle').innerText = "Buku Catatan Hutang (Cloud)"; document.getElementById('btn-clear-cart-desktop').style.display = 'none'; renderDebts(); } 
-            else if (tabName === 'rekap') { document.getElementById('header-subtitle').innerText = "Rekapitulasi Uang (Cloud)"; document.getElementById('btn-clear-cart-desktop').style.display = 'none'; renderRekapList(); } 
-            else if (tabName === 'pengaturan') { document.getElementById('header-subtitle').innerText = "Setelan Aplikasi"; document.getElementById('btn-clear-cart-desktop').style.display = 'none'; loadStoreSettings(); }
-        }
-
-        // ================= KASIR & TRANSAKSI =================
-        function toggleMobileCart(show) { const cartSection = document.getElementById('cartSection'); if (show) { cartSection.classList.remove('translate-y-full'); } else { cartSection.classList.add('translate-y-full'); } }
-        function handleBarcodeEnter(e) {
-            if (e.key === 'Enter') {
-                const inputEl = document.getElementById('searchInput'); const code = inputEl.value.trim(); if(!code) return;
-                const product = masterProducts.find(p => p.barcode === code || String(p.id) === code);
-                if(product) { addToCart(product.id, product.name, product.price, product.buyPrice); playBeep(); showToast(`✅ ${product.name}`); inputEl.value = ""; renderProducts(); } else { filterProducts(); }
-            }
-        }
+        function toggleMobileCart(s) { const c = document.getElementById('cartSection'); if(s) c.classList.remove('translate-y-full'); else c.classList.add('translate-y-full'); }
 
         function renderProducts() {
-            const filterText = document.getElementById('searchInput').value.toLowerCase();
             const list = document.getElementById('productList'); list.innerHTML = "";
-            const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filterText) || (p.barcode && p.barcode.includes(filterText))).sort((a,b) => a.name.localeCompare(b.name));
-            if(filtered.length === 0) { list.innerHTML = `<div class="col-span-2 sm:col-span-3 lg:col-span-4 text-center p-8 text-gray-400 font-medium">Barang tidak ditemukan.<br>Gunakan tombol Input Manual.</div>`; return; }
-
-            filtered.forEach(product => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer active:scale-95 active:bg-blue-50 transition transform h-full relative overflow-hidden min-h-[140px]";
-                div.onclick = () => addToCart(product.id, product.name, product.price, product.buyPrice);
-                let barcodeBadge = product.barcode ? `<div class="absolute top-0 right-0 bg-blue-100 text-blue-600 px-2 py-1 text-[8px] font-bold rounded-bl-lg"><i class="fa-solid fa-barcode"></i></div>` : "";
-                
-                let stockValue = product.stock || 0;
-                let stockClass = stockValue <= 0 ? "text-red-500 font-black" : "text-green-600 font-bold";
-
-                div.innerHTML = `${barcodeBadge}<div class="flex-1 flex flex-col mb-1 pt-1"><div class="font-bold text-gray-800 text-xs sm:text-sm leading-snug">${product.name}</div><div class="text-[10px] text-gray-400 mt-1">Sisa Stok: <span class="${stockClass}">${stockValue}</span></div></div><div class="mt-auto pt-2 border-t border-gray-50"><div class="text-blue-600 font-black text-sm sm:text-base mb-2">${formatRp(product.price)}</div><div class="bg-blue-50 text-blue-700 text-center text-[10px] sm:text-xs py-2 rounded-xl font-bold border border-blue-100"><i class="fa-solid fa-cart-plus"></i> Masuk</div></div>`;
-                list.appendChild(div);
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filter) || (p.barcode && p.barcode.includes(filter))).sort((a,b)=>a.name.localeCompare(b.name));
+            filtered.forEach(p => {
+                const d = document.createElement('div');
+                d.className = "bg-white p-3 rounded-2xl border flex flex-col cursor-pointer active:scale-95 transition min-h-[140px]";
+                d.onclick = () => addToCart(p);
+                const stockCls = (p.stock||0) <= 0 ? "text-red-600" : "text-emerald-600";
+                d.innerHTML = `<div class="flex-1"><div class="font-bold text-xs leading-tight mb-1">${p.name}</div><div class="text-[9px] text-gray-400">Stok: <span class="${stockCls} font-black">${p.stock||0}</span></div></div><div class="mt-2"><div class="text-blue-600 font-black text-sm mb-1">${formatRp(p.price)}</div><div class="bg-blue-50 text-blue-700 text-center text-[9px] py-1.5 rounded-lg font-bold border border-blue-100">PILIH</div></div>`;
+                list.appendChild(d);
             });
         }
-
         function filterProducts() { renderProducts(); }
-        function openManualModal() { document.getElementById('manName').value = ""; document.getElementById('manBuy').value = ""; document.getElementById('manSell').value = ""; document.getElementById('manualModal').classList.remove('hidden'); setTimeout(() => document.getElementById('manName').focus(), 100); }
-        function closeManualModal() { document.getElementById('manualModal').classList.add('hidden'); }
-        
-        function submitManualItem() { 
-            const name = document.getElementById('manName').value.trim(); const buy = parseInt(document.getElementById('manBuy').value); const sell = parseInt(document.getElementById('manSell').value); 
-            if(!name || isNaN(buy) || isNaN(sell)) return showToast("Isi data manual dengan lengkap!", true); 
-            if (buy > sell) { playErrorBeep(); return showToast("Ditolak! Modal tidak boleh lebih besar dari Harga Jual.", true); }
-            cart.push({ id: "M"+Date.now(), name: name, buyPrice: buy, price: sell, originalPrice: sell, qty: 1 }); 
-            updateCartUI(); closeManualModal(); playBeep(); showToast(`${name} ditambahkan!`); 
+
+        function addToCart(p) {
+            const exist = cart.find(i => i.id === p.id);
+            if(exist) exist.qty++; else cart.push({ ...p, qty: 1 });
+            updateCartUI();
         }
 
-        function addToCart(id, name, price, buyPrice) { const existing = cart.find(item => String(item.id) === String(id)); if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1 }); } updateCartUI(); }
-        function changeQty(id, delta) { const item = cart.find(i => String(i.id) === String(id)); if (item) { item.qty += delta; if (item.qty <= 0) cart = cart.filter(i => String(i.id) !== String(id)); } updateCartUI(); }
-        function updateItemPrice(id, inputElement) { const newPrice = parseInt(inputElement.value); const item = cart.find(i => String(i.id) === String(id)); if (item) { item.price = (!isNaN(newPrice) && newPrice >= 0) ? newPrice : item.originalPrice; } updateCartUI(); }
-        function clearCart(force = false) { if(force || confirm("Yakin ingin mengosongkan keranjang?")) { cart = []; document.getElementById('payAmount').value = ''; updateCartUI(); toggleMobileCart(false); } }
+        function changeQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if(item) { item.qty += delta; if(item.qty <= 0) cart = cart.filter(i => i.id !== id); }
+            updateCartUI();
+        }
+
         function updateCartUI() {
-            const cartContainer = document.getElementById('cartItems'); const cartCountDesk = document.getElementById('cartCountDesktop'); const totalPriceEl = document.getElementById('totalPrice'); const floatBadge = document.getElementById('floatingCartCount'); const floatTotal = document.getElementById('floatingCartTotal');
-            let total = 0, count = 0; cart.forEach(item => { total += (item.price * item.qty); count += item.qty; });
-            if(count > 0) { floatBadge.innerText = count; floatBadge.classList.remove('hidden'); } else { floatBadge.classList.add('hidden'); }
-            floatTotal.innerText = formatRp(total);
-            if (cart.length === 0) { cartContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60 pt-10"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p class="font-medium text-lg">Keranjang Masih Kosong</p></div>`; cartCountDesk.innerText = "0 Barang"; totalPriceEl.innerText = "Rp 0"; totalPriceEl.dataset.total = 0; calculateChange(); return; }
-            cartContainer.innerHTML = "";
+            const container = document.getElementById('cartItems'); container.innerHTML = "";
+            let total = 0, count = 0;
             cart.forEach(item => {
-                const div = document.createElement('div'); div.className = "flex flex-col bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm";
-                div.innerHTML = `<div class="font-bold text-sm truncate text-gray-800 mb-2">${item.name}</div><div class="flex justify-between items-center gap-2"><div class="flex items-center text-xs text-gray-500 bg-gray-50 border-2 border-gray-100 rounded-xl px-2 sm:px-3 focus-within:border-blue-300 overflow-hidden w-[45%]"><span class="mr-1 font-black text-gray-400">Rp</span><input type="number" value="${item.price}" onchange="updateItemPrice('${item.id}', this)" class="w-full bg-transparent py-2 text-right focus:outline-none font-bold text-blue-700 text-sm sm:text-base"></div><div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"><button onclick="changeQty('${item.id}', -1)" class="w-10 sm:w-12 py-2 text-red-600 hover:bg-gray-200 font-black text-lg bg-white active:bg-gray-100">-</button><span class="font-bold min-w-[2.5rem] sm:min-w-[3rem] text-center text-sm sm:text-base bg-gray-50 py-2 text-gray-800">${item.qty}</span><button onclick="changeQty('${item.id}', 1)" class="w-10 sm:w-12 py-2 text-blue-600 hover:bg-gray-200 font-black text-lg bg-white active:bg-gray-100">+</button></div></div>`;
-                cartContainer.appendChild(div);
+                total += (item.price * item.qty); count += item.qty;
+                const d = document.createElement('div'); d.className = "bg-white p-3 rounded-2xl border flex items-center justify-between";
+                d.innerHTML = `<div class="flex-1 pr-2"><div class="font-bold text-xs truncate">${item.name}</div><div class="text-blue-600 font-bold text-xs">${formatRp(item.price)}</div></div><div class="flex items-center bg-gray-100 rounded-lg overflow-hidden"><button onclick="changeQty('${item.id}', -1)" class="w-8 py-1 font-black text-red-500 bg-white">-</button><span class="px-3 font-bold text-xs">${item.qty}</span><button onclick="changeQty('${item.id}', 1)" class="w-8 py-1 font-black text-blue-500 bg-white">+</button></div>`;
+                container.appendChild(d);
             });
-            cartCountDesk.innerText = `${count} Barang`; totalPriceEl.innerText = formatRp(total); totalPriceEl.dataset.total = total; calculateChange();
+            document.getElementById('totalPrice').innerText = formatRp(total);
+            document.getElementById('totalPrice').dataset.val = total;
+            document.getElementById('floatingCartTotal').innerText = formatRp(total);
+            const badge = document.getElementById('floatingCartCount');
+            if(count > 0) { badge.innerText = count; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+            calculateChange();
         }
-        function calculateChange() { const total = parseInt(document.getElementById('totalPrice').dataset.total || 0); const pay = parseInt(document.getElementById('payAmount').value || 0); const changeEl = document.getElementById('changeAmount'); if (cart.length === 0) { changeEl.innerText = "Rp 0"; changeEl.className = "text-gray-400 text-xl font-black"; return; } if (pay >= total) { changeEl.innerText = formatRp(pay - total); changeEl.className = "text-green-600 font-black text-2xl"; } else { changeEl.innerText = "Uang Kurang!"; changeEl.className = "text-red-500 font-black text-xl"; } }
+
+        function calculateChange() {
+            const total = parseInt(document.getElementById('totalPrice').dataset.val || 0);
+            const pay = parseInt(document.getElementById('payAmount').value || 0);
+            const el = document.getElementById('changeAmount');
+            if(pay >= total && total > 0) { el.innerText = formatRp(pay-total); el.className = "text-green-600 font-black text-xl"; } else { el.innerText = "Rp 0"; el.className = "text-gray-400 font-black text-xl"; }
+        }
+
         function showReceipt() {
-            if (cart.length === 0) return showToast("Keranjang kosong!", true);
-            const total = parseInt(document.getElementById('totalPrice').dataset.total || 0); const pay = parseInt(document.getElementById('payAmount').value || 0); if (pay < total) return showToast("Uang tunai pembeli kurang!", true);
-            isReprintMode = false; document.getElementById('btn-save-tx').classList.remove('hidden'); const now = new Date(); currentTransactionDateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
-            const newInvoice = generateInvoiceCode(); populateReceiptUI(newInvoice, `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`, `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`, cart, total, pay, (pay-total));
+            const total = parseInt(document.getElementById('totalPrice').dataset.val || 0);
+            const pay = parseInt(document.getElementById('payAmount').value || 0);
+            if(total <= 0) return;
+            if(pay < total) return showToast("Uang Kurang!", true);
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID');
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const inv = "INV-" + Date.now().toString().slice(-6);
+
+            let itemsTxt = "";
+            cart.forEach(i => { itemsTxt += `${i.name}\n${i.qty} x ${i.price.toLocaleString()} = ${(i.qty*i.price).toLocaleString()}\n`; });
+
+            const receiptTxt = `${storeSettings.name}\n${storeSettings.address}\n------------------------\nNO: ${inv}\nTGL: ${dateStr} ${timeStr}\n------------------------\n${itemsTxt}------------------------\nTOTAL: ${total.toLocaleString()}\nTUNAI: ${pay.toLocaleString()}\nKEMBALI: ${(pay-total).toLocaleString()}\n------------------------\n${storeSettings.footer}`;
+            
+            document.getElementById('receipt-area').innerText = receiptTxt;
+            document.getElementById('receipt-area').dataset.inv = inv;
+            document.getElementById('receipt-area').dataset.total = total;
+            document.getElementById('receipt-area').dataset.pay = pay;
+            document.getElementById('receipt-area').dataset.date = dateStr;
+            document.getElementById('receipt-area').dataset.time = timeStr;
             document.getElementById('receiptModal').classList.remove('hidden');
         }
-        function reprintReceipt(txId) {
-            reprintTxData = transactionsHistory.find(t => String(t.id) === String(txId)); if(!reprintTxData) return;
-            isReprintMode = true; document.getElementById('btn-save-tx').classList.add('hidden');
-            populateReceiptUI(reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`, reprintTxData.displayDate, reprintTxData.time, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change);
-            document.getElementById('receiptModal').classList.remove('hidden');
+
+        function processTransaction(type) {
+            const area = document.getElementById('receipt-area');
+            const total = parseInt(area.dataset.total);
+            const pay = parseInt(area.dataset.pay);
+            const inv = area.dataset.inv;
+            const text = area.innerText;
+
+            let totalModal = 0;
+            cart.forEach(item => {
+                totalModal += ((item.buyPrice || 0) * item.qty);
+                if(item.id.toString().indexOf('M') === -1) {
+                    const p = masterProducts.find(x => x.id === item.id);
+                    if(p) prodCol().doc(item.id.toString()).update({ stock: (p.stock || 0) - item.qty });
+                }
+            });
+
+            const tx = { id: Date.now(), invoice: inv, total, pay, change: pay-total, modal: totalModal, profit: total-totalModal, date: new Date().toISOString().split('T')[0], displayDate: area.dataset.date, time: area.dataset.time, items: [...cart] };
+            txCol().doc(tx.id.toString()).set(tx);
+
+            if(type === 'share_text') { if(navigator.share) navigator.share({ text }); else alert("Salin & Paste Struk Ini:\n\n" + text); }
+            if(type === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+
+            cart = []; updateCartUI(); document.getElementById('payAmount').value = "";
+            closeReceipt(); showToast("Transaksi Berhasil!");
         }
-        function populateReceiptUI(invoice, dateStr, timeStr, itemsList, total, pay, change) {
-            document.getElementById('print-store-name').innerText = storeSettings.name; document.getElementById('print-store-address').innerText = storeSettings.address; document.getElementById('print-store-footer').innerText = storeSettings.footer;
-            document.getElementById('receiptInvoice').innerText = invoice; document.getElementById('receiptDate').innerText = dateStr; document.getElementById('receiptTime').innerText = timeStr;
-            const receiptItems = document.getElementById('receiptItems'); receiptItems.innerHTML = "";
-            itemsList.forEach(item => { const itemDiv = document.createElement('div'); itemDiv.className = "mb-1"; itemDiv.innerHTML = `<div class="truncate text-[11px] font-bold">${item.name}</div><div class="flex justify-between pl-2 text-[11px] text-gray-700"><span>${item.qty} x ${item.price.toLocaleString('id-ID')}</span><span>${(item.price * item.qty).toLocaleString('id-ID')}</span></div>`; receiptItems.appendChild(itemDiv); });
-            document.getElementById('receiptTotal').innerText = total.toLocaleString('id-ID'); document.getElementById('receiptPay').innerText = pay.toLocaleString('id-ID'); document.getElementById('receiptChange').innerText = change.toLocaleString('id-ID');
-        }
+
         function closeReceipt() { document.getElementById('receiptModal').classList.add('hidden'); }
-        
-        function generateRawTextReceipt(invoice, itemsList, total, pay, change, dateStr, timeStr) {
-            let text = `${storeSettings.name}\n${storeSettings.address}\n--------------------------------\nTRX : ${invoice}\nTgl : ${dateStr} ${timeStr}\n--------------------------------\n`;
-            itemsList.forEach(item => { text += `${item.name}\n`; let qtyPrice = `${item.qty}x ${item.price.toLocaleString('id-ID')}`; let subtotalStr = (item.price * item.qty).toLocaleString('id-ID'); let spaces = " ".repeat(Math.max(1, 32 - qtyPrice.length - subtotalStr.length)); text += `${qtyPrice}${spaces}${subtotalStr}\n`; });
-            text += "--------------------------------\n"; text += `TOTAL${" ".repeat(32 - 5 - total.toLocaleString('id-ID').length)}${total.toLocaleString('id-ID')}\n`; text += `TUNAI${" ".repeat(32 - 5 - pay.toLocaleString('id-ID').length)}${pay.toLocaleString('id-ID')}\n`; text += `KEMBALI${" ".repeat(32 - 7 - change.toLocaleString('id-ID').length)}${change.toLocaleString('id-ID')}\n`; text += `--------------------------------\n${storeSettings.footer}\n\n`;
-            return text;
-        }
-        
-        function processTransaction(actionType) {
-            let textReceipt = "";
-            if(!isReprintMode) {
-                const total = parseInt(document.getElementById('totalPrice').dataset.total || 0); const pay = parseInt(document.getElementById('payAmount').value || 0); const inv = document.getElementById('receiptInvoice').innerText;
-                let totalModal = 0; 
-                
-                cart.forEach(item => { 
-                    totalModal += ((item.buyPrice || 0) * item.qty); 
-                    if(!String(item.id).startsWith("M")) {
-                        let product = masterProducts.find(p => String(p.id) === String(item.id));
-                        if(product) {
-                            let newStock = (product.stock || 0) - item.qty;
-                            getProductsRef().doc(String(product.id)).update({ stock: newStock });
-                        }
-                    }
-                });
 
-                const profit = total - totalModal;
-                if (actionType !== 'print_only') {
-                    const transaction = { id: Date.now(), invoice: inv, date: currentTransactionDateStr, displayDate: document.getElementById('receiptDate').innerText, time: document.getElementById('receiptTime').innerText, items: JSON.parse(JSON.stringify(cart)), total: total, modal: totalModal, profit: profit, pay: pay, change: pay - total };
-                    getTransactionsRef().doc(String(transaction.id)).set(transaction);
-                }
-                textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
-            } else {
-                const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
-                textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
-            }
-
-            if (actionType === 'share_text') { 
-                if (navigator.share) { navigator.share({ title: 'Struk ' + storeSettings.name, text: textReceipt }).catch(e => console.log("Share dibatalkan"));
-                } else {
-                    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textReceipt); alert("Struk Teks berhasil disalin. Silakan Paste di manapun!"); } 
-                    else { const textArea = document.createElement("textarea"); textArea.value = textReceipt; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("Struk Teks disalin. Silakan Paste!"); } catch (err) {} document.body.removeChild(textArea); }
-                }
-            } else if (actionType === 'whatsapp') { window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); }
-
-            if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Tersimpan di Cloud!"); }
-            closeReceipt(); 
-        }
-
-        // ================= KULAKAN / TAMBAH STOK & UPDATE HARGA =================
-        function openRestockModal(id) {
-            const product = masterProducts.find(p => String(p.id) === String(id)); if(!product) return;
-            document.getElementById('restockProductId').value = product.id; document.getElementById('restockProductName').innerText = product.name; document.getElementById('restockCurrentStock').innerText = product.stock || 0; document.getElementById('restockAddQty').value = ""; document.getElementById('restockBuyPrice').value = product.buyPrice || 0; document.getElementById('restockSellPrice').value = product.price || 0;
-            document.getElementById('restockModal').classList.remove('hidden'); setTimeout(() => document.getElementById('restockAddQty').focus(), 100);
-        }
-        function closeRestockModal() { document.getElementById('restockModal').classList.add('hidden'); }
-        function saveRestockData() {
-            const id = document.getElementById('restockProductId').value; const addQty = parseInt(document.getElementById('restockAddQty').value) || 0;  const newBuyPrice = parseInt(document.getElementById('restockBuyPrice').value); const newSellPrice = parseInt(document.getElementById('restockSellPrice').value);
-            if(isNaN(newBuyPrice) || isNaN(newSellPrice)) return showToast("Harga harus diisi angka yang valid!", true);
-            if(newBuyPrice > newSellPrice) return showToast("Harga Modal tidak boleh lebih dari Harga Jual!", true);
-            const product = masterProducts.find(p => String(p.id) === String(id));
-            if(product) {
-                const newStock = (product.stock || 0) + addQty;
-                getProductsRef().doc(String(product.id)).update({ stock: newStock, buyPrice: newBuyPrice, price: newSellPrice }).then(() => {
-                    if(addQty > 0) { showToast(`Berhasil menambah ${addQty} stok & Update Harga!`); } else { showToast(`Harga berhasil diupdate tanpa merubah stok!`); }
-                    closeRestockModal();
-                });
-            }
-        }
-
-        // ================= LAPORAN & MASTER BARANG =================
-        function toggleReportFilter() {
-            const type = document.getElementById('reportType').value;
-            if(type === 'daily') { document.getElementById('reportDate').classList.remove('hidden'); document.getElementById('reportMonth').classList.add('hidden'); } else { document.getElementById('reportDate').classList.add('hidden'); document.getElementById('reportMonth').classList.remove('hidden'); }
-            loadReport();
-        }
-        function renderHourlyChart(transactions) {
-            const chartContainer = document.getElementById('chart-bars'); let hoursCount = new Array(24).fill(0); transactions.forEach(tx => { let hour = parseInt(tx.time.split(':')[0]); if (!isNaN(hour)) { hoursCount[hour]++; } }); let maxCount = Math.max(...hoursCount); if (maxCount === 0) maxCount = 1; let html = "";
-            for(let i=0; i<24; i++) { let heightPercent = (hoursCount[i] / maxCount) * 100; let opacity = hoursCount[i] > 0 ? 'bg-blue-500' : 'bg-gray-100'; html += `<div class="flex flex-col items-center flex-1 h-full justify-end group relative" title="Jam ${i}:00 = ${hoursCount[i]} transaksi"><span class="text-[8px] font-bold text-gray-500 mb-0.5 opacity-0 group-hover:opacity-100 transition">${hoursCount[i] > 0 ? hoursCount[i] : ''}</span><div class="w-full ${opacity} rounded-t-[2px] min-h-[1px] transition-all duration-500" style="height: ${heightPercent}%"></div></div>`; } chartContainer.innerHTML = html;
-        }
-        function loadReport() {
-            const type = document.getElementById('reportType').value; let filteredTransactions = [];
-            if (type === 'daily') {
-                const dateInput = document.getElementById('reportDate'); if (!dateInput.value) { const now = new Date(); dateInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`; }
-                filteredTransactions = transactionsHistory.filter(tx => tx.date === dateInput.value);
-            } else {
-                const monthInput = document.getElementById('reportMonth'); if (!monthInput.value) { const now = new Date(); monthInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}`; }
-                filteredTransactions = transactionsHistory.filter(tx => tx.date.startsWith(monthInput.value));
-            }
-            let totalOmzet = 0, totalProfit = 0; filteredTransactions.forEach(tx => { totalOmzet += tx.total; totalProfit += (tx.profit || 0); }); document.getElementById('reportTotalOmzet').innerText = formatRp(totalOmzet); document.getElementById('reportTotalProfit').innerText = formatRp(totalProfit); document.getElementById('reportTotalTx').innerText = `${filteredTransactions.length} Nota`; renderHourlyChart(filteredTransactions);
-            const listContainer = document.getElementById('reportList'); listContainer.innerHTML = "";
-            if (filteredTransactions.length === 0) { listContainer.innerHTML = `<div class="p-8 text-center text-gray-400 font-medium">Belum ada transaksi di periode ini.</div>`; return; }
-            filteredTransactions.slice().sort((a,b) => b.id - a.id).forEach((tx) => {
-                let itemsHtml = tx.items.map(i => `<div class="text-[11px] sm:text-xs text-gray-500 flex justify-between"><span>${i.qty}x ${i.name}</span><span>${formatRp(i.qty * i.price)}</span></div>`).join('');
-                let invDisplay = tx.invoice || `INV-${tx.id.toString().slice(-6)}`; const itemDiv = document.createElement('div'); itemDiv.className = "p-4 hover:bg-gray-50 transition border-b border-gray-100";
-                itemDiv.innerHTML = `<div class="flex justify-between items-start mb-1 cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden')"><div><span class="font-bold text-gray-800 text-sm">${invDisplay}</span><span class="text-xs text-gray-400 ml-2"><i class="fa-regular fa-calendar"></i> ${tx.displayDate} - ${tx.time}</span></div><div class="font-black text-blue-600 text-base">${formatRp(tx.total)}</div></div><div class="hidden pt-3 mt-2 border-t border-dashed border-gray-200">${itemsHtml}<div class="mt-3 pt-2 border-t border-gray-100 text-[10px] text-gray-500 flex justify-between items-center bg-blue-50 p-2.5 rounded-xl"><div class="flex flex-col"><span class="font-medium">Modal: ${formatRp(tx.modal || 0)}</span><span class="font-black text-emerald-600 text-xs">Laba: ${formatRp(tx.profit || 0)}</span></div><div class="text-right"><span>Tunai: ${formatRp(tx.pay)}</span><br><span>Kembali: ${formatRp(tx.change)}</span></div></div><div class="mt-3 flex justify-end gap-2"><button onclick="deleteTransaction(${tx.id})" class="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-lg font-bold transition"><i class="fa-solid fa-trash mr-1"></i> Hapus</button><button onclick="reprintReceipt(${tx.id})" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded-lg font-bold transition"><i class="fa-solid fa-print mr-1"></i> Cetak Ulang</button></div></div>`;
-                listContainer.appendChild(itemDiv);
-            });
-        }
-        function deleteTransaction(txId) { if(confirm("Yakin ingin menghapus transaksi ini dari Cloud secara permanen?")) { getTransactionsRef().doc(String(txId)).delete(); showToast("Proses menghapus data transaksi..."); } }
-        function clearReportData() { if(confirm("AWAS! Hapus semua riwayat transaksi permanen dari database cloud?")) { let check = prompt("Ketik 'HAPUS':"); if(check === 'HAPUS') { transactionsHistory.forEach(tx => getTransactionsRef().doc(String(tx.id)).delete()); showToast("Sedang menghapus semua riwayat..."); } } }
-        function downloadCSV(csvContent, fileName) { const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", fileName); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
-        function exportTransactionsToCSV() {
-            if(transactionsHistory.length === 0) return showToast("Tidak ada data transaksi untuk diexport!", true);
-            let csv = "ID_Sistem,No_Invoice,Tanggal,Jam,Total_Omzet,Total_Modal,Laba_Bersih,Uang_Tunai,Kembalian,Daftar_Barang\n";
-            transactionsHistory.forEach(tx => { let itemsStr = tx.items.map(i => `${i.qty}x ${i.name}`).join(' | '); let invStr = tx.invoice || `INV-${tx.id.toString().slice(-6)}`; csv += `"${tx.id}","${invStr}","${tx.date}","${tx.time}","${tx.total}","${tx.modal || 0}","${tx.profit || 0}","${tx.pay}","${tx.change}","${itemsStr}"\n`; });
-            downloadCSV(csv, `Transaksi_${storeSettings.name}_${new Date().toISOString().slice(0, 10)}.csv`); showToast("Berhasil mendownload Excel Transaksi!");
-        }
-        function exportProductsToCSV() {
-            if(masterProducts.length === 0) return showToast("Tidak ada data produk!", true);
-            let csv = "ID_Produk,Barcode,Nama_Barang,Harga_Modal,Harga_Jual,Stok\n"; masterProducts.forEach(p => { csv += `"${p.id}","${p.barcode || ''}","${p.name}","${p.buyPrice}","${p.price}","${p.stock || 0}"\n`; });
-            downloadCSV(csv, `DatabaseBarang_${storeSettings.name}_${new Date().toISOString().slice(0, 10)}.csv`); showToast("Berhasil mendownload Excel Produk!");
-        }
+        // MASTER BARANG LOGIC
         function renderMasterProducts() {
-            const filterText = document.getElementById('searchMaster').value.toLowerCase(); const list = document.getElementById('masterList'); list.innerHTML = "";
-            const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filterText) || (p.barcode && p.barcode.includes(filterText))).sort((a,b) => a.name.localeCompare(b.name)); document.getElementById('masterTotalItems').innerText = `${filtered.length} Item`;
-            if(filtered.length === 0) { list.innerHTML = `<div class="p-6 text-center text-gray-400 font-medium">Barang tidak ditemukan.</div>`; return; }
-            filtered.forEach(product => {
-                const div = document.createElement('div'); div.className = "p-4 hover:bg-gray-50 flex justify-between items-center transition border-b border-gray-100";
-                let barcodeStatus = product.barcode ? `<span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-1 text-[9px] font-bold"><i class="fa-solid fa-barcode mr-1"></i>OK</span>` : `<span class="text-red-500 bg-red-50 px-2 py-0.5 rounded ml-1 text-[9px] font-bold"><i class="fa-solid fa-triangle-exclamation"></i> No Barcode</span>`;
-                let stockValue = product.stock || 0; let stockColor = stockValue <= 0 ? "text-red-500" : "text-black";
-                div.innerHTML = `<div class="flex-1 pr-2"><div class="font-bold text-gray-800 text-sm mb-1">${product.name}</div><div class="text-xs font-medium text-gray-500 mb-1.5">Stok: <span class="font-black ${stockColor}">${stockValue}</span></div><div class="flex flex-wrap gap-2 text-[10px] font-medium items-center"><span class="text-red-500 bg-red-50 px-2 py-0.5 rounded"><i class="fa-solid fa-box mr-1"></i>Modal: ${formatRp(product.buyPrice)}</span><span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded"><i class="fa-solid fa-tag mr-1"></i>Jual: ${formatRp(product.price)}</span>${barcodeStatus}</div></div><div class="flex flex-col gap-2"><div class="flex gap-2"><button onclick="openRestockModal(${product.id})" class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2.5 rounded-xl transition shadow-sm" title="Tambah Stok & Harga Baru"><i class="fa-solid fa-boxes-packing"></i></button></div><div class="flex gap-2"><button onclick="openProductModal(${product.id})" class="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 p-2.5 rounded-xl transition"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteProduct(${product.id})" class="bg-red-50 text-red-500 hover:bg-red-100 p-2.5 rounded-xl transition"><i class="fa-solid fa-trash"></i></button></div></div>`; list.appendChild(div);
+            const list = document.getElementById('masterList'); list.innerHTML = "";
+            const filter = document.getElementById('searchMaster').value.toLowerCase();
+            const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filter) || (p.barcode && p.barcode.includes(filter))).sort((a,b)=>a.name.localeCompare(b.name));
+            filtered.forEach(p => {
+                const d = document.createElement('div'); d.className = "p-4 flex items-center justify-between border-b";
+                d.innerHTML = `<div class="flex-1">
+                    <div class="font-bold text-sm">${p.name}</div>
+                    <div class="text-[10px] text-gray-500 mb-1">Stok: <span class="font-black text-gray-800">${p.stock||0}</span></div>
+                    <div class="flex gap-2 text-[9px] font-bold">
+                        <span class="text-red-500 bg-red-50 px-1.5 rounded">M: ${formatRp(p.buyPrice)}</span>
+                        <span class="text-blue-600 bg-blue-50 px-1.5 rounded">J: ${formatRp(p.price)}</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openRestockModal(${p.id})" class="bg-blue-50 text-blue-600 w-9 h-9 rounded-xl flex items-center justify-center"><i class="fa-solid fa-boxes-packing"></i></button>
+                    <button onclick="openProductModal(${p.id})" class="bg-yellow-50 text-yellow-600 w-9 h-9 rounded-xl flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteProduct(${p.id})" class="bg-red-50 text-red-600 w-9 h-9 rounded-xl flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+                list.appendChild(d);
             });
         }
+
         function openProductModal(id = null) {
             document.getElementById('productModal').classList.remove('hidden');
-            if (id) {
-                document.getElementById('modalTitle').innerHTML = "<i class='fa-solid fa-pen-to-square mr-2 text-yellow-500'></i>Edit Barang"; const product = masterProducts.find(p => String(p.id) === String(id));
-                document.getElementById('editProductId').value = product.id; document.getElementById('editProductBarcode').value = product.barcode || ""; document.getElementById('editProductName').value = product.name; document.getElementById('editProductModal').value = product.buyPrice; document.getElementById('editProductJual').value = product.price; document.getElementById('divStokAwal').classList.add('hidden'); 
+            if(id) {
+                const p = masterProducts.find(x => x.id === id);
+                document.getElementById('editProductId').value = p.id;
+                document.getElementById('editProductBarcode').value = p.barcode || "";
+                document.getElementById('editProductName').value = p.name;
+                document.getElementById('editProductModal').value = p.buyPrice;
+                document.getElementById('editProductJual').value = p.price;
+                document.getElementById('divStokAwal').classList.add('hidden');
             } else {
-                document.getElementById('modalTitle').innerHTML = "<i class='fa-solid fa-box-open mr-2 text-blue-500'></i>Tambah Baru";
-                document.getElementById('editProductId').value = ""; document.getElementById('editProductBarcode').value = ""; document.getElementById('editProductName').value = ""; document.getElementById('editProductModal').value = ""; document.getElementById('editProductJual').value = ""; document.getElementById('editProductStock').value = "0"; document.getElementById('divStokAwal').classList.remove('hidden');
+                document.getElementById('editProductId').value = "";
+                document.getElementById('editProductBarcode').value = "";
+                document.getElementById('editProductName').value = "";
+                document.getElementById('editProductModal').value = "";
+                document.getElementById('editProductJual').value = "";
+                document.getElementById('editProductStock').value = "0";
+                document.getElementById('divStokAwal').classList.remove('hidden');
             }
         }
         function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
         function saveProductData() {
-            const id = document.getElementById('editProductId').value; const barcode = document.getElementById('editProductBarcode').value.trim(); const name = document.getElementById('editProductName').value.trim(); const buyPrice = parseInt(document.getElementById('editProductModal').value); const price = parseInt(document.getElementById('editProductJual').value);
-            if(!name || isNaN(buyPrice) || isNaN(price)) return showToast("Isi semua form dengan benar!", true);
-            if(buyPrice > price) return showToast("Modal tidak boleh lebih besar dari Harga Jual!", true);
-            if(barcode) { const isBarcodeUsed = masterProducts.find(p => p.barcode === barcode && String(p.id) !== String(id)); if(isBarcodeUsed) return showToast("Barcode sudah dipakai barang lain!", true); }
-            let finalStock = id ? masterProducts.find(p => String(p.id) === String(id)).stock : parseInt(document.getElementById('editProductStock').value) || 0;
-            const prodData = { id: id ? parseInt(id) : Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price, stock: finalStock };
-            getProductsRef().doc(String(prodData.id)).set(prodData).then(() => { showToast("Data barang berhasil tersimpan di Cloud!"); closeProductModal(); }).catch(err => showToast("Gagal menyimpan barang", true));
+            const name = document.getElementById('editProductName').value.trim();
+            const buy = parseInt(document.getElementById('editProductModal').value);
+            const sell = parseInt(document.getElementById('editProductJual').value);
+            if(!name || isNaN(buy) || isNaN(sell)) return;
+            const id = document.getElementById('editProductId').value || Date.now().toString();
+            const p = { id: parseInt(id), barcode: document.getElementById('editProductBarcode').value, name, buyPrice: buy, price: sell, stock: parseInt(document.getElementById('editProductStock').value)||0 };
+            prodCol().doc(id.toString()).set(p, {merge: true});
+            closeProductModal(); showToast("Produk Disimpan!");
         }
-        function deleteProduct(id) { if(confirm("Yakin ingin menghapus barang ini selamanya dari Cloud?")) { getProductsRef().doc(String(id)).delete(); showToast("Menghapus barang..."); } }
+        function deleteProduct(id) { if(confirm("Hapus barang ini selamanya?")) prodCol().doc(id.toString()).delete(); }
 
-        // ================= SISTEM BUKU HUTANG =================
-        function renderDebts() {
-            const filterText = document.getElementById('searchDebt').value.toLowerCase(); const list = document.getElementById('debtList'); list.innerHTML = "";
-            const filtered = debtsData.filter(d => d.name.toLowerCase().includes(filterText)).sort((a,b) => { if(a.isPaid === b.isPaid) return b.id - a.id; return a.isPaid ? 1 : -1; });
-            document.getElementById('debtTotalItems').innerText = `${filtered.length} Catatan`; let totalPiutang = 0; debtsData.forEach(d => { if(!d.isPaid) totalPiutang += d.amount; }); document.getElementById('debtTotalAmount').innerText = formatRp(totalPiutang);
-            if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-gray-400 font-medium">Buku hutang bersih, tidak ada catatan.</div>`; return; }
-            filtered.forEach(debt => {
-                const div = document.createElement('div'); div.className = `p-4 hover:bg-gray-50 transition border-b border-gray-100 ${debt.isPaid ? 'opacity-60 bg-gray-50' : ''}`;
-                let statusBadge = debt.isPaid ? `<span class="text-green-600 bg-green-100 border border-green-200 px-2 py-0.5 rounded font-bold text-[10px] ml-2"><i class="fa-solid fa-check-circle mr-1"></i>Lunas</span>` : `<span class="text-red-600 bg-red-100 border border-red-200 px-2 py-0.5 rounded font-bold text-[10px] ml-2"><i class="fa-solid fa-clock mr-1"></i>Belum Lunas</span>`;
-                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="font-bold text-gray-800 text-base ${debt.isPaid ? 'line-through' : ''}">${debt.name} ${statusBadge}</div><div class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-calendar-days mr-1"></i> ${debt.dateStr}</div>${debt.desc ? `<div class="text-xs text-gray-500 mt-0.5"><i class="fa-solid fa-pen-clip mr-1"></i> ${debt.desc}</div>` : ''}</div><div class="font-black ${debt.isPaid ? 'text-gray-400' : 'text-red-600'} text-lg">${formatRp(debt.amount)}</div></div><div class="flex gap-2 justify-end mt-3 border-t border-gray-100 pt-3">${!debt.isPaid ? `<button onclick="toggleDebtStatus(${debt.id})" class="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center"><i class="fa-solid fa-check mr-1"></i> Tandai Lunas</button>` : `<button onclick="toggleDebtStatus(${debt.id})" class="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-4 py-2 rounded-lg text-xs font-bold transition flex-1 sm:flex-none text-center"><i class="fa-solid fa-arrow-rotate-left mr-1"></i> Batal Lunas</button>`}<button onclick="openDebtModal(${debt.id})" class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg transition"><i class="fa-solid fa-pen"></i></button><button onclick="deleteDebt(${debt.id})" class="bg-red-50 text-red-500 hover:bg-red-100 px-3 py-2 rounded-lg transition"><i class="fa-solid fa-trash"></i></button></div>`; list.appendChild(div);
+        function openRestockModal(id) {
+            const p = masterProducts.find(x => x.id === id);
+            document.getElementById('restockProductId').value = p.id;
+            document.getElementById('restockProductName').innerText = p.name;
+            document.getElementById('restockAddQty').value = "";
+            document.getElementById('restockBuyPrice').value = p.buyPrice;
+            document.getElementById('restockSellPrice').value = p.price;
+            document.getElementById('restockModal').classList.remove('hidden');
+        }
+        function closeRestockModal() { document.getElementById('restockModal').classList.add('hidden'); }
+        function saveRestockData() {
+            const id = document.getElementById('restockProductId').value;
+            const add = parseInt(document.getElementById('restockAddQty').value) || 0;
+            const buy = parseInt(document.getElementById('restockBuyPrice').value);
+            const sell = parseInt(document.getElementById('restockSellPrice').value);
+            const p = masterProducts.find(x => x.id == id);
+            prodCol().doc(id.toString()).update({ stock: (p.stock||0) + add, buyPrice: buy, price: sell });
+            closeRestockModal(); showToast("Data Diperbarui!");
+        }
+
+        // LAPORAN LOGIC
+        function toggleReportFilter() {
+            const t = document.getElementById('reportType').value;
+            document.getElementById('reportDate').classList.toggle('hidden', t==='monthly');
+            document.getElementById('reportMonth').classList.toggle('hidden', t==='daily');
+            loadReport();
+        }
+
+        function loadReport() {
+            const type = document.getElementById('reportType').value;
+            const dateVal = document.getElementById('reportDate').value || new Date().toISOString().split('T')[0];
+            const monthVal = document.getElementById('reportMonth').value || new Date().toISOString().slice(0,7);
+            
+            const filtered = transactionsHistory.filter(tx => type === 'daily' ? tx.date === dateVal : tx.date.startsWith(monthVal));
+            let omzet = 0, profit = 0;
+            filtered.forEach(tx => { omzet += tx.total; profit += tx.profit; });
+            
+            document.getElementById('reportTotalOmzet').innerText = formatRp(omzet);
+            document.getElementById('reportTotalProfit').innerText = formatRp(profit);
+            document.getElementById('reportTotalTx').innerText = filtered.length;
+
+            const list = document.getElementById('reportList'); list.innerHTML = "";
+            filtered.sort((a,b)=>b.id-a.id).forEach(tx => {
+                const d = document.createElement('div'); d.className = "p-3 border-b";
+                d.innerHTML = `<div class="flex justify-between items-start">
+                    <div><div class="font-bold text-xs">${tx.invoice}</div><div class="text-[9px] text-gray-400">${tx.displayDate} ${tx.time}</div></div>
+                    <div class="text-right"><div class="font-black text-xs text-blue-600">${formatRp(tx.total)}</div><div class="text-[9px] text-emerald-600 font-bold">Laba: ${formatRp(tx.profit)}</div></div>
+                </div>`;
+                list.appendChild(d);
             });
         }
-        function openDebtModal(id = null) {
-            document.getElementById('debtModal').classList.remove('hidden');
-            if (id) {
-                document.getElementById('debtModalTitle').innerHTML = "<i class='fa-solid fa-pen-to-square mr-2 text-yellow-500'></i>Edit Hutang"; const debt = debtsData.find(d => String(d.id) === String(id));
-                document.getElementById('editDebtId').value = debt.id; document.getElementById('debtName').value = debt.name; document.getElementById('debtAmount').value = debt.amount; document.getElementById('debtDesc').value = debt.desc || "";
-            } else {
-                document.getElementById('debtModalTitle').innerHTML = "<i class='fa-solid fa-book-medical mr-2 text-red-500'></i>Catat Hutang Baru";
-                document.getElementById('editDebtId').value = ""; document.getElementById('debtName').value = ""; document.getElementById('debtAmount').value = ""; document.getElementById('debtDesc').value = "";
-            }
+
+        // HUTANG LOGIC
+        function renderDebts() {
+            const list = document.getElementById('debtList'); list.innerHTML = "";
+            let total = 0;
+            debtsData.forEach(d => {
+                if(!d.isPaid) total += d.amount;
+                const div = document.createElement('div'); div.className = `p-4 flex items-center justify-between border-b ${d.isPaid ? 'opacity-40' : ''}`;
+                div.innerHTML = `<div><div class="font-bold text-sm ${d.isPaid ? 'line-through' : ''}">${d.name}</div><div class="text-[10px] text-gray-400">${d.dateStr}</div></div>
+                <div class="flex items-center gap-3">
+                    <div class="font-black ${d.isPaid ? 'text-gray-400' : 'text-red-600'}">${formatRp(d.amount)}</div>
+                    <button onclick="toggleDebtStatus(${d.id})" class="p-2 border rounded-lg text-xs ${d.isPaid ? 'bg-gray-100' : 'bg-green-50 text-green-600 border-green-200'}"><i class="fa-solid fa-check"></i></button>
+                    <button onclick="deleteDebt(${d.id})" class="text-red-400 px-2"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+                list.appendChild(div);
+            });
+            document.getElementById('debtTotalAmount').innerText = formatRp(total);
         }
+        function openDebtModal() { document.getElementById('debtModal').classList.remove('hidden'); }
         function closeDebtModal() { document.getElementById('debtModal').classList.add('hidden'); }
         function saveDebtData() {
-            const id = document.getElementById('editDebtId').value; const name = document.getElementById('debtName').value.trim(); const amount = parseInt(document.getElementById('debtAmount').value); const desc = document.getElementById('debtDesc').value.trim();
-            if(!name || isNaN(amount) || amount <= 0) return showToast("Nama dan Jumlah Hutang wajib diisi dengan benar!", true);
-            const now = new Date(); const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const debtData = { id: id ? parseInt(id) : Date.now(), name: name, amount: amount, desc: desc, dateStr: id ? (debtsData.find(d => String(d.id) === String(id)).dateStr) : dateStr, isPaid: id ? (debtsData.find(d => String(d.id) === String(id)).isPaid) : false };
-            getDebtsRef().doc(String(debtData.id)).set(debtData).then(() => { showToast("Catatan hutang tersimpan di Cloud!"); closeDebtModal(); });
+            const name = document.getElementById('debtName').value.trim();
+            const amount = parseInt(document.getElementById('debtAmount').value);
+            if(!name || isNaN(amount)) return;
+            const id = Date.now().toString();
+            const d = { id: parseInt(id), name, amount, desc: document.getElementById('debtDesc').value, dateStr: new Date().toLocaleDateString('id-ID'), isPaid: false };
+            debtCol().doc(id).set(d);
+            closeDebtModal(); showToast("Hutang Dicatat!");
         }
-        function deleteDebt(id) { if(confirm("Yakin ingin menghapus catatan hutang ini dari cloud?")) { getDebtsRef().doc(String(id)).delete(); showToast("Catatan dihapus!"); } }
-        function toggleDebtStatus(id) { const debt = debtsData.find(d => String(d.id) === String(id)); if (debt) { debt.isPaid = !debt.isPaid; getDebtsRef().doc(String(debt.id)).set(debt).then(() => { if(debt.isPaid) { showToast("Hutang ditandai LUNAS!"); playBeep(); } else { showToast("Status dikembalikan ke Belum Lunas", true); } }); } }
+        function toggleDebtStatus(id) {
+            const d = debtsData.find(x => x.id == id);
+            debtCol().doc(id.toString()).update({ isPaid: !d.isPaid });
+        }
+        function deleteDebt(id) { if(confirm("Hapus catatan ini?")) debtCol().doc(id.toString()).delete(); }
 
-        // ================= SISTEM REKAP UANG =================
+        // REKAP LOGIC
         function renderRekapList() {
-            const listContainer = document.getElementById('rekapList'); listContainer.innerHTML = "";
-            if(rekapHistory.length === 0) { listContainer.innerHTML = `<div class="p-8 text-center text-gray-400 font-medium">Belum ada riwayat rekap kasir.</div>`; return; }
-            rekapHistory.slice().sort((a,b) => b.id - a.id).forEach((rekap) => {
-                const div = document.createElement('div'); div.className = "p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer";
-                div.innerHTML = `<div class="flex justify-between items-start" onclick="this.nextElementSibling.classList.toggle('hidden')"><div><span class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-calendar-check text-teal-500 mr-1"></i> ${rekap.dateStr}</span></div><div class="font-black text-teal-600 text-base">${formatRp(rekap.grandTotal)}</div></div><div class="hidden mt-3 pt-3 border-t border-dashed border-gray-200 text-xs"><div class="grid grid-cols-2 gap-4"><div class="bg-green-50 p-2 rounded-xl"><span class="font-bold text-green-700 block mb-1">Fisik (Tunai)</span><div class="text-gray-600 space-y-0.5"><div class="flex justify-between"><span>100rb:</span><span>${rekap.cash.p100} lbr</span></div><div class="flex justify-between"><span>50rb:</span><span>${rekap.cash.p50} lbr</span></div><div class="flex justify-between"><span>20rb:</span><span>${rekap.cash.p20} lbr</span></div><div class="flex justify-between"><span>10rb:</span><span>${rekap.cash.p10} lbr</span></div><div class="flex justify-between"><span>5rb:</span><span>${rekap.cash.p5} lbr</span></div><div class="flex justify-between"><span>2rb:</span><span>${rekap.cash.p2} lbr</span></div><div class="flex justify-between"><span>Koin:</span><span>${formatRp(rekap.cash.koin)}</span></div></div><div class="font-bold text-green-800 mt-2 border-t border-green-200 pt-1 text-right">${formatRp(rekap.totalCash)}</div></div><div class="bg-blue-50 p-2 rounded-xl"><span class="font-bold text-blue-700 block mb-1">Digital (Saldo)</span><div class="text-gray-600 space-y-0.5"><div class="flex justify-between"><span>Kuota:</span><span>${formatRp(rekap.digital.kuota)}</span></div><div class="flex justify-between"><span>Digipos:</span><span>${formatRp(rekap.digital.digipos)}</span></div><div class="flex justify-between"><span>DANA:</span><span>${formatRp(rekap.digital.dana)}</span></div><div class="flex justify-between"><span>SeaBank:</span><span>${formatRp(rekap.digital.seabank)}</span></div><div class="flex justify-between"><span>BNI:</span><span>${formatRp(rekap.digital.bni)}</span></div><div class="flex justify-between"><span>QRIS:</span><span>${formatRp(rekap.digital.qris)}</span></div></div><div class="font-bold text-blue-800 mt-2 border-t border-blue-200 pt-1 text-right">${formatRp(rekap.totalDigital)}</div></div></div></div>`;
-                listContainer.appendChild(div);
+            const list = document.getElementById('rekapList'); list.innerHTML = "";
+            rekapHistory.sort((a,b)=>b.id-a.id).forEach(r => {
+                const d = document.createElement('div'); d.className = "p-4 border-b flex justify-between items-center";
+                d.innerHTML = `<div><div class="text-[10px] text-gray-500">${r.dateStr}</div><div class="font-black text-teal-600">${formatRp(r.grandTotal)}</div></div><button onclick="rekapCol().doc('${r.id}').delete()" class="text-red-300"><i class="fa-solid fa-trash"></i></button>`;
+                list.appendChild(d);
             });
         }
-        function openRekapModal() { const ids = ['rkp-100', 'rkp-50', 'rkp-20', 'rkp-10', 'rkp-5', 'rkp-2', 'rkp-koin', 'rkp-kuota', 'rkp-digipos', 'rkp-dana', 'rkp-seabank', 'rkp-bni', 'rkp-qris']; ids.forEach(id => document.getElementById(id).value = ''); calculateRekapTotal(); document.getElementById('rekapModal').classList.remove('hidden'); }
+        function openRekapModal() { document.getElementById('rekapModal').classList.remove('hidden'); }
         function closeRekapModal() { document.getElementById('rekapModal').classList.add('hidden'); }
         function calculateRekapTotal() {
-            const p100 = parseInt(document.getElementById('rkp-100').value) || 0; const p50  = parseInt(document.getElementById('rkp-50').value) || 0; const p20  = parseInt(document.getElementById('rkp-20').value) || 0; const p10  = parseInt(document.getElementById('rkp-10').value) || 0; const p5   = parseInt(document.getElementById('rkp-5').value) || 0; const p2   = parseInt(document.getElementById('rkp-2').value) || 0; const koin = parseInt(document.getElementById('rkp-koin').value) || 0;
-            const totalTunai = (p100 * 100000) + (p50 * 50000) + (p20 * 20000) + (p10 * 10000) + (p5 * 5000) + (p2 * 2000) + koin; document.getElementById('lbl-sub-tunai').innerText = formatRp(totalTunai);
-            const kuota   = parseInt(document.getElementById('rkp-kuota').value) || 0; const digipos = parseInt(document.getElementById('rkp-digipos').value) || 0; const dana    = parseInt(document.getElementById('rkp-dana').value) || 0; const seabank = parseInt(document.getElementById('rkp-seabank').value) || 0; const bni     = parseInt(document.getElementById('rkp-bni').value) || 0; const qris    = parseInt(document.getElementById('rkp-qris').value) || 0;
-            const totalDigital = kuota + digipos + dana + seabank + bni + qris; document.getElementById('lbl-sub-digital').innerText = formatRp(totalDigital);
-            const grandTotal = totalTunai + totalDigital; document.getElementById('lbl-grand-rekap').innerText = formatRp(grandTotal); document.getElementById('lbl-grand-rekap').dataset.total = grandTotal;
+            const t100 = (parseInt(document.getElementById('rkp-100').value)||0)*100000;
+            const t50 = (parseInt(document.getElementById('rkp-50').value)||0)*50000;
+            const t20 = (parseInt(document.getElementById('rkp-20').value)||0)*20000;
+            const t10 = (parseInt(document.getElementById('rkp-10').value)||0)*10000;
+            const digital = parseInt(document.getElementById('rkp-digital-total').value)||0;
+            const grand = t100+t50+t20+t10+digital;
+            document.getElementById('lbl-grand-rekap').innerText = formatRp(grand);
+            document.getElementById('lbl-grand-rekap').dataset.val = grand;
         }
         function saveRekapData() {
-            const grandTotal = parseInt(document.getElementById('lbl-grand-rekap').dataset.total || 0); if(grandTotal === 0 && !confirm("Total rekap 0 Rupiah, yakin ingin menyimpan?")) return;
-            const now = new Date(); const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const rekapItem = { id: Date.now(), dateStr: dateStr, cash: { p100: parseInt(document.getElementById('rkp-100').value) || 0, p50: parseInt(document.getElementById('rkp-50').value) || 0, p20: parseInt(document.getElementById('rkp-20').value) || 0, p10: parseInt(document.getElementById('rkp-10').value) || 0, p5: parseInt(document.getElementById('rkp-5').value) || 0, p2: parseInt(document.getElementById('rkp-2').value) || 0, koin: parseInt(document.getElementById('rkp-koin').value) || 0 }, digital: { kuota: parseInt(document.getElementById('rkp-kuota').value) || 0, digipos: parseInt(document.getElementById('rkp-digipos').value) || 0, dana: parseInt(document.getElementById('rkp-dana').value) || 0, seabank: parseInt(document.getElementById('rkp-seabank').value) || 0, bni: parseInt(document.getElementById('rkp-bni').value) || 0, qris: parseInt(document.getElementById('rkp-qris').value) || 0 }, totalCash: parseInt(document.getElementById('lbl-sub-tunai').innerText.replace(/[^\d]/g, '')), totalDigital: parseInt(document.getElementById('lbl-sub-digital').innerText.replace(/[^\d]/g, '')), grandTotal: grandTotal };
-            getRekapsRef().doc(String(rekapItem.id)).set(rekapItem).then(() => { closeRekapModal(); showToast("Rekap Tersimpan di Cloud!"); }).catch((err) => { showToast("Gagal menyimpan rekap", true); });
-        }
-        function clearRekapHistory() { if(confirm("Yakin ingin menghapus seluruh riwayat rekap di cloud?")) { rekapHistory.forEach(r => getRekapsRef().doc(String(r.id)).delete()); showToast("Proses menghapus riwayat rekap..."); } }
-
-        // ================= SISTEM BARCODE SCANNER =================
-        function openScanner(mode) { scanMode = mode; document.getElementById('scannerModal').classList.remove('hidden'); html5QrcodeScanner = new Html5Qrcode("reader"); const config = { fps: 10, qrbox: { width: 250, height: 250 } }; html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess).catch(err => { alert("Gagal mengakses kamera."); closeScanner(); }); }
-        function closeScanner() { if (html5QrcodeScanner) { html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; document.getElementById('scannerModal').classList.add('hidden'); }).catch(err => { document.getElementById('scannerModal').classList.add('hidden'); }); } else { document.getElementById('scannerModal').classList.add('hidden'); } }
-        function onScanSuccess(decodedText) { const currentTime = Date.now(); if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 1500) { return; } lastScanTime = currentTime; lastScannedCode = decodedText; if (scanMode === 'kasir') { const product = masterProducts.find(p => p.barcode === decodedText); if (product) { addToCart(product.id, product.name, product.price, product.buyPrice); playBeep(); showToast(`✅ Masuk: ${product.name}`); closeScanner(); } else { playErrorBeep(); showToast(`❌ Barcode tidak ditemukan!`, true); } } else if (scanMode === 'edit') { document.getElementById('editProductBarcode').value = decodedText; playBeep(); showToast("Barcode terbaca!"); closeScanner(); } }
-
-        // ================= PULL DATA KHUSUS USER INI =================
-        function initDataListeners() {
-            if(!currentUser) return;
-            
-            unsubscribeProducts = getProductsRef().onSnapshot((snapshot) => { masterProducts = []; snapshot.forEach((doc) => { masterProducts.push(doc.data()); }); if(document.getElementById('view-barang').classList.contains('active')) renderMasterProducts(); if(document.getElementById('view-kasir').classList.contains('active')) renderProducts(); });
-            unsubscribeTransactions = getTransactionsRef().onSnapshot((snapshot) => { transactionsHistory = []; snapshot.forEach((doc) => { transactionsHistory.push(doc.data()); }); if(document.getElementById('view-laporan').classList.contains('active')) loadReport(); });
-            unsubscribeDebts = getDebtsRef().onSnapshot((snapshot) => { debtsData = []; snapshot.forEach((doc) => { debtsData.push(doc.data()); }); if(document.getElementById('view-hutang').classList.contains('active')) renderDebts(); });
-            unsubscribeRekaps = getRekapsRef().onSnapshot((snapshot) => { rekapHistory = []; snapshot.forEach((doc) => { rekapHistory.push(doc.data()); }); if(document.getElementById('view-rekap').classList.contains('active')) renderRekapList(); });
-            
-            const now = new Date(); const dateInput = document.getElementById('reportDate'); const monthInput = document.getElementById('reportMonth');
-            if(dateInput) { dateInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`; }
-            if(monthInput) { monthInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}`; }
+            const val = parseInt(document.getElementById('lbl-grand-rekap').dataset.val || 0);
+            const r = { id: Date.now(), dateStr: new Date().toLocaleString('id-ID'), grandTotal: val };
+            rekapCol().doc(r.id.toString()).set(r);
+            closeRekapModal(); showToast("Rekap Disimpan!");
         }
 
+        // SCANNER LOGIC
+        function openScanner(m) {
+            scanMode = m; document.getElementById('scannerModal').classList.remove('hidden');
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                if(scanMode === 'kasir') { const p = masterProducts.find(x => x.barcode === txt); if(p) { addToCart(p); showToast(p.name); } }
+                else { document.getElementById('editProductBarcode').value = txt; }
+                closeScanner(); playBeep();
+            }).catch(() => { alert("Kamera Error"); closeScanner(); });
+        }
+        function closeScanner() { if(html5QrcodeScanner) html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); document.getElementById('scannerModal').classList.add('hidden'); }); else document.getElementById('scannerModal').classList.add('hidden'); }
+
+        // SETTINGS & BACKUP
+        function loadStoreSettings() {
+            const saved = localStorage.getItem(`soka_v3_${currentUser.uid}`);
+            if(saved) storeSettings = JSON.parse(saved);
+            document.getElementById('set-store-name').value = storeSettings.name;
+            document.getElementById('set-store-address').value = storeSettings.address;
+            document.getElementById('set-store-footer').value = storeSettings.footer;
+            document.getElementById('header-store-name').innerText = storeSettings.name;
+        }
+        function saveStoreSettings() {
+            storeSettings = { name: document.getElementById('set-store-name').value, address: document.getElementById('set-store-address').value, footer: document.getElementById('set-store-footer').value };
+            localStorage.setItem(`soka_v3_${currentUser.uid}`, JSON.stringify(storeSettings));
+            document.getElementById('header-store-name').innerText = storeSettings.name;
+            showToast("Setelan Disimpan!");
+        }
+
+        function backupData() {
+            const data = { products: masterProducts, transactions: transactionsHistory, debts: debtsData, rekaps: rekapHistory, settings: storeSettings };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `SokaCloud_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click(); showToast("Backup Berhasil!");
+        }
+
+        async function restoreData(event) {
+            const file = event.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    document.getElementById('loading-overlay').classList.add('active');
+                    
+                    const batch = db.batch();
+                    if(data.products) data.products.forEach(p => prodCol().doc(p.id.toString()).set(p));
+                    if(data.transactions) data.transactions.forEach(t => txCol().doc(t.id.toString()).set(t));
+                    if(data.debts) data.debts.forEach(d => debtCol().doc(d.id.toString()).set(d));
+                    if(data.rekaps) data.rekaps.forEach(r => rekapCol().doc(r.id.toString()).set(r));
+                    
+                    setTimeout(() => { window.location.reload(); }, 3000);
+                } catch(err) { alert("File Rusak!"); document.getElementById('loading-overlay').classList.remove('active'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function handleBarcodeEnter(e) {
+            if(e.key === 'Enter') {
+                const code = e.target.value.trim();
+                const p = masterProducts.find(x => x.barcode === code);
+                if(p) { addToCart(p); e.target.value = ""; showToast(p.name); }
+            }
+        }
     </script>
 </body>
 </html>
-
 
