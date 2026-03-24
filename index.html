@@ -33,9 +33,20 @@
         #reader video { object-fit: cover; border-radius: 1rem; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Loading Overlay saat Restore */
+        #loading-overlay { display: none; }
+        #loading-overlay.active { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay" class="fixed inset-0 bg-blue-900 bg-opacity-90 z-[99999] flex flex-col items-center justify-center text-white backdrop-blur-sm">
+        <i class="fa-solid fa-cloud-arrow-up text-6xl mb-4 animate-bounce"></i>
+        <h2 class="text-2xl font-black mb-2">Mengunggah ke Cloud...</h2>
+        <p class="text-blue-200 font-medium text-center px-6">Jangan tutup aplikasi atau layar HP ini sampai proses selesai sepenuhnya.</p>
+    </div>
 
     <!-- ================= LAYAR LOGIN ================= -->
     <div id="login-screen" class="fixed inset-0 bg-blue-700 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
@@ -338,7 +349,7 @@
                     </div>
                 </div>
 
-                <!-- Backup & Restore Data (Dikembalikan Sesuai Permintaan) -->
+                <!-- Backup & Restore Data -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-arrow-down text-emerald-500 mr-2"></i>Backup & Restore Cloud Data</h2>
                     <div class="space-y-4">
@@ -406,7 +417,7 @@
 
     <!-- ================= MODALS ================= -->
 
-    <!-- Modal Tambah Stok Kulakan & Update Harga (DIUPDATE) -->
+    <!-- Modal Tambah Stok Kulakan & Update Harga -->
     <div id="restockModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <h2 class="font-black text-xl text-gray-800 border-b pb-3 mb-4"><i class="fa-solid fa-boxes-packing text-blue-600 mr-2"></i>Update Stok & Harga</h2>
@@ -486,7 +497,7 @@
                     <span id="lbl-grand-rekap" class="text-3xl font-black text-teal-600">Rp 0</span>
                 </div>
                 <button onclick="saveRekapData()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-xl shadow-lg transition active:scale-95 text-lg">
-                    <i class="fa-solid fa-floppy-disk mr-2"></i> SIMPAN REKAP HARI INI
+                    <i class="fa-solid fa-floppy-disk mr-2"></i> SIM ঐতি REKAP HARI INI
                 </button>
             </div>
         </div>
@@ -710,9 +721,8 @@
         function saveStoreSettings() { storeSettings.name = document.getElementById('set-store-name').value || 'SOKA CELLULER'; storeSettings.address = document.getElementById('set-store-address').value || '-'; storeSettings.footer = document.getElementById('set-store-footer').value || 'Terima Kasih'; localStorage.setItem('soka_store_settings', JSON.stringify(storeSettings)); document.getElementById('header-store-name').innerText = storeSettings.name; showToast("Pengaturan struk disimpan!"); }
         function generateInvoiceCode() { const now = new Date(); const h = now.getHours().toString().padStart(2, '0'); const m = now.getMinutes().toString().padStart(2, '0'); const s = now.getSeconds().toString().padStart(2, '0'); return `INV-${h}${m}${s}`; }
 
-        // ================= SISTEM BACKUP & RESTORE =================
+        // ================= SISTEM BACKUP & RESTORE TAHAN LOADING =================
         function backupData() {
-            // Karena data sudah tersinkron via onSnapshot ke array lokal, kita bisa langsung backup dari array lokal
             const data = {
                 soka_master_products: JSON.stringify(masterProducts),
                 soka_transactions: JSON.stringify(transactionsHistory),
@@ -733,30 +743,52 @@
             showToast("Backup data berhasil diunduh!");
         }
 
-        function restoreData(event) {
+        async function restoreData(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if(confirm("PERINGATAN: Restore akan menimpa SEMUA data toko Anda di server Cloud (Firebase) saat ini. Lanjutkan?")) {
-                        showToast("Memproses restore ke Cloud... Mohon tunggu.");
+                    if(confirm("PERINGATAN: Data di JSON ini akan digabungkan ke server Cloud (Firebase). Lanjutkan?")) {
+                        // Tampilkan loading yang menutupi seluruh layar
+                        document.getElementById('loading-overlay').classList.add('active');
                         
-                        // Kembalikan ke Firebase
-                        if(data.soka_master_products) { JSON.parse(data.soka_master_products).forEach(p => db.collection("products").doc(String(p.id)).set(p)); }
-                        if(data.soka_transactions) { JSON.parse(data.soka_transactions).forEach(t => db.collection("transactions").doc(String(t.id)).set(t)); }
-                        if(data.soka_debts) { JSON.parse(data.soka_debts).forEach(d => db.collection("debts").doc(String(d.id)).set(d)); }
-                        if(data.soka_rekap_history) { JSON.parse(data.soka_rekap_history).forEach(r => db.collection("rekaps").doc(String(r.id)).set(r)); }
+                        let promises = [];
+
+                        // Proses baca array & masukkan ke daftar antrean Upload (Promise)
+                        if(data.soka_master_products) { 
+                            let arr = typeof data.soka_master_products === 'string' ? JSON.parse(data.soka_master_products) : data.soka_master_products;
+                            arr.forEach(p => promises.push(db.collection("products").doc(String(p.id)).set(p))); 
+                        }
+                        if(data.soka_transactions) { 
+                            let arr = typeof data.soka_transactions === 'string' ? JSON.parse(data.soka_transactions) : data.soka_transactions;
+                            arr.forEach(t => promises.push(db.collection("transactions").doc(String(t.id)).set(t))); 
+                        }
+                        if(data.soka_debts) { 
+                            let arr = typeof data.soka_debts === 'string' ? JSON.parse(data.soka_debts) : data.soka_debts;
+                            arr.forEach(d => promises.push(db.collection("debts").doc(String(d.id)).set(d))); 
+                        }
+                        if(data.soka_rekap_history) { 
+                            let arr = typeof data.soka_rekap_history === 'string' ? JSON.parse(data.soka_rekap_history) : data.soka_rekap_history;
+                            arr.forEach(r => promises.push(db.collection("rekaps").doc(String(r.id)).set(r))); 
+                        }
                         
-                        if(data.soka_store_settings) localStorage.setItem('soka_store_settings', data.soka_store_settings);
+                        if(data.soka_store_settings) localStorage.setItem('soka_store_settings', typeof data.soka_store_settings === 'string' ? data.soka_store_settings : JSON.stringify(data.soka_store_settings));
                         if(data.soka_password) localStorage.setItem('soka_password', data.soka_password);
                         
-                        showToast("Restore Cloud Selesai! Halaman akan dimuat ulang...");
+                        // INI KUNCI UTAMANYA: Tunggu sampai semua file 100% selesai diupload
+                        await Promise.all(promises);
+
+                        // Setelah selesai, baru layar di reload
+                        document.getElementById('loading-overlay').querySelector('h2').innerText = "Upload Selesai!";
+                        document.getElementById('loading-overlay').querySelector('p').innerText = "Aplikasi akan dimuat ulang dalam 2 detik...";
                         setTimeout(() => { window.location.reload(); }, 2000);
                     }
                 } catch (err) {
+                    console.error(err);
+                    document.getElementById('loading-overlay').classList.remove('active');
                     showToast("Gagal membaca file backup. Format tidak valid!", true);
                 }
                 event.target.value = ""; 
@@ -800,7 +832,6 @@
                 div.onclick = () => addToCart(product.id, product.name, product.price, product.buyPrice);
                 let barcodeBadge = product.barcode ? `<div class="absolute top-0 right-0 bg-blue-100 text-blue-600 px-2 py-1 text-[8px] font-bold rounded-bl-lg"><i class="fa-solid fa-barcode"></i></div>` : "";
                 
-                // Menampilkan Stok: BISA DIJUAL MESKIPUN 0 (warna merah)
                 let stockValue = product.stock || 0;
                 let stockClass = stockValue <= 0 ? "text-red-500 font-black" : "text-green-600 font-bold";
 
@@ -819,12 +850,7 @@
             const sell = parseInt(document.getElementById('manSell').value); 
             
             if(!name || isNaN(buy) || isNaN(sell)) return showToast("Isi data manual dengan lengkap!", true); 
-            
-            // VALIDASI: Harga Modal dilarang lebih besar dari Harga Jual
-            if (buy > sell) {
-                playErrorBeep();
-                return showToast("Ditolak! Modal tidak boleh lebih besar dari Harga Jual.", true);
-            }
+            if (buy > sell) { playErrorBeep(); return showToast("Ditolak! Modal tidak boleh lebih besar dari Harga Jual.", true); }
 
             cart.push({ id: "M"+Date.now(), name: name, buyPrice: buy, price: sell, originalPrice: sell, qty: 1 }); 
             updateCartUI(); closeManualModal(); playBeep(); showToast(`${name} ditambahkan!`); 
@@ -871,7 +897,6 @@
         }
         function closeReceipt() { document.getElementById('receiptModal').classList.add('hidden'); }
         
-        // FORMAT STRUK BENTUK TEKS MURNI
         function generateRawTextReceipt(invoice, itemsList, total, pay, change, dateStr, timeStr) {
             let text = `${storeSettings.name}\n${storeSettings.address}\n--------------------------------\nTRX : ${invoice}\nTgl : ${dateStr} ${timeStr}\n--------------------------------\n`;
             itemsList.forEach(item => { text += `${item.name}\n`; let qtyPrice = `${item.qty}x ${item.price.toLocaleString('id-ID')}`; let subtotalStr = (item.price * item.qty).toLocaleString('id-ID'); let spaces = " ".repeat(Math.max(1, 32 - qtyPrice.length - subtotalStr.length)); text += `${qtyPrice}${spaces}${subtotalStr}\n`; });
@@ -887,15 +912,11 @@
                 const inv = document.getElementById('receiptInvoice').innerText;
                 let totalModal = 0; 
                 
-                // MENGURANGI STOK BARANG & HITUNG MODAL
                 cart.forEach(item => { 
                     totalModal += ((item.buyPrice || 0) * item.qty); 
-                    
-                    // Kurangi stok di Firebase jika bukan barang manual
                     if(!String(item.id).startsWith("M")) {
                         let product = masterProducts.find(p => String(p.id) === String(item.id));
                         if(product) {
-                            // Stok bisa menjadi 0 atau negatif (laku terjual di luar catatan stok)
                             let newStock = (product.stock || 0) - item.qty;
                             db.collection("products").doc(String(product.id)).update({ stock: newStock });
                         }
@@ -913,17 +934,12 @@
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-            // BAGIKAN STRUK TEKS MURNI
             if (actionType === 'share_text') { 
                 if (navigator.share) {
-                    navigator.share({
-                        title: 'Struk ' + storeSettings.name,
-                        text: textReceipt
-                    }).catch(e => console.log("Share dibatalkan"));
+                    navigator.share({ title: 'Struk ' + storeSettings.name, text: textReceipt }).catch(e => console.log("Share dibatalkan"));
                 } else {
                     if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(textReceipt);
-                        alert("Struk Teks berhasil disalin. Silakan Paste di manapun!");
+                        navigator.clipboard.writeText(textReceipt); alert("Struk Teks berhasil disalin. Silakan Paste di manapun!");
                     } else {
                         const textArea = document.createElement("textarea"); textArea.value = textReceipt; document.body.appendChild(textArea); textArea.focus(); textArea.select();
                         try { document.execCommand('copy'); alert("Struk Teks disalin. Silakan Paste!"); } catch (err) {}
@@ -945,19 +961,16 @@
             document.getElementById('restockProductId').value = product.id;
             document.getElementById('restockProductName').innerText = product.name;
             document.getElementById('restockCurrentStock').innerText = product.stock || 0;
-            
-            // Setel form ke kosong dan bawaan (Harga saat ini)
             document.getElementById('restockAddQty').value = "";
             document.getElementById('restockBuyPrice').value = product.buyPrice || 0;
             document.getElementById('restockSellPrice').value = product.price || 0;
-            
             document.getElementById('restockModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('restockAddQty').focus(), 100);
         }
         function closeRestockModal() { document.getElementById('restockModal').classList.add('hidden'); }
         function saveRestockData() {
             const id = document.getElementById('restockProductId').value;
-            const addQty = parseInt(document.getElementById('restockAddQty').value) || 0; // Bisa 0 kalau cuma mau update harga
+            const addQty = parseInt(document.getElementById('restockAddQty').value) || 0; 
             const newBuyPrice = parseInt(document.getElementById('restockBuyPrice').value);
             const newSellPrice = parseInt(document.getElementById('restockSellPrice').value);
             
@@ -968,15 +981,9 @@
             if(product) {
                 const newStock = (product.stock || 0) + addQty;
                 db.collection("products").doc(String(product.id)).update({ 
-                    stock: newStock,
-                    buyPrice: newBuyPrice,
-                    price: newSellPrice
+                    stock: newStock, buyPrice: newBuyPrice, price: newSellPrice
                 }).then(() => {
-                    if(addQty > 0) {
-                        showToast(`Berhasil menambah ${addQty} stok & Update Harga!`);
-                    } else {
-                        showToast(`Harga berhasil diupdate tanpa merubah stok!`);
-                    }
+                    if(addQty > 0) { showToast(`Berhasil menambah ${addQty} stok & Update Harga!`); } else { showToast(`Harga berhasil diupdate tanpa merubah stok!`); }
                     closeRestockModal();
                 });
             }
@@ -1014,13 +1021,7 @@
         }
         function deleteTransaction(txId) { if(confirm("Yakin ingin menghapus transaksi ini dari Cloud secara permanen?")) { db.collection("transactions").doc(String(txId)).delete(); showToast("Proses menghapus data transaksi..."); } }
         function clearReportData() {
-            if(confirm("AWAS! Hapus semua riwayat transaksi permanen dari database cloud?")) {
-                let check = prompt("Ketik 'HAPUS':");
-                if(check === 'HAPUS') {
-                    transactionsHistory.forEach(tx => db.collection("transactions").doc(String(tx.id)).delete());
-                    showToast("Sedang menghapus semua riwayat...");
-                }
-            }
+            if(confirm("AWAS! Hapus semua riwayat transaksi permanen dari database cloud?")) { let check = prompt("Ketik 'HAPUS':"); if(check === 'HAPUS') { transactionsHistory.forEach(tx => db.collection("transactions").doc(String(tx.id)).delete()); showToast("Sedang menghapus semua riwayat..."); } }
         }
         function downloadCSV(csvContent, fileName) { const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", fileName); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
         function exportTransactionsToCSV() {
@@ -1069,23 +1070,13 @@
             
             let finalStock = id ? masterProducts.find(p => String(p.id) === String(id)).stock : parseInt(document.getElementById('editProductStock').value) || 0;
 
-            const prodData = {
-                id: id ? parseInt(id) : Date.now(),
-                barcode: barcode,
-                name: name,
-                buyPrice: buyPrice,
-                price: price,
-                stock: finalStock
-            };
+            const prodData = { id: id ? parseInt(id) : Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price, stock: finalStock };
             
-            db.collection("products").doc(String(prodData.id)).set(prodData).then(() => {
-                showToast("Data barang berhasil tersimpan di Cloud!");
-                closeProductModal();
-            }).catch(err => showToast("Gagal menyimpan barang", true));
+            db.collection("products").doc(String(prodData.id)).set(prodData).then(() => { showToast("Data barang berhasil tersimpan di Cloud!"); closeProductModal(); }).catch(err => showToast("Gagal menyimpan barang", true));
         }
         function deleteProduct(id) { if(confirm("Yakin ingin menghapus barang ini selamanya dari Cloud?")) { db.collection("products").doc(String(id)).delete(); showToast("Menghapus barang..."); } }
 
-        // ================= SISTEM BUKU HUTANG (KASBON) =================
+        // ================= SISTEM BUKU HUTANG =================
         function renderDebts() {
             const filterText = document.getElementById('searchDebt').value.toLowerCase(); const list = document.getElementById('debtList'); list.innerHTML = "";
             const filtered = debtsData.filter(d => d.name.toLowerCase().includes(filterText)).sort((a,b) => { if(a.isPaid === b.isPaid) return b.id - a.id; return a.isPaid ? 1 : -1; });
@@ -1113,32 +1104,12 @@
         function saveDebtData() {
             const id = document.getElementById('editDebtId').value; const name = document.getElementById('debtName').value.trim(); const amount = parseInt(document.getElementById('debtAmount').value); const desc = document.getElementById('debtDesc').value.trim();
             if(!name || isNaN(amount) || amount <= 0) return showToast("Nama dan Jumlah Hutang wajib diisi dengan benar!", true);
-            
             const now = new Date(); const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const debtData = {
-                id: id ? parseInt(id) : Date.now(),
-                name: name,
-                amount: amount,
-                desc: desc,
-                dateStr: id ? (debtsData.find(d => String(d.id) === String(id)).dateStr) : dateStr,
-                isPaid: id ? (debtsData.find(d => String(d.id) === String(id)).isPaid) : false
-            };
-
-            db.collection("debts").doc(String(debtData.id)).set(debtData).then(() => {
-                showToast("Catatan hutang tersimpan di Cloud!");
-                closeDebtModal();
-            });
+            const debtData = { id: id ? parseInt(id) : Date.now(), name: name, amount: amount, desc: desc, dateStr: id ? (debtsData.find(d => String(d.id) === String(id)).dateStr) : dateStr, isPaid: id ? (debtsData.find(d => String(d.id) === String(id)).isPaid) : false };
+            db.collection("debts").doc(String(debtData.id)).set(debtData).then(() => { showToast("Catatan hutang tersimpan di Cloud!"); closeDebtModal(); });
         }
         function deleteDebt(id) { if(confirm("Yakin ingin menghapus catatan hutang ini dari cloud?")) { db.collection("debts").doc(String(id)).delete(); showToast("Catatan dihapus!"); } }
-        function toggleDebtStatus(id) {
-            const debt = debtsData.find(d => String(d.id) === String(id));
-            if (debt) {
-                debt.isPaid = !debt.isPaid;
-                db.collection("debts").doc(String(debt.id)).set(debt).then(() => {
-                    if(debt.isPaid) { showToast("Hutang ditandai LUNAS!"); playBeep(); } else { showToast("Status dikembalikan ke Belum Lunas", true); }
-                });
-            }
-        }
+        function toggleDebtStatus(id) { const debt = debtsData.find(d => String(d.id) === String(id)); if (debt) { debt.isPaid = !debt.isPaid; db.collection("debts").doc(String(debt.id)).set(debt).then(() => { if(debt.isPaid) { showToast("Hutang ditandai LUNAS!"); playBeep(); } else { showToast("Status dikembalikan ke Belum Lunas", true); } }); } }
 
         // ================= SISTEM BARCODE SCANNER =================
         function openScanner(mode) { scanMode = mode; document.getElementById('scannerModal').classList.remove('hidden'); html5QrcodeScanner = new Html5Qrcode("reader"); const config = { fps: 10, qrbox: { width: 250, height: 250 } }; html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess).catch(err => { alert("Gagal mengakses kamera."); closeScanner(); }); }
@@ -1155,34 +1126,10 @@
             loadStoreSettings();
 
             // SINKRONISASI DATABASE CLOUD REAL-TIME
-            // 1. Data Barang
-            db.collection("products").onSnapshot((snapshot) => {
-                masterProducts = [];
-                snapshot.forEach((doc) => { masterProducts.push(doc.data()); });
-                if(document.getElementById('view-barang').classList.contains('active')) renderMasterProducts();
-                if(document.getElementById('view-kasir').classList.contains('active')) renderProducts();
-            });
-
-            // 2. Data Transaksi
-            db.collection("transactions").onSnapshot((snapshot) => {
-                transactionsHistory = [];
-                snapshot.forEach((doc) => { transactionsHistory.push(doc.data()); });
-                if(document.getElementById('view-laporan').classList.contains('active')) loadReport();
-            });
-
-            // 3. Data Hutang
-            db.collection("debts").onSnapshot((snapshot) => {
-                debtsData = [];
-                snapshot.forEach((doc) => { debtsData.push(doc.data()); });
-                if(document.getElementById('view-hutang').classList.contains('active')) renderDebts();
-            });
-
-            // 4. Data Rekap Kasir
-            db.collection("rekaps").onSnapshot((snapshot) => {
-                rekapHistory = [];
-                snapshot.forEach((doc) => { rekapHistory.push(doc.data()); });
-                if(document.getElementById('view-rekap').classList.contains('active')) renderRekapList();
-            });
+            db.collection("products").onSnapshot((snapshot) => { masterProducts = []; snapshot.forEach((doc) => { masterProducts.push(doc.data()); }); if(document.getElementById('view-barang').classList.contains('active')) renderMasterProducts(); if(document.getElementById('view-kasir').classList.contains('active')) renderProducts(); });
+            db.collection("transactions").onSnapshot((snapshot) => { transactionsHistory = []; snapshot.forEach((doc) => { transactionsHistory.push(doc.data()); }); if(document.getElementById('view-laporan').classList.contains('active')) loadReport(); });
+            db.collection("debts").onSnapshot((snapshot) => { debtsData = []; snapshot.forEach((doc) => { debtsData.push(doc.data()); }); if(document.getElementById('view-hutang').classList.contains('active')) renderDebts(); });
+            db.collection("rekaps").onSnapshot((snapshot) => { rekapHistory = []; snapshot.forEach((doc) => { rekapHistory.push(doc.data()); }); if(document.getElementById('view-rekap').classList.contains('active')) renderRekapList(); });
             
             const now = new Date(); const dateInput = document.getElementById('reportDate'); const monthInput = document.getElementById('reportMonth');
             if(dateInput) { dateInput.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`; }
