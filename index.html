@@ -42,10 +42,10 @@
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
 
     <!-- LOADING OVERLAY -->
-    <div id="loading-overlay" class="fixed inset-0 bg-blue-900 bg-opacity-90 z-[99999] flex flex-col items-center justify-center text-white backdrop-blur-sm">
+    <div id="loading-overlay" class="fixed inset-0 bg-blue-900 bg-opacity-95 z-[99999] flex flex-col items-center justify-center text-white backdrop-blur-md">
         <i class="fa-solid fa-cloud-arrow-up text-6xl mb-4 animate-bounce"></i>
-        <h2 class="text-2xl font-black mb-2">Mengunggah ke Cloud...</h2>
-        <p class="text-blue-200 font-medium text-center px-6">Jangan tutup aplikasi atau layar HP ini sampai proses selesai sepenuhnya.</p>
+        <h2 class="text-2xl font-black mb-2" id="loading-title">Memproses Data...</h2>
+        <p class="text-blue-200 font-medium text-center px-6" id="loading-desc">Memasukkan data ke memori lokal. Jangan tutup layar ini.</p>
     </div>
 
     <!-- ================= LAYAR LOGIN ================= -->
@@ -497,7 +497,7 @@
                     <span id="lbl-grand-rekap" class="text-3xl font-black text-teal-600">Rp 0</span>
                 </div>
                 <button onclick="saveRekapData()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-xl shadow-lg transition active:scale-95 text-lg">
-                    <i class="fa-solid fa-floppy-disk mr-2"></i> SIM ঐতি REKAP HARI INI
+                    <i class="fa-solid fa-floppy-disk mr-2"></i> SIMPAN REKAP HARI INI
                 </button>
             </div>
         </div>
@@ -721,75 +721,59 @@
         function saveStoreSettings() { storeSettings.name = document.getElementById('set-store-name').value || 'SOKA CELLULER'; storeSettings.address = document.getElementById('set-store-address').value || '-'; storeSettings.footer = document.getElementById('set-store-footer').value || 'Terima Kasih'; localStorage.setItem('soka_store_settings', JSON.stringify(storeSettings)); document.getElementById('header-store-name').innerText = storeSettings.name; showToast("Pengaturan struk disimpan!"); }
         function generateInvoiceCode() { const now = new Date(); const h = now.getHours().toString().padStart(2, '0'); const m = now.getMinutes().toString().padStart(2, '0'); const s = now.getSeconds().toString().padStart(2, '0'); return `INV-${h}${m}${s}`; }
 
-        // ================= SISTEM BACKUP & RESTORE TAHAN LOADING =================
+        // ================= SISTEM BACKUP & RESTORE INSTAN =================
         function backupData() {
             const data = {
-                soka_master_products: JSON.stringify(masterProducts),
-                soka_transactions: JSON.stringify(transactionsHistory),
-                soka_debts: JSON.stringify(debtsData),
-                soka_rekap_history: JSON.stringify(rekapHistory),
-                soka_store_settings: JSON.stringify(storeSettings),
-                soka_password: localStorage.getItem('soka_password') || '1234'
+                soka_master_products: JSON.stringify(masterProducts), soka_transactions: JSON.stringify(transactionsHistory),
+                soka_debts: JSON.stringify(debtsData), soka_rekap_history: JSON.stringify(rekapHistory),
+                soka_store_settings: JSON.stringify(storeSettings), soka_password: localStorage.getItem('soka_password') || '1234'
             };
-
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a'); a.href = url; const dateStr = new Date().toISOString().slice(0, 10);
-            a.download = `Backup_SokaPOS_Cloud_${dateStr}.json`;
-            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `Backup_SokaPOS_Cloud_${new Date().toISOString().slice(0, 10)}.json`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
             showToast("Backup data berhasil diunduh!");
         }
 
-        async function restoreData(event) {
+        // METODE BARU ANTI NYANGKUT: Menembak data ke lokal, tanpa menunggu respon server 1 per 1
+        function restoreData(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if(confirm("PERINGATAN: Data di JSON ini akan digabungkan ke server Cloud (Firebase). Lanjutkan?")) {
-                        // Tampilkan loading yang menutupi seluruh layar
+                    if(confirm("PERINGATAN: Data JSON ini akan ditambahkan ke server Cloud (Firebase). Lanjutkan?")) {
                         document.getElementById('loading-overlay').classList.add('active');
                         
-                        let promises = [];
+                        // Fungsi instan
+                        const writeDataInstantly = (collectionName, dataString) => {
+                            if(!dataString) return;
+                            let arr = typeof dataString === 'string' ? JSON.parse(dataString) : dataString;
+                            // Loop dan langsung set tanpa await. Akan dikerjakan oleh worker background Firebase.
+                            arr.forEach(item => {
+                                db.collection(collectionName).doc(String(item.id)).set(item);
+                            });
+                        };
 
-                        // Proses baca array & masukkan ke daftar antrean Upload (Promise)
-                        if(data.soka_master_products) { 
-                            let arr = typeof data.soka_master_products === 'string' ? JSON.parse(data.soka_master_products) : data.soka_master_products;
-                            arr.forEach(p => promises.push(db.collection("products").doc(String(p.id)).set(p))); 
-                        }
-                        if(data.soka_transactions) { 
-                            let arr = typeof data.soka_transactions === 'string' ? JSON.parse(data.soka_transactions) : data.soka_transactions;
-                            arr.forEach(t => promises.push(db.collection("transactions").doc(String(t.id)).set(t))); 
-                        }
-                        if(data.soka_debts) { 
-                            let arr = typeof data.soka_debts === 'string' ? JSON.parse(data.soka_debts) : data.soka_debts;
-                            arr.forEach(d => promises.push(db.collection("debts").doc(String(d.id)).set(d))); 
-                        }
-                        if(data.soka_rekap_history) { 
-                            let arr = typeof data.soka_rekap_history === 'string' ? JSON.parse(data.soka_rekap_history) : data.soka_rekap_history;
-                            arr.forEach(r => promises.push(db.collection("rekaps").doc(String(r.id)).set(r))); 
-                        }
+                        writeDataInstantly("products", data.soka_master_products);
+                        writeDataInstantly("transactions", data.soka_transactions);
+                        writeDataInstantly("debts", data.soka_debts);
+                        writeDataInstantly("rekaps", data.soka_rekap_history);
                         
                         if(data.soka_store_settings) localStorage.setItem('soka_store_settings', typeof data.soka_store_settings === 'string' ? data.soka_store_settings : JSON.stringify(data.soka_store_settings));
                         if(data.soka_password) localStorage.setItem('soka_password', data.soka_password);
                         
-                        // INI KUNCI UTAMANYA: Tunggu sampai semua file 100% selesai diupload
-                        await Promise.all(promises);
-
-                        // Setelah selesai, baru layar di reload
-                        document.getElementById('loading-overlay').querySelector('h2').innerText = "Upload Selesai!";
-                        document.getElementById('loading-overlay').querySelector('p').innerText = "Aplikasi akan dimuat ulang dalam 2 detik...";
-                        setTimeout(() => { window.location.reload(); }, 2000);
+                        // Cukup beri waktu 4 detik agar antrean tersusun rapi di memori lokal HP
+                        setTimeout(() => {
+                            document.getElementById('loading-title').innerText = "Proses Selesai!";
+                            document.getElementById('loading-desc').innerText = "Aplikasi akan memuat ulang...";
+                            setTimeout(() => { window.location.reload(); }, 1500);
+                        }, 4000);
                     }
                 } catch (err) {
-                    console.error(err);
                     document.getElementById('loading-overlay').classList.remove('active');
-                    showToast("Gagal membaca file backup. Format tidak valid!", true);
+                    showToast("Gagal membaca file backup!", true);
                 }
                 event.target.value = ""; 
             };
