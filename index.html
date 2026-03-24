@@ -7,10 +7,14 @@
     
     <link rel="manifest" href="manifest.json">
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Library Barcode Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 
+    <!-- FIREBASE SDK COMPAT (CLOUD DATABASE & AUTH) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
@@ -33,12 +37,14 @@
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
 
+    <!-- LOADING OVERLAY -->
     <div id="loading-overlay" class="fixed inset-0 bg-blue-900 bg-opacity-95 z-[99999] flex flex-col items-center justify-center text-white backdrop-blur-md">
         <i class="fa-solid fa-cloud-arrow-up text-6xl mb-4 animate-bounce"></i>
         <h2 class="text-2xl font-black mb-2" id="loading-title">Memproses Data...</h2>
         <p class="text-blue-200 font-medium text-center px-6" id="loading-desc">Memasukkan data ke memori lokal. Jangan tutup layar ini.</p>
     </div>
 
+    <!-- ================= LAYAR LOGIN GOOGLE (MULTI-USER) ================= -->
     <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-indigo-800 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm text-gray-800 relative overflow-hidden">
             <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner border border-blue-100">
@@ -55,6 +61,7 @@
         </div>
     </div>
 
+    <!-- HEADER UTAMA -->
     <header class="h-[65px] flex-none bg-blue-600 text-white shadow-md flex justify-between items-center px-4 z-40">
         <div>
             <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-store mr-2"></i><span id="header-store-name">Toko Saya</span></h1>
@@ -65,8 +72,10 @@
         </button>
     </header>
 
+    <!-- AREA KONTEN TENGAH -->
     <div class="flex-1 relative w-full h-full overflow-hidden">
 
+        <!-- ================= 1. VIEW KASIR ================= -->
         <main id="view-kasir" class="tab-content active absolute inset-0 flex-col md:flex-row bg-white z-10 w-full h-full">
             <section class="w-full md:w-[60%] lg:w-2/3 h-full flex flex-col relative border-r border-gray-200">
                 <div class="flex-none p-3 border-b bg-white shadow-sm flex flex-col sm:flex-row gap-2 z-10">
@@ -89,7 +98,8 @@
                 </div>
                 
                 <div id="productList" class="flex-1 overflow-y-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-[90px] md:pb-4 bg-gray-100">
-                    </div>
+                    <!-- Produk dimuat di sini -->
+                </div>
 
                 <div class="md:hidden absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-gray-100 via-gray-100 to-transparent z-20 pb-4">
                     <button onclick="toggleMobileCart(true)" class="w-full bg-blue-700 text-white shadow-[0_8px_20px_rgba(29,78,216,0.4)] rounded-2xl p-4 flex justify-between items-center active:scale-95 transition-transform border border-blue-500">
@@ -159,6 +169,7 @@
             </section>
         </main>
 
+        <!-- ================= 2. VIEW LAPORAN ================= -->
         <main id="view-laporan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
@@ -202,7 +213,8 @@
                     <p class="text-[10px] text-gray-400 mb-4">Grafik frekuensi transaksi berdasarkan jam</p>
                     <div class="relative h-32 w-full flex items-end border-b border-gray-200">
                         <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-0.5 px-1 pb-1">
-                            </div>
+                            <!-- Batang grafik akan dirender disini -->
+                        </div>
                     </div>
                     <div class="flex justify-between text-[10px] text-gray-400 mt-2 font-bold px-1">
                         <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
@@ -218,6 +230,7 @@
             </div>
         </main>
 
+        <!-- ================= 3. VIEW MASTER BARANG ================= -->
         <main id="view-barang" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-3">
@@ -247,6 +260,7 @@
             </div>
         </main>
 
+        <!-- ================= 4. VIEW HUTANG (KASBON) ================= -->
         <main id="view-hutang" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
                 <div class="bg-gradient-to-r from-red-500 to-red-600 p-5 rounded-2xl shadow-md text-white flex flex-col justify-center items-center relative overflow-hidden">
@@ -277,6 +291,7 @@
             </div>
         </main>
 
+        <!-- ================= 5. VIEW REKAP UANG (TUTUP KASIR) ================= -->
         <main id="view-rekap" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-4xl mx-auto space-y-4">
                 
@@ -302,8 +317,10 @@
             </div>
         </main>
 
+        <!-- ================= 6. VIEW PENGATURAN ================= -->
         <main id="view-pengaturan" class="tab-content absolute inset-0 flex-col bg-gray-100 z-10 overflow-y-auto pb-20 w-full h-full">
             <div class="p-4 w-full max-w-lg mx-auto space-y-6">
+                <!-- Akun Info -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-brands fa-google text-red-500 mr-2"></i>Akun Cloud Saya</h2>
                     <div class="flex items-center gap-4 mb-4">
@@ -318,6 +335,7 @@
                     </button>
                 </div>
 
+                <!-- Pengaturan Struk -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-receipt text-blue-500 mr-2"></i>Pengaturan Struk Toko</h2>
                     <div class="space-y-4">
@@ -339,6 +357,7 @@
                     </div>
                 </div>
 
+                <!-- Backup & Restore Data -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-arrow-down text-emerald-500 mr-2"></i>Backup & Restore Cloud Data</h2>
                     <div class="space-y-4">
@@ -359,6 +378,7 @@
         </main>
     </div>
 
+    <!-- BOTTOM NAVIGATION -->
     <nav class="h-[65px] flex-none bg-white border-t border-gray-300 w-full flex overflow-x-auto no-scrollbar items-center z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.15)] relative">
         <button onclick="switchTab('kasir')" id="tab-kasir" class="flex-1 min-w-[60px] flex flex-col items-center justify-center text-blue-600 transition pt-1 h-full">
             <i class="fa-solid fa-cash-register text-[18px] mb-1"></i>
@@ -386,6 +406,9 @@
         </button>
     </nav>
 
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal Tambah Stok Kulakan & Update Harga -->
     <div id="restockModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <h2 class="font-black text-xl text-gray-800 border-b pb-3 mb-4"><i class="fa-solid fa-boxes-packing text-blue-600 mr-2"></i>Update Stok & Harga</h2>
@@ -418,12 +441,14 @@
         </div>
     </div>
 
+    <!-- Modal Form Rekap Uang -->
     <div id="rekapModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
         <div class="bg-gray-50 sm:rounded-3xl rounded-t-3xl p-5 w-full max-w-2xl flex flex-col shadow-2xl relative h-[90vh] sm:max-h-[95vh]">
             <div class="flex justify-between items-center border-b pb-3 mb-4 flex-none">
                 <h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-calculator mr-2 text-teal-600"></i>Form Rekap Uang</h2>
                 <button onclick="closeRekapModal()" class="text-gray-400 hover:text-red-500 bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
+            
             <div class="overflow-y-auto flex-1 pr-1 space-y-5 pb-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
@@ -440,6 +465,7 @@
                         <div class="col-span-2"><label class="block text-[10px] font-bold text-gray-500 mb-1">Koin / Receh (Total Nominal Rp)</label><input type="number" id="rkp-koin" oninput="calculateRekapTotal()" placeholder="0" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl font-bold text-gray-700 outline-none focus:border-teal-500 text-lg"></div>
                     </div>
                 </div>
+
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-700 mb-3 flex items-center justify-between border-b pb-2">
                         <span><i class="fa-solid fa-mobile-screen text-blue-500 mr-2"></i>Saldo Digital (Aplikasi)</span>
@@ -455,6 +481,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="flex-none pt-4 border-t border-gray-200 mt-2 bg-gray-50">
                 <div class="flex justify-between items-end mb-4">
                     <span class="text-gray-500 font-bold text-sm">TOTAL KESELURUHAN</span>
@@ -467,80 +494,148 @@
         </div>
     </div>
 
+    <!-- Modal Scanner Kamera -->
     <div id="scannerModal" class="fixed inset-0 bg-black z-[150] hidden flex flex-col">
         <div class="flex justify-between items-center p-4 bg-gray-900 text-white shadow-md z-10 flex-none">
             <h2 class="font-bold text-lg"><i class="fa-solid fa-barcode mr-2"></i>Scan Barcode Kamera</h2>
-            <button onclick="closeScanner()" class="text-gray-300 hover:text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <button onclick="closeScanner()" class="text-gray-300 hover:text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
         <div class="flex-1 w-full bg-black relative flex justify-center items-center overflow-hidden">
             <div id="reader" class="w-full h-full max-w-lg mx-auto"></div>
             <div class="absolute inset-0 pointer-events-none border-[40px] border-black border-opacity-50"></div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40 border-2 border-green-500 rounded-lg pointer-events-none flex justify-center items-center"><div class="w-full h-0.5 bg-green-500 bg-opacity-50 absolute animate-pulse"></div></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40 border-2 border-green-500 rounded-lg pointer-events-none flex justify-center items-center">
+                <div class="w-full h-0.5 bg-green-500 bg-opacity-50 absolute animate-pulse"></div>
+            </div>
             <div class="absolute bottom-10 left-0 right-0 text-center text-white text-sm font-medium z-10 drop-shadow-md">Arahkan garis ke barcode produk</div>
         </div>
     </div>
 
+    <!-- Modal Input Manual -->
     <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
-            <div class="flex justify-between items-center mb-5 border-b pb-3"><h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-keyboard mr-2 text-indigo-600"></i>Input Manual</h2><button onclick="closeManualModal()" class="text-gray-400 hover:text-red-500 text-2xl"><i class="fa-solid fa-circle-xmark"></i></button></div>
+            <div class="flex justify-between items-center mb-5 border-b pb-3">
+                <h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-keyboard mr-2 text-indigo-600"></i>Input Manual</h2>
+                <button onclick="closeManualModal()" class="text-gray-400 hover:text-red-500 text-2xl"><i class="fa-solid fa-circle-xmark"></i></button>
+            </div>
             <div class="space-y-4">
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang / Transaksi</label><input type="text" id="manName" placeholder="Contoh: Pulsa Tsel 20" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800"></div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang / Transaksi</label>
+                    <input type="text" id="manName" placeholder="Contoh: Pulsa Tsel 20" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800">
+                </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-gray-600 text-xs font-bold mb-1">Modal (Beli)</label><input type="number" id="manBuy" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-red-600"></div>
-                    <div><label class="block text-gray-600 text-xs font-bold mb-1">Tagihan (Jual)</label><input type="number" id="manSell" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-indigo-600"></div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-bold mb-1">Modal (Beli)</label>
+                        <input type="number" id="manBuy" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-red-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-bold mb-1">Tagihan (Jual)</label>
+                        <input type="number" id="manSell" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-indigo-600">
+                    </div>
                 </div>
             </div>
-            <button onclick="submitManualItem()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg transition active:scale-95">Tambahkan ke Keranjang</button>
+            <button onclick="submitManualItem()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg transition active:scale-95">
+                Tambahkan ke Keranjang
+            </button>
         </div>
     </div>
 
+    <!-- Modal Pratinjau & Cetak Struk -->
     <div id="receiptModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col max-h-[95vh] shadow-2xl relative">
-            <div class="flex justify-between items-center border-b pb-3 mb-4 flex-none"><h2 class="font-black text-xl text-gray-800">Penyelesaian</h2><button onclick="closeReceipt()" class="text-gray-400 hover:text-red-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+            <div class="flex justify-between items-center border-b pb-3 mb-4 flex-none">
+                <h2 class="font-black text-xl text-gray-800">Penyelesaian</h2>
+                <button onclick="closeReceipt()" class="text-gray-400 hover:text-red-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
             <div class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
+                <!-- Area ini hanya pratinjau kasat mata -->
                 <div id="receipt-area" class="font-receipt text-xs text-black w-full max-w-[58mm] bg-white p-4 shadow-md">
                     <div class="text-center font-bold text-sm mb-1 uppercase" id="print-store-name">SOKA CELLULER</div>
                     <div class="text-center mb-2" id="print-store-address">Sembako & Konter Pulsa</div>
                     <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div class="flex justify-between text-[10px]"><span>TRX: <span id="receiptInvoice">INV-000000</span></span></div>
-                    <div class="flex justify-between text-[10px]"><span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span></div>
+                    <div class="flex justify-between text-[10px]">
+                        <span>TRX: <span id="receiptInvoice">INV-000000</span></span>
+                    </div>
+                    <div class="flex justify-between text-[10px]">
+                        <span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span>
+                    </div>
                     <div class="border-t border-dashed border-gray-500 my-1"></div>
                     <div id="receiptItems" class="mb-2"></div>
                     <div class="border-t border-dashed border-gray-500 my-1"></div>
-                    <div class="flex justify-between font-bold text-sm"><span>TOTAL</span><span id="receiptTotal">Rp 0</span></div>
-                    <div class="flex justify-between"><span>TUNAI</span><span id="receiptPay">Rp 0</span></div>
-                    <div class="flex justify-between"><span>KEMBALI</span><span id="receiptChange">Rp 0</span></div>
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>TOTAL</span><span id="receiptTotal">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>TUNAI</span><span id="receiptPay">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>KEMBALI</span><span id="receiptChange">Rp 0</span>
+                    </div>
                     <div class="border-t border-dashed border-gray-500 my-1 mt-2"></div>
                     <div class="text-center mt-2" id="print-store-footer">Terima Kasih</div>
                 </div>
             </div>
+
             <div class="space-y-2 flex-none">
-                <button id="btn-save-tx" onclick="processTransaction('save_only')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition active:scale-95"><i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Transaksi Saja</button>
+                <button id="btn-save-tx" onclick="processTransaction('save_only')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition active:scale-95">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Transaksi Saja
+                </button>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="processTransaction('share_text')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95"><i class="fa-solid fa-share-nodes mr-2"></i> Bagikan Teks</button>
-                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95"><i class="fa-brands fa-whatsapp mr-2 text-lg"></i> Kirim WA</button>
+                    <button onclick="processTransaction('share_text')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
+                        <i class="fa-solid fa-share-nodes mr-2"></i> Bagikan Teks
+                    </button>
+                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
+                        <i class="fa-brands fa-whatsapp mr-2 text-lg"></i> Kirim WA
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Form Tambah/Edit Master Barang -->
     <div id="productModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <h2 id="modalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5">Tambah Barang</h2>
             <input type="hidden" id="editProductId">
+            
             <div class="space-y-4 mb-6">
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Nomor Barcode (Opsional)</label><div class="flex gap-2"><input type="text" id="editProductBarcode" placeholder="Scan atau Ketik Manual" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold font-mono"><button onclick="openScanner('edit')" class="bg-black text-white px-4 py-3 rounded-xl font-bold shadow transition"><i class="fa-solid fa-barcode"></i></button></div></div>
-                <div><label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang</label><input type="text" id="editProductName" placeholder="Misal: Rokok Gudang Garam" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold"></div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Nomor Barcode (Opsional)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="editProductBarcode" placeholder="Scan atau Ketik Manual" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold font-mono">
+                        <button onclick="openScanner('edit')" class="bg-black text-white px-4 py-3 rounded-xl font-bold shadow transition"><i class="fa-solid fa-barcode"></i></button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang</label>
+                    <input type="text" id="editProductName" placeholder="Misal: Rokok Gudang Garam" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold">
+                </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-gray-600 text-xs font-bold mb-1">Harga Modal</label><input type="number" id="editProductModal" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold"></div>
-                    <div><label class="block text-gray-600 text-xs font-bold mb-1">Harga Jual</label><input type="number" id="editProductJual" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-600 font-bold"></div>
-                    <div class="col-span-2" id="divStokAwal"><label class="block text-gray-600 text-xs font-bold mb-1">Stok Awal (Saat ini)</label><input type="number" id="editProductStock" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold"></div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Modal</label>
+                        <input type="number" id="editProductModal" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 text-red-600 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-bold mb-1">Harga Jual</label>
+                        <input type="number" id="editProductJual" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-600 font-bold">
+                    </div>
+                    <div class="col-span-2" id="divStokAwal">
+                        <label class="block text-gray-600 text-xs font-bold mb-1">Stok Awal (Saat ini)</label>
+                        <input type="number" id="editProductStock" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-black font-bold">
+                    </div>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 border-t pt-5"><button onclick="closeProductModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button><button onclick="saveProductData()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button></div>
+
+            <div class="flex justify-end gap-3 border-t pt-5">
+                <button onclick="closeProductModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button>
+                <button onclick="saveProductData()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-save mr-1"></i> Simpan</button>
+            </div>
         </div>
     </div>
 
+    <!-- Modal Form Hutang -->
     <div id="debtModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative">
             <h2 id="debtModalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5"><i class="fa-solid fa-book-medical text-red-500 mr-2"></i>Catat Hutang</h2>
@@ -554,11 +649,13 @@
         </div>
     </div>
 
+    <!-- Toast Notifikasi -->
     <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-2xl text-sm font-bold z-[200] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center">
         <i class="fa-solid fa-circle-check text-green-400 mr-3 text-xl" id="toast-icon"></i>
         <span id="toast-msg">Pesan</span>
     </div>
 
+    <!-- =============== SCRIPT LOGIKA + FIREBASE CLOUD MULTI-USER =============== -->
     <script>
         // --- 1. INISIALISASI FIREBASE ---
         const firebaseConfig = {
@@ -574,6 +671,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
         
+        // Aktifkan Mode Offline
         db.enablePersistence().catch(function(err) { console.log("Offline mode error:", err); });
 
         // Variabel Global
@@ -597,13 +695,12 @@
         function playBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gainNode = ctx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); gainNode.gain.setValueAtTime(0.1, ctx.currentTime); osc.connect(gainNode); gainNode.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} }
         function playErrorBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gainNode = ctx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, ctx.currentTime); gainNode.gain.setValueAtTime(0.1, ctx.currentTime); osc.connect(gainNode); gainNode.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.3); } catch(e) {} }
 
-        // ================= SISTEM LOGIN GOOGLE =================
+        // ================= SISTEM LOGIN GOOGLE (REDIRECT) =================
         function loginWithGoogle() {
             document.getElementById('txt-btn-google').innerText = "Memuat...";
             document.getElementById('auth-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyambungkan ke Google...';
             
             const provider = new firebase.auth.GoogleAuthProvider();
-            // Gunakan Redirect agar tidak diblokir browser HP
             auth.signInWithRedirect(provider).catch((error) => {
                 showToast("Gagal Login: " + error.message, true);
                 document.getElementById('txt-btn-google').innerText = "Masuk dengan Google";
@@ -1052,6 +1149,5 @@
     </script>
 </body>
 </html>
-
 
 
