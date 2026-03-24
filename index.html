@@ -1104,6 +1104,107 @@
             if (scanMode === 'kasir') { const product = masterProducts.find(p => p.barcode === decodedText); if (product) { addToCart(product.id, product.name, product.price, product.buyPrice); playBeep(); showToast(`✅ Masuk: ${product.name}`); closeScanner(); } else { playErrorBeep(); showToast(`❌ Barcode tidak ditemukan!`, true); } } 
             else if (scanMode === 'edit') { document.getElementById('editProductBarcode').value = decodedText; playBeep(); showToast("Barcode terbaca!"); closeScanner(); }
         }
+        // ================= SISTEM REKAP UANG (TUTUP KASIR) =================
+        function renderRekapList() {
+            const listContainer = document.getElementById('rekapList');
+            listContainer.innerHTML = "";
+            if(rekapHistory.length === 0) { listContainer.innerHTML = `<div class="p-8 text-center text-gray-400 font-medium">Belum ada riwayat rekap kasir.</div>`; return; }
+
+            rekapHistory.slice().sort((a,b) => b.id - a.id).forEach((rekap) => {
+                const div = document.createElement('div');
+                div.className = "p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <div>
+                            <span class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-calendar-check text-teal-500 mr-1"></i> ${rekap.dateStr}</span>
+                        </div>
+                        <div class="font-black text-teal-600 text-base">${formatRp(rekap.grandTotal)}</div>
+                    </div>
+                    
+                    <div class="hidden mt-3 pt-3 border-t border-dashed border-gray-200 text-xs">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-green-50 p-2 rounded-xl">
+                                <span class="font-bold text-green-700 block mb-1">Fisik (Tunai)</span>
+                                <div class="text-gray-600 space-y-0.5">
+                                    <div class="flex justify-between"><span>100rb:</span><span>${rekap.cash.p100} lbr</span></div>
+                                    <div class="flex justify-between"><span>50rb:</span><span>${rekap.cash.p50} lbr</span></div>
+                                    <div class="flex justify-between"><span>20rb:</span><span>${rekap.cash.p20} lbr</span></div>
+                                    <div class="flex justify-between"><span>10rb:</span><span>${rekap.cash.p10} lbr</span></div>
+                                    <div class="flex justify-between"><span>5rb:</span><span>${rekap.cash.p5} lbr</span></div>
+                                    <div class="flex justify-between"><span>2rb:</span><span>${rekap.cash.p2} lbr</span></div>
+                                    <div class="flex justify-between"><span>Koin:</span><span>${formatRp(rekap.cash.koin)}</span></div>
+                                </div>
+                                <div class="font-bold text-green-800 mt-2 border-t border-green-200 pt-1 text-right">${formatRp(rekap.totalCash)}</div>
+                            </div>
+                            
+                            <div class="bg-blue-50 p-2 rounded-xl">
+                                <span class="font-bold text-blue-700 block mb-1">Digital (Saldo)</span>
+                                <div class="text-gray-600 space-y-0.5">
+                                    <div class="flex justify-between"><span>Kuota:</span><span>${formatRp(rekap.digital.kuota)}</span></div>
+                                    <div class="flex justify-between"><span>Digipos:</span><span>${formatRp(rekap.digital.digipos)}</span></div>
+                                    <div class="flex justify-between"><span>DANA:</span><span>${formatRp(rekap.digital.dana)}</span></div>
+                                    <div class="flex justify-between"><span>SeaBank:</span><span>${formatRp(rekap.digital.seabank)}</span></div>
+                                    <div class="flex justify-between"><span>BNI:</span><span>${formatRp(rekap.digital.bni)}</span></div>
+                                    <div class="flex justify-between"><span>QRIS:</span><span>${formatRp(rekap.digital.qris)}</span></div>
+                                </div>
+                                <div class="font-bold text-blue-800 mt-2 border-t border-blue-200 pt-1 text-right">${formatRp(rekap.totalDigital)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function openRekapModal() {
+            const ids = ['rkp-100', 'rkp-50', 'rkp-20', 'rkp-10', 'rkp-5', 'rkp-2', 'rkp-koin', 'rkp-kuota', 'rkp-digipos', 'rkp-dana', 'rkp-seabank', 'rkp-bni', 'rkp-qris'];
+            ids.forEach(id => document.getElementById(id).value = '');
+            calculateRekapTotal(); document.getElementById('rekapModal').classList.remove('hidden');
+        }
+
+        function closeRekapModal() { document.getElementById('rekapModal').classList.add('hidden'); }
+
+        function calculateRekapTotal() {
+            const p100 = parseInt(document.getElementById('rkp-100').value) || 0; const p50  = parseInt(document.getElementById('rkp-50').value) || 0; const p20  = parseInt(document.getElementById('rkp-20').value) || 0; const p10  = parseInt(document.getElementById('rkp-10').value) || 0; const p5   = parseInt(document.getElementById('rkp-5').value) || 0; const p2   = parseInt(document.getElementById('rkp-2').value) || 0; const koin = parseInt(document.getElementById('rkp-koin').value) || 0;
+            const totalTunai = (p100 * 100000) + (p50 * 50000) + (p20 * 20000) + (p10 * 10000) + (p5 * 5000) + (p2 * 2000) + koin;
+            document.getElementById('lbl-sub-tunai').innerText = formatRp(totalTunai);
+
+            const kuota   = parseInt(document.getElementById('rkp-kuota').value) || 0; const digipos = parseInt(document.getElementById('rkp-digipos').value) || 0; const dana    = parseInt(document.getElementById('rkp-dana').value) || 0; const seabank = parseInt(document.getElementById('rkp-seabank').value) || 0; const bni     = parseInt(document.getElementById('rkp-bni').value) || 0; const qris    = parseInt(document.getElementById('rkp-qris').value) || 0;
+            const totalDigital = kuota + digipos + dana + seabank + bni + qris;
+            document.getElementById('lbl-sub-digital').innerText = formatRp(totalDigital);
+
+            const grandTotal = totalTunai + totalDigital;
+            document.getElementById('lbl-grand-rekap').innerText = formatRp(grandTotal);
+            document.getElementById('lbl-grand-rekap').dataset.total = grandTotal;
+        }
+
+        function saveRekapData() {
+            const grandTotal = parseInt(document.getElementById('lbl-grand-rekap').dataset.total || 0);
+            if(grandTotal === 0 && !confirm("Total rekap 0 Rupiah, yakin ingin menyimpan?")) return;
+
+            const now = new Date();
+            const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            const rekapItem = {
+                id: Date.now(),
+                dateStr: dateStr,
+                cash: { p100: parseInt(document.getElementById('rkp-100').value) || 0, p50: parseInt(document.getElementById('rkp-50').value) || 0, p20: parseInt(document.getElementById('rkp-20').value) || 0, p10: parseInt(document.getElementById('rkp-10').value) || 0, p5: parseInt(document.getElementById('rkp-5').value) || 0, p2: parseInt(document.getElementById('rkp-2').value) || 0, koin: parseInt(document.getElementById('rkp-koin').value) || 0 },
+                digital: { kuota: parseInt(document.getElementById('rkp-kuota').value) || 0, digipos: parseInt(document.getElementById('rkp-digipos').value) || 0, dana: parseInt(document.getElementById('rkp-dana').value) || 0, seabank: parseInt(document.getElementById('rkp-seabank').value) || 0, bni: parseInt(document.getElementById('rkp-bni').value) || 0, qris: parseInt(document.getElementById('rkp-qris').value) || 0 },
+                totalCash: parseInt(document.getElementById('lbl-sub-tunai').innerText.replace(/[^\d]/g, '')),
+                totalDigital: parseInt(document.getElementById('lbl-sub-digital').innerText.replace(/[^\d]/g, '')),
+                grandTotal: grandTotal
+            };
+            
+            db.collection("rekaps").doc(String(rekapItem.id)).set(rekapItem).then(() => {
+                closeRekapModal(); showToast("Rekap Tersimpan di Cloud!");
+            }).catch((err) => { showToast("Gagal menyimpan rekap", true); });
+        }
+
+        function clearRekapHistory() {
+            if(confirm("Yakin ingin menghapus seluruh riwayat rekap di cloud?")) {
+                rekapHistory.forEach(r => db.collection("rekaps").doc(String(r.id)).delete());
+                showToast("Proses menghapus riwayat rekap...");
+            }
+        }
 
         // ================= START APP & CLOUD SYNC =================
         function initApp() {
