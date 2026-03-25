@@ -1333,15 +1333,51 @@ function processTransaction(actionType) {
         }
         function renderHourlyChart(transactions) {
             const chartContainer = document.getElementById('chart-bars');
+            
+            // 1. Hitung jumlah transaksi di setiap jam
             let hoursCount = new Array(24).fill(0);
-            transactions.forEach(tx => { let hour = parseInt(tx.time.split(':')[0]); if (!isNaN(hour)) { hoursCount[hour]++; } });
-            let maxCount = Math.max(...hoursCount); if (maxCount === 0) maxCount = 1;
-            let html = "";
+            transactions.forEach(tx => { 
+                let hour = parseInt(tx.time.split(':')[0]); 
+                if (!isNaN(hour)) { hoursCount[hour]++; } 
+            });
+
+            let maxCount = Math.max(...hoursCount); 
+            if (maxCount === 0) maxCount = 1;
+
+            // 2. Buat titik-titik koordinat Grafik Garis (Line Chart)
+            let points = "";
+            let dots = "";
             for(let i=0; i<24; i++) {
-                let heightPercent = (hoursCount[i] / maxCount) * 100;
-                let opacity = hoursCount[i] > 0 ? 'bg-blue-500' : 'bg-gray-100';
-                html += `<div class="flex flex-col items-center flex-1 h-full justify-end group relative" title="Jam ${i}:00 = ${hoursCount[i]} transaksi"><span class="text-[8px] font-bold text-gray-500 mb-0.5 opacity-0 group-hover:opacity-100 transition">${hoursCount[i] > 0 ? hoursCount[i] : ''}</span><div class="w-full ${opacity} rounded-t-[2px] min-h-[1px] transition-all duration-500" style="height: ${heightPercent}%"></div></div>`;
+                let x = i * 10; // Rentang mendatar
+                let y = 100 - ((hoursCount[i] / maxCount) * 100); // Rentang tinggi
+                points += `${x},${y} `;
+                
+                // Munculkan bulatan dan angka JIKA ada transaksi di jam tersebut
+                if (hoursCount[i] > 0) {
+                    dots += `<circle cx="${x}" cy="${y}" r="2" fill="#2563eb" />
+                             <text x="${x}" y="${y - 4}" font-size="8" fill="#6b7280" text-anchor="middle" font-weight="bold">${hoursCount[i]}</text>`;
+                }
             }
+
+            // 3. Masukkan gambar SVG ke dalam wadah grafik
+            chartContainer.className = "w-full h-full pt-2";
+            chartContainer.innerHTML = `
+            <svg viewBox="0 -15 230 120" class="w-full h-full overflow-visible" preserveAspectRatio="none">
+                <polygon fill="rgba(59, 130, 246, 0.15)" points="0,100 ${points} 230,100"/>
+                <polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" stroke-linejoin="round" stroke-linecap="round"/>
+                ${dots}
+            </svg>`;
+
+            // 4. Ubah angka jam di bawah grafik menjadi rentang per 3 Jam
+            const labelContainer = chartContainer.parentElement.nextElementSibling;
+            if(labelContainer) {
+                // Sengaja formatnya dipendekkan (00, 03, dst) agar tidak tabrakan di layar HP
+                labelContainer.innerHTML = `
+                    <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span>
+                    <span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span>
+                `;
+            }
+        }
             chartContainer.innerHTML = html;
         }
         function loadReport() {
@@ -1601,5 +1637,3 @@ function processTransaction(actionType) {
     </script>
 </body>
 </html>
-
-
