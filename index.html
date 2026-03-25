@@ -1357,8 +1357,6 @@ function processTransaction(actionType) {
                     dots += `<circle cx="${x}" cy="${y}" r="2" fill="#2563eb" />
                              <text x="${x}" y="${y - 4}" font-size="8" fill="#6b7280" text-anchor="middle" font-weight="bold">${hoursCount[i]}</text>`;
                 }
-            }
-
             // 3. Masukkan gambar SVG ke dalam wadah grafik
             chartContainer.className = "w-full h-full pt-2";
             chartContainer.innerHTML = `
@@ -1637,3 +1635,5 @@ function processTransaction(actionType) {
     </script>
 </body>
 </html>
+
+
