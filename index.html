@@ -1308,15 +1308,15 @@ function processTransaction(actionType) {
     // LOGIKA CETAK TEKS DAN WHATSAPP
     // ==========================================
     if (actionType === 'printer') {
-        // Ini akan membuka jendela kosong khusus berisi teks murni lalu menge-print-nya
-        const printWin = window.open('', '', 'width=400,height=600');
-        printWin.document.write('<html><body style="margin:0; padding:0;">');
-        printWin.document.write('<pre style="font-family: monospace; font-size: 12px; margin: 0; white-space: pre-wrap;">' + textReceipt + '</pre>');
-        printWin.document.write('</body></html>');
-        printWin.document.close();
-        printWin.focus();
-        printWin.print();
-        printWin.close();
+        // Menggunakan fitur Share bawaan HP agar bisa memilih aplikasi Termer
+        if (navigator.share) {
+            navigator.share({
+                title: 'Struk Soka Celluler',
+                text: textReceipt
+            }).catch((error) => console.log('Batal memilih printer', error));
+        } else {
+            alert("Maaf, browser HP kamu tidak mendukung fitur pilih aplikasi printer.");
+        }
     } else if (actionType === 'whatsapp') { 
         window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
     }
