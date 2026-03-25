@@ -1357,6 +1357,8 @@ function processTransaction(actionType) {
                     dots += `<circle cx="${x}" cy="${y}" r="2" fill="#2563eb" />
                              <text x="${x}" y="${y - 4}" font-size="8" fill="#6b7280" text-anchor="middle" font-weight="bold">${hoursCount[i]}</text>`;
                 }
+            } // <--- INI KURUNG TUTUP YANG KEMARIN HILANG
+
             // 3. Masukkan gambar SVG ke dalam wadah grafik
             chartContainer.className = "w-full h-full pt-2";
             chartContainer.innerHTML = `
@@ -1375,8 +1377,6 @@ function processTransaction(actionType) {
                     <span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span>
                 `;
             }
-        }
-            chartContainer.innerHTML = html;
         }
         function loadReport() {
             const type = document.getElementById('reportType').value;
