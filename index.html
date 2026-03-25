@@ -1268,34 +1268,62 @@
             return text;
         }
         
-        function processTransaction(actionType) {
-            let textReceipt = "";
-            if(!isReprintMode) {
-                const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
-                const pay = parseInt(document.getElementById('payAmount').value || 0);
-                const inv = document.getElementById('receiptInvoice').innerText;
-                let totalModal = 0; cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
-                const profit = total - totalModal;
-                if (actionType !== 'print_only') {
-                    const transaction = { id: Date.now(), invoice: inv, date: currentTransactionDateStr, displayDate: document.getElementById('receiptDate').innerText, time: document.getElementById('receiptTime').innerText, items: JSON.parse(JSON.stringify(cart)), total: total, modal: totalModal, profit: profit, pay: pay, change: pay - total };
-                    let history = JSON.parse(localStorage.getItem('soka_transactions')) || []; history.push(transaction); localStorage.setItem('soka_transactions', JSON.stringify(history));
-                }
-                textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
-            } else {
-                const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
-                textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
-            }
-
-            // PERUBAHAN FUNGSI PRINT: Memanggil Print Bawaan Browser
-            if (actionType === 'printer') {
-                window.print();
-            } else if (actionType === 'whatsapp') { 
-                window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
-            }
-
-            if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
-            closeReceipt(); 
+function processTransaction(actionType) {
+    let textReceipt = "";
+    if(!isReprintMode) {
+        const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
+        const pay = parseInt(document.getElementById('payAmount').value || 0);
+        const inv = document.getElementById('receiptInvoice').innerText;
+        
+        let totalModal = 0; 
+        cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
+        const profit = total - totalModal;
+        
+        if (actionType !== 'print_only') {
+            const transaction = { 
+                id: Date.now(), 
+                invoice: inv, 
+                date: currentTransactionDateStr, 
+                displayDate: document.getElementById('receiptDate').innerText, 
+                time: document.getElementById('receiptTime').innerText, 
+                items: JSON.parse(JSON.stringify(cart)), 
+                total: total, 
+                modal: totalModal, 
+                profit: profit, 
+                pay: pay, 
+                change: pay - total 
+            };
+            let history = JSON.parse(localStorage.getItem('soka_transactions')) || []; 
+            history.push(transaction); 
+            localStorage.setItem('soka_transactions', JSON.stringify(history));
         }
+        
+        textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
+    } else {
+        const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
+        textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
+    }
+
+    // ==========================================
+    // LOGIKA CETAK TEKS DAN WHATSAPP
+    // ==========================================
+    if (actionType === 'printer') {
+        // Ini akan membuka jendela kosong khusus berisi teks murni lalu menge-print-nya
+        const printWin = window.open('', '', 'width=400,height=600');
+        printWin.document.write('<html><body style="margin:0; padding:0;">');
+        printWin.document.write('<pre style="font-family: monospace; font-size: 12px; margin: 0; white-space: pre-wrap;">' + textReceipt + '</pre>');
+        printWin.document.write('</body></html>');
+        printWin.document.close();
+        printWin.focus();
+        printWin.print();
+        printWin.close();
+    } else if (actionType === 'whatsapp') { 
+        window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
+    }
+
+    if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
+    closeReceipt(); 
+}
 
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
