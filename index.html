@@ -1361,54 +1361,54 @@ function processTransaction(actionType) {
             else { document.getElementById('reportDate').classList.add('hidden'); document.getElementById('reportMonth').classList.remove('hidden'); }
             loadReport();
         }
-        function renderHourlyChart(transactions) {
+                function renderHourlyChart(transactions) {
             const chartContainer = document.getElementById('chart-bars');
+            if(!chartContainer) return;
             
             // 1. Hitung jumlah transaksi di setiap jam
             let hoursCount = new Array(24).fill(0);
             transactions.forEach(tx => { 
-                let hour = parseInt(tx.time.split(':')[0]); 
-                if (!isNaN(hour)) { hoursCount[hour]++; } 
+                if(tx && tx.time) {
+                    let hour = parseInt(tx.time.split(':')[0]); 
+                    if (!isNaN(hour)) { hoursCount[hour]++; } 
+                }
             });
 
             let maxCount = Math.max(...hoursCount); 
             if (maxCount === 0) maxCount = 1;
 
-            // 2. Buat titik-titik koordinat Grafik Garis (Line Chart)
-            let points = "";
-            let dots = "";
+            // 2. Buat Batang Grafik (Bar Chart)
+            let barsHtml = "";
             for(let i=0; i<24; i++) {
-                let x = i * 10; // Rentang mendatar
-                let y = 100 - ((hoursCount[i] / maxCount) * 100); // Rentang tinggi
-                points += `${x},${y} `;
+                let percentage = (hoursCount[i] / maxCount) * 100;
                 
-                // Munculkan bulatan dan angka JIKA ada transaksi di jam tersebut
-                if (hoursCount[i] > 0) {
-                    dots += `<circle cx="${x}" cy="${y}" r="2" fill="#2563eb" />
-                             <text x="${x}" y="${y - 4}" font-size="8" fill="#6b7280" text-anchor="middle" font-weight="bold">${hoursCount[i]}</text>`;
-                }
-            } // <--- INI KURUNG TUTUP YANG KEMARIN HILANG
-
-            // 3. Masukkan gambar SVG ke dalam wadah grafik
-            chartContainer.className = "w-full h-full pt-2";
-            chartContainer.innerHTML = `
-            <svg viewBox="0 -15 230 120" class="w-full h-full overflow-visible" preserveAspectRatio="none">
-                <polygon fill="rgba(59, 130, 246, 0.15)" points="0,100 ${points} 230,100"/>
-                <polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" stroke-linejoin="round" stroke-linecap="round"/>
-                ${dots}
-            </svg>`;
-
-            // 4. Ubah angka jam di bawah grafik menjadi rentang per 3 Jam sampai 24:00
-            const labelContainer = chartContainer.parentElement.nextElementSibling;
-            if(labelContainer) {
-                // Menggunakan text-[8px] agar 9 label muat sejajar di layar HP
-                labelContainer.className = "flex justify-between text-[8px] sm:text-[10px] text-gray-400 mt-3 font-bold px-1 pb-2";
+                // Label angka di atas batang (muncul kalau ada transaksi)
+                let numLabel = hoursCount[i] > 0 ? `<div class="absolute -top-4 text-[9px] sm:text-[10px] font-black text-blue-600 w-full text-center">${hoursCount[i]}</div>` : '';
                 
-                labelContainer.innerHTML = `
-                    <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>
+                // Tinggi minimal 2% biar garis dasar (jam kosong) tetap kelihatan samar
+                let h = percentage > 0 ? percentage : 2; 
+                let bgClass = hoursCount[i] > 0 ? "bg-blue-500 shadow-sm" : "bg-gray-200 opacity-50";
+
+                barsHtml += `
+                    <div class="relative flex-1 flex flex-col justify-end items-center h-full group" title="Jam ${i.toString().padStart(2, '0')}:00 - ${hoursCount[i]} Transaksi">
+                        ${numLabel}
+                        <div class="w-[80%] max-w-[16px] ${bgClass} rounded-t-sm transition-all duration-500 hover:bg-orange-500 cursor-pointer" style="height: ${h}%;"></div>
+                    </div>
                 `;
             }
+
+            // 3. Masukkan ke wadah HTML
+            chartContainer.className = "w-full flex justify-between h-full items-end gap-[1px] sm:gap-1 px-1 pb-0 pt-5";
+            chartContainer.innerHTML = barsHtml;
+
+            // 4. Ubah label jam di bawah grafik biar pas posisinya
+            const labelContainer = chartContainer.parentElement.nextElementSibling;
+            if(labelContainer) {
+                labelContainer.className = "flex justify-between text-[8px] sm:text-[10px] text-gray-400 mt-2 font-bold px-1";
+                labelContainer.innerHTML = `<span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>`;
             }
+        }
+
         function loadReport() {
             const type = document.getElementById('reportType').value;
             let history = JSON.parse(localStorage.getItem('soka_transactions')) || [];
@@ -1426,24 +1426,26 @@ function processTransaction(actionType) {
             
             // === HITUNG PEMISAHAN UANG & BARANG TERLARIS ===
             let totalOmzet = 0, totalProfit = 0, totalTunai = 0, totalQris = 0;
-            let itemSales = {}; // Wadah untuk menghitung barang terjual
+                            let itemSales = {}; 
 
-            filteredTransactions.forEach(tx => { 
-                totalOmzet += (tx.total || 0); 
-                totalProfit += (tx.profit || 0); 
-                if (tx.method === 'qris') { 
-                    totalQris += (tx.total || 0); 
-                } else { 
-                    totalTunai += (tx.total || 0); 
-                }
+                filteredTransactions.forEach(tx => { 
+                    totalOmzet += (Number(tx.total) || 0); 
+                    totalProfit += (Number(tx.profit) || 0); 
+                    if (tx.method === 'qris') { totalQris += (Number(tx.total) || 0); } 
+                    else { totalTunai += (Number(tx.total) || 0); }
 
-                // Kalkulasi barang terlaris
-                let safeItems = tx.items || [];
-                safeItems.forEach(i => {
-                    if(!itemSales[i.id]) { itemSales[i.id] = { name: i.name, qty: 0 }; }
-                    itemSales[i.id].qty += i.qty;
+                    let safeItems = tx.items || [];
+                    if(Array.isArray(safeItems)) {
+                        safeItems.forEach(i => {
+                            if(i && i.name) {
+                                // PINTAR: Gabungkan barang berdasarkan NAMANYA (huruf besar/kecil disamakan)
+                                let namaBarang = i.name.trim().toUpperCase();
+                                if(!itemSales[namaBarang]) { itemSales[namaBarang] = { name: i.name, qty: 0 }; }
+                                itemSales[namaBarang].qty += (Number(i.qty) || 0);
+                            }
+                        });
+                    }
                 });
-            });
 
             document.getElementById('reportTotalOmzet').innerText = formatRp(totalOmzet);
             document.getElementById('reportTotalProfit').innerText = formatRp(totalProfit);
