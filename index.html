@@ -1424,8 +1424,10 @@ function processTransaction(actionType) {
                 filteredTransactions = history.filter(tx => tx.date && tx.date.startsWith(monthInput.value));
             }
             
-            // === BAGIAN INI UNTUK MENGHITUNG PEMISAHAN UANG TUNAI & QRIS ===
+            // === HITUNG PEMISAHAN UANG & BARANG TERLARIS ===
             let totalOmzet = 0, totalProfit = 0, totalTunai = 0, totalQris = 0;
+            let itemSales = {}; // Wadah untuk menghitung barang terjual
+
             filteredTransactions.forEach(tx => { 
                 totalOmzet += (tx.total || 0); 
                 totalProfit += (tx.profit || 0); 
@@ -1434,6 +1436,13 @@ function processTransaction(actionType) {
                 } else { 
                     totalTunai += (tx.total || 0); 
                 }
+
+                // Kalkulasi barang terlaris
+                let safeItems = tx.items || [];
+                safeItems.forEach(i => {
+                    if(!itemSales[i.id]) { itemSales[i.id] = { name: i.name, qty: 0 }; }
+                    itemSales[i.id].qty += i.qty;
+                });
             });
 
             document.getElementById('reportTotalOmzet').innerText = formatRp(totalOmzet);
@@ -1445,8 +1454,25 @@ function processTransaction(actionType) {
             const listContainer = document.getElementById('reportList');
             if(!listContainer) return; 
 
-            // === BAGIAN INI MUNCULIN TULISAN TUNAI & QRIS DI ATAS DAFTAR TRANSAKSI ===
-            listContainer.innerHTML = `
+            // Urutkan dari yang paling banyak terjual, lalu ambil 5 teratas
+            let topItems = Object.values(itemSales).sort((a, b) => b.qty - a.qty).slice(0, 5);
+            let topItemsHtml = "";
+            
+            if(topItems.length > 0) {
+                topItemsHtml = `<div class="bg-amber-50 p-4 border-b border-amber-200 shadow-sm z-10 relative">
+                    <div class="text-xs font-black text-amber-800 mb-2"><i class="fa-solid fa-fire text-orange-500 mr-1"></i> 5 BARANG PALING LARIS:</div>
+                    <div class="space-y-1.5">`;
+                topItems.forEach((item, idx) => {
+                    topItemsHtml += `<div class="flex justify-between text-[11px] text-amber-900 font-bold items-center">
+                        <span class="truncate pr-2">${idx + 1}. ${item.name}</span>
+                        <span class="bg-amber-200 px-2 py-0.5 rounded text-[10px] whitespace-nowrap">${item.qty} Terjual</span>
+                    </div>`;
+                });
+                topItemsHtml += `</div></div>`;
+            }
+
+            // === TAMPILKAN HEADER (BARANG TERLARIS + TUNAI/QRIS) ===
+            listContainer.innerHTML = topItemsHtml + `
                 <div class="bg-indigo-50 p-3 flex justify-between text-xs font-bold border-b border-indigo-200">
                     <span class="text-blue-700"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tunai: ${formatRp(totalTunai)}</span>
                     <span class="text-purple-700"><i class="fa-solid fa-qrcode mr-1"></i> QRIS: ${formatRp(totalQris)}</span>
@@ -1466,7 +1492,6 @@ function processTransaction(actionType) {
                 let dateDisplay = tx.displayDate || tx.date || "-";
                 let timeDisplay = tx.time || "-";
                 
-                // MUNCULIN LABEL "QRIS" WARNA UNGU KALAU DIA BAYAR PAKAI QRIS
                 let methodBadge = tx.method === 'qris' ? `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[8px] ml-2 uppercase font-black tracking-widest"><i class="fa-solid fa-qrcode"></i> QRIS</span>` : '';
                 
                 const itemDiv = document.createElement('div');
