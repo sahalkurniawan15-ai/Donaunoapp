@@ -1181,7 +1181,7 @@
             if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1 }); }
             updateCartUI();
         }
-        function changeQty(id, delta) {
+        function adjQty(id, delta) {
             const item = cart.find(i => String(i.id) === String(id));
             if (item) { item.qty += delta; if (item.qty <= 0) cart = cart.filter(i => String(i.id) !== String(id)); }
             updateCartUI();
