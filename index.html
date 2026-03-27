@@ -586,7 +586,7 @@
     </div>
 
     <!-- Modal Form Tambah/Edit Master Barang -->
-    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div id="productModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <h2 id="modalTitle" class="font-black text-xl text-gray-800 border-b pb-3 mb-5">Tambah Barang</h2>
             <input type="hidden" id="editProductId">
@@ -611,6 +611,10 @@
                     <div>
                         <label class="block text-gray-600 text-xs font-bold mb-1">Harga Jual</label>
                         <input type="number" id="editProductJual" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-600 font-bold">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-emerald-600 text-xs font-bold mb-1">Jumlah Stok (Barang Masuk)</label>
+                        <input type="number" id="editProductStock" placeholder="0" class="w-full px-4 py-3 border-2 border-emerald-200 rounded-xl focus:outline-none focus:border-emerald-500 text-emerald-700 font-bold">
                     </div>
                 </div>
             </div>
@@ -1307,11 +1311,20 @@ function processTransaction(actionType) {
         const inv = document.getElementById('receiptInvoice').innerText;
         
         let totalModal = 0; 
-        cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
+        cart.forEach(item => { 
+            totalModal += ((item.buyPrice || 0) * item.qty); 
+            
+            // --- LOGIKA POTONG STOK OTOMATIS ---
+            let pIndex = masterProducts.findIndex(p => String(p.id) === String(item.id));
+            if (pIndex !== -1) {
+                masterProducts[pIndex].stock = (masterProducts[pIndex].stock || 0) - item.qty;
+            }
+        });
+        saveMasterData(); // Simpan sisa stok terbaru ke HP
+        
         const profit = total - totalModal;
         
         if (actionType !== 'print_only') {
-            // DI SINI KITA MENYIMPAN INFO APAKAH DIA BAYAR PAKAI QRIS ATAU TUNAI
             const transaction = { 
                 id: Date.now(), 
                 invoice: inv, 
@@ -1337,7 +1350,7 @@ function processTransaction(actionType) {
         textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
     }
 
-    // LOGIKA CETAK
+    // LOGIKA CETAK & SHARE
     if (actionType === 'printer') {
         if (navigator.share) {
             navigator.share({
@@ -1559,7 +1572,7 @@ function processTransaction(actionType) {
             const timeCode = new Date().toISOString().slice(0, 10);
             downloadCSV(csv, `DatabaseBarang_${storeSettings.name}_${timeCode}.csv`); showToast("Berhasil mendownload Excel Produk!");
         }
-        function renderMasterProducts() {
+                        function renderMasterProducts() {
             const filterText = document.getElementById('searchMaster').value.toLowerCase();
             const list = document.getElementById('masterList'); list.innerHTML = "";
             const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filterText) || (p.barcode && p.barcode.includes(filterText))).sort((a,b) => a.name.localeCompare(b.name));
@@ -1569,11 +1582,19 @@ function processTransaction(actionType) {
                 const div = document.createElement('div');
                 div.className = "p-4 hover:bg-gray-50 flex justify-between items-center transition border-b border-gray-100";
                 let barcodeStatus = product.barcode ? `<span class="text-green-600 bg-green-50 px-2 py-0.5 rounded ml-1" title="Barcode: ${product.barcode}"><i class="fa-solid fa-barcode mr-1"></i>OK</span>` : `<span class="text-red-500 bg-red-50 px-2 py-0.5 rounded ml-1" title="Belum ada barcode"><i class="fa-solid fa-triangle-exclamation"></i> No Barcode</span>`;
+                
+                // Indikator Stok di Daftar Barang
+                let stockVal = product.stock || 0;
+                let stockStatus = `<span class="${stockVal <= 5 ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'} px-2 py-0.5 rounded ml-1 font-bold"><i class="fa-solid fa-cubes mr-1"></i>Stok: ${stockVal}</span>`;
+
                 div.innerHTML = `
                     <div class="flex-1 pr-3">
                         <div class="font-bold text-gray-800 text-sm mb-1.5">${product.name}</div>
-                        <div class="flex flex-wrap gap-2 text-[10px] font-medium items-center">
-                            <span class="text-red-500 bg-red-50 px-2 py-0.5 rounded"><i class="fa-solid fa-box mr-1"></i>Modal: ${formatRp(product.buyPrice)}</span><span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded"><i class="fa-solid fa-tag mr-1"></i>Jual: ${formatRp(product.price)}</span>${barcodeStatus}
+                        <div class="flex flex-wrap gap-2 text-[10px] font-medium items-center mt-1">
+                            <span class="text-red-500 bg-red-50 px-2 py-0.5 rounded"><i class="fa-solid fa-box mr-1"></i>Modal: ${formatRp(product.buyPrice)}</span>
+                            <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded"><i class="fa-solid fa-tag mr-1"></i>Jual: ${formatRp(product.price)}</span>
+                            ${stockStatus}
+                            ${barcodeStatus}
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -1588,22 +1609,44 @@ function processTransaction(actionType) {
             if (id) {
                 document.getElementById('modalTitle').innerHTML = "<i class='fa-solid fa-pen-to-square mr-2 text-yellow-500'></i>Edit Barang";
                 const product = masterProducts.find(p => String(p.id) === String(id));
-                document.getElementById('editProductId').value = product.id; document.getElementById('editProductBarcode').value = product.barcode || ""; document.getElementById('editProductName').value = product.name; document.getElementById('editProductModal').value = product.buyPrice; document.getElementById('editProductJual').value = product.price;
+                document.getElementById('editProductId').value = product.id; 
+                document.getElementById('editProductBarcode').value = product.barcode || ""; 
+                document.getElementById('editProductName').value = product.name; 
+                document.getElementById('editProductModal').value = product.buyPrice; 
+                document.getElementById('editProductJual').value = product.price;
+                document.getElementById('editProductStock').value = product.stock || 0; // Baca memori stok
             } else {
                 document.getElementById('modalTitle').innerHTML = "<i class='fa-solid fa-box-open mr-2 text-blue-500'></i>Tambah Baru";
-                document.getElementById('editProductId').value = ""; document.getElementById('editProductBarcode').value = ""; document.getElementById('editProductName').value = ""; document.getElementById('editProductModal').value = ""; document.getElementById('editProductJual').value = "";
+                document.getElementById('editProductId').value = ""; 
+                document.getElementById('editProductBarcode').value = ""; 
+                document.getElementById('editProductName').value = ""; 
+                document.getElementById('editProductModal').value = ""; 
+                document.getElementById('editProductJual').value = "";
+                document.getElementById('editProductStock').value = ""; // Kosongkan stok
             }
         }
         function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
         function saveProductData() {
-            const id = document.getElementById('editProductId').value; const barcode = document.getElementById('editProductBarcode').value.trim(); const name = document.getElementById('editProductName').value.trim(); const buyPrice = parseInt(document.getElementById('editProductModal').value); const price = parseInt(document.getElementById('editProductJual').value);
+            const id = document.getElementById('editProductId').value; 
+            const barcode = document.getElementById('editProductBarcode').value.trim(); 
+            const name = document.getElementById('editProductName').value.trim(); 
+            const buyPrice = parseInt(document.getElementById('editProductModal').value); 
+            const price = parseInt(document.getElementById('editProductJual').value);
+            const stock = parseInt(document.getElementById('editProductStock').value) || 0; 
+
             if(!name || isNaN(buyPrice) || isNaN(price)) return showToast("Isi semua form dengan benar!", true);
             if(barcode) { const isBarcodeUsed = masterProducts.find(p => p.barcode === barcode && String(p.id) !== String(id)); if(isBarcodeUsed) return showToast("Barcode sudah dipakai barang lain!", true); }
             if (id) {
                 const index = masterProducts.findIndex(p => String(p.id) === String(id));
-                if (index !== -1) { masterProducts[index].barcode = barcode; masterProducts[index].name = name; masterProducts[index].buyPrice = buyPrice; masterProducts[index].price = price; showToast("Data barang berhasil diubah!"); }
+                if (index !== -1) { 
+                    masterProducts[index].barcode = barcode; masterProducts[index].name = name; 
+                    masterProducts[index].buyPrice = buyPrice; masterProducts[index].price = price; 
+                    masterProducts[index].stock = stock; // Simpan ke memori
+                    showToast("Data barang berhasil diubah!"); 
+                }
             } else {
-                masterProducts.push({ id: Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price }); showToast("Barang baru ditambahkan!");
+                masterProducts.push({ id: Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price, stock: stock }); 
+                showToast("Barang baru ditambahkan!");
             }
             saveMasterData(); renderMasterProducts(); if(!document.getElementById('view-barang').classList.contains('hidden')){ renderProducts(); } closeProductModal();
         }
@@ -1612,6 +1655,7 @@ function processTransaction(actionType) {
                 masterProducts = masterProducts.filter(p => String(p.id) !== String(id)); saveMasterData(); renderMasterProducts(); showToast("Barang dihapus!");
             }
         }
+
 
         // ================= SISTEM BUKU HUTANG (KASBON) =================
         function loadDebtsData() { const saved = localStorage.getItem('soka_debts'); if (saved) { debtsData = JSON.parse(saved); } }
