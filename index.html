@@ -1196,7 +1196,7 @@
             }
         }
 
-                function renderProducts() {
+                        function renderProducts() {
             const filterText = document.getElementById('searchInput').value.toLowerCase();
             const list = document.getElementById('productList');
             list.innerHTML = "";
@@ -1212,25 +1212,26 @@
             filtered.forEach(product => {
                 const div = document.createElement('div');
                 
-                // Cek Stok
+                // Cek Stok untuk tampilan badge
                 let isOutOfStock = product.stock !== undefined && product.stock <= 0;
                 let stockBadge = "";
                 if (product.stock !== undefined) {
                     if (isOutOfStock) {
-                        stockBadge = `<div class="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-[9px] font-black rounded-bl-lg tracking-widest">HABIS</div>`;
+                        // Tampilkan angka minusnya dengan warna merah
+                        stockBadge = `<div class="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-[9px] font-black rounded-bl-lg tracking-widest">STOK: ${product.stock}</div>`;
                     } else {
                         stockBadge = `<div class="absolute top-0 right-0 bg-orange-100 text-orange-600 px-2 py-1 text-[9px] font-bold rounded-bl-lg">Stok: ${product.stock}</div>`;
                     }
                 }
 
-                div.className = `bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer transition transform h-full relative overflow-hidden min-h-[140px] ${isOutOfStock ? 'opacity-50 grayscale' : 'active:scale-95 active:bg-blue-50'}`;
+                // Hapus efek grayscale agar barang tetap terlihat normal dan bisa diklik
+                div.className = `bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer transition transform h-full relative overflow-hidden min-h-[140px] active:scale-95 active:bg-blue-50`;
                 
                 div.onclick = () => {
-                    if (isOutOfStock) {
-                        showToast("Stok barang ini habis!", true);
-                        playErrorBeep();
-                    } else {
-                        addToCart(product.id, product.name, product.price, product.buyPrice);
+                    addToCart(product.id, product.name, product.price, product.buyPrice);
+                    if(isOutOfStock) {
+                        // Tampilkan notifikasi kecil saja tanpa bunyi error
+                        showToast("Peringatan: Terjual dengan stok minus", true);
                     }
                 };
                 
@@ -1247,6 +1248,7 @@
                 list.appendChild(div);
             });
         }
+
 
         function filterProducts() { renderProducts(); }
         
@@ -1268,16 +1270,8 @@
             updateCartUI(); closeManualModal(); playBeep(); showToast(`${name} ditambahkan!`);
         }
         
-                function addToCart(id, name, price, buyPrice) {
-            const product = masterProducts.find(p => String(p.id) === String(id));
+                    function addToCart(id, name, price, buyPrice) {
             const existing = cart.find(item => String(item.id) === String(id));
-            const currentQty = existing ? existing.qty : 0;
-
-            if (product && product.stock !== undefined && (currentQty + 1) > product.stock) {
-                playErrorBeep();
-                return showToast(`Maksimal stok ${name} sisa ${product.stock}!`, true);
-            }
-
             if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1 }); }
             updateCartUI();
         }
@@ -1285,12 +1279,6 @@
         function adjQty(id, delta) {
             const item = cart.find(i => String(i.id) === String(id));
             if (item) {
-                const product = masterProducts.find(p => String(p.id) === String(id));
-                if (delta > 0 && product && product.stock !== undefined && (item.qty + delta) > product.stock) {
-                     playErrorBeep();
-                     return showToast(`Maksimal stok sisa ${product.stock}!`, true);
-                }
-                
                 item.qty += delta; 
                 if (item.qty <= 0) cart = cart.filter(i => String(i.id) !== String(id)); 
             }
@@ -1854,12 +1842,12 @@
                 const profit = total - totalModal;
                 
                 if (actionType !== 'print_only') {
-                    // POTONG STOK
+                                        // POTONG STOK (MENDUKUNG MINUS)
                     cart.forEach(cartItem => {
                         let pIndex = masterProducts.findIndex(p => String(p.id) === String(cartItem.id));
                         if (pIndex !== -1 && masterProducts[pIndex].stock !== undefined) {
                             masterProducts[pIndex].stock -= cartItem.qty;
-                            if(masterProducts[pIndex].stock < 0) masterProducts[pIndex].stock = 0;
+                            // Baris pencegah minus sudah dihapus, jadi sekarang bisa -1, -2, dst.
                         }
                     });
                     saveMasterData(); 
