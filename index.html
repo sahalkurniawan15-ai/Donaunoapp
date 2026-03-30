@@ -105,10 +105,10 @@
                 <div id="productList" class="flex-1 overflow-y-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-[90px] md:pb-4 bg-gray-100">
                     </div>
 
-                <div class="md:hidden absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-gray-100 via-gray-100 to-transparent z-20 pb-4">
+                                <div class="md:hidden absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-gray-100 via-gray-100 to-transparent z-20 pb-4">
                     <button onclick="toggleMobileCart(true)" class="w-full bg-blue-700 text-white shadow-[0_8px_20px_rgba(29,78,216,0.4)] rounded-2xl p-4 flex justify-between items-center active:scale-95 transition-transform border border-blue-500">
                         <div class="flex items-center gap-4">
-                            <div class="relative bg-blue-800 p-2 rounded-xl">
+                            <div class="relative bg-blue-800 p-2 rounded-xl flex items-center justify-center w-12 h-12">
                                 <i class="fa-solid fa-cart-shopping text-xl"></i>
                                 <span id="floatingCartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-sm hidden">0</span>
                             </div>
@@ -117,8 +117,8 @@
                                 <p id="floatingCartTotal" class="text-lg font-black tracking-wide">Rp 0</p>
                             </div>
                         </div>
-                        <div class="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm shadow flex items-center">
-                            Bayar <i class="fa-solid fa-chevron-up ml-2 text-xs"></i>
+                        <div class="bg-white text-blue-700 px-4 py-2.5 rounded-xl font-black text-sm shadow flex items-center">
+                            CEK KERANJANG <i class="fa-solid fa-chevron-up ml-2 text-xs"></i>
                         </div>
                     </button>
                 </div>
@@ -147,45 +147,15 @@
                     </div>
                 </div>
 
-                <div class="flex-none bg-white px-5 py-5 border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20 space-y-4 pb-[85px] md:pb-5">
-            
-            <div class="flex justify-between items-end border-b pb-2">
-                <span class="text-sm font-bold text-gray-500 uppercase tracking-wide">Total Tagihan</span>
-                <span id="totalPrice" class="text-4xl font-black text-gray-900 tracking-tighter">Rp 0</span>
-            </div>
-            
-            <div class="space-y-2">
-                <label class="block text-gray-500 text-xs font-bold uppercase tracking-wider">Metode Pembayaran</label>
-                <div class="flex gap-2.5">
-                    <button id="btn-pay-cash" onclick="setPaymentMethod('cash')" class="flex-1 py-2.5 rounded-xl font-bold border-2 border-blue-600 bg-blue-600 text-white text-sm transition active:scale-95">TUNAI</button>
-                    <button id="btn-pay-qris" onclick="setPaymentMethod('qris')" class="flex-1 py-2.5 rounded-xl font-bold border-2 border-gray-200 bg-white text-gray-500 text-sm transition active:scale-95">QRIS</button>
+                                                <div class="flex-none bg-white p-5 border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20 space-y-4 pb-[85px] md:pb-5">
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <span class="text-sm font-bold text-gray-500 uppercase tracking-wide">Total Belanja</span>
+                        <span id="totalPrice" class="text-3xl font-black text-blue-600 tracking-tighter" data-total="0">Rp 0</span>
+                    </div>
+                    <button onclick="openPaymentModal()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition flex justify-center items-center gap-2 shadow-sm">
+                        LANJUT BAYAR <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
                 </div>
-            </div>
-
-            <div id="cash-input-area" class="space-y-2">
-                <label class="block text-gray-500 text-xs font-bold uppercase tracking-wider">Uang Tunai Pelanggan</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 font-bold text-gray-400 text-xl">Rp</span>
-                    <input type="number" id="payAmount" oninput="calculateChange()" class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl text-2xl font-bold text-gray-800 focus:outline-none focus:border-blue-500 transition" placeholder="0">
-                </div>
-                
-                <div class="flex overflow-x-auto gap-2 py-1 no-scrollbar">
-                    <button onclick="setQuickCash('pas')" class="flex-none bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 whitespace-nowrap"><i class="fa-solid fa-check mr-1"></i>Pas</button>
-                    <button onclick="setQuickCash(20000)" class="flex-none bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 whitespace-nowrap">20.000</button>
-                    <button onclick="setQuickCash(50000)" class="flex-none bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 whitespace-nowrap">50.000</button>
-                    <button onclick="setQuickCash(100000)" class="flex-none bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 whitespace-nowrap">100.000</button>
-                </div>
-            </div>
-
-            <div id="change-area" class="flex justify-between items-center bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
-                <span class="text-gray-600 text-sm font-bold">Uang Kembali:</span>
-                <span id="changeAmount" class="text-green-600 font-black text-2xl">Rp 0</span>
-            </div>
-
-            <button onclick="showReceipt()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition flex justify-center items-center gap-2 shadow-sm mt-2">
-                <i class="fa-solid fa-money-bill-wave"></i> LANJUT PEMBAYARAN
-            </button>
-        </div>
             </section>
         </main>
 
@@ -238,12 +208,9 @@
                             <input type="date" id="reportDate" onchange="loadReport()" class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-bold text-gray-700 text-xs">
                             <input type="month" id="reportMonth" onchange="loadReport()" class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-bold text-gray-700 text-xs hidden">
                         </div>
-                        <div class="flex gap-2 w-full sm:w-auto" id="laporan-action-buttons">
-                            <button onclick="exportTransactionsToCSV()" class="flex-1 text-green-700 bg-green-50 hover:bg-green-100 font-bold py-2.5 px-3 rounded-xl border border-green-200 transition text-xs">
-                                <i class="fa-solid fa-file-excel mr-1"></i> Excel
-                            </button>
-                            <button onclick="clearReportData()" class="flex-1 text-red-600 bg-white hover:bg-red-50 font-bold py-2.5 px-3 rounded-xl border border-red-200 transition text-xs">
-                                <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+                                                <div class="flex gap-2 w-full sm:w-auto" id="laporan-action-buttons">
+                            <button onclick="exportTransactionsToCSV()" class="w-full sm:w-auto text-green-700 bg-green-50 hover:bg-green-100 font-bold py-2.5 px-5 rounded-xl border border-green-200 transition shadow-sm text-sm active:scale-95">
+                                <i class="fa-solid fa-file-excel mr-1"></i> Download Excel
                             </button>
                         </div>
                     </div>
@@ -785,6 +752,60 @@
         <span id="toast-msg">Pesan</span>
     </div>
 
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-sm flex flex-col shadow-2xl relative overflow-hidden h-[95vh] md:h-auto">
+            
+            <div class="bg-blue-600 p-4 text-white flex justify-between items-center rounded-t-3xl shadow-sm z-10">
+                <h2 class="font-black text-lg tracking-wide"><i class="fa-solid fa-cash-register mr-2"></i>PEMBAYARAN</h2>
+                <button onclick="closePaymentModal()" class="text-blue-100 hover:text-white text-2xl active:scale-90 transition"><i class="fa-solid fa-circle-xmark"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-5 bg-gray-50">
+                
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 opacity-5 text-gray-900"><i class="fa-solid fa-receipt text-6xl"></i></div>
+                    <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1 relative z-10">TOTAL TAGIHAN</p>
+                    <h3 id="paymentModalTotal" class="text-3xl font-black text-gray-800 tracking-tighter relative z-10">Rp 0</h3>
+                </div>
+
+                <div>
+                    <label class="block text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-2 ml-1">Metode Bayar</label>
+                    <div class="flex gap-2">
+                        <button id="btn-pay-modal-cash" onclick="setModalPaymentMethod('cash')" class="flex-1 py-3 rounded-xl font-bold border-2 border-blue-600 bg-blue-600 text-white text-sm shadow-md transition active:scale-95 flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-money-bill-wave"></i> TUNAI
+                        </button>
+                        <button id="btn-pay-modal-qris" onclick="setModalPaymentMethod('qris')" class="flex-1 py-3 rounded-xl font-bold border-2 border-gray-200 bg-white text-gray-600 text-sm shadow-sm transition active:scale-95 flex justify-center items-center gap-2 hover:border-blue-400">
+                            <i class="fa-solid fa-qrcode"></i> QRIS
+                        </button>
+                    </div>
+                </div>
+
+                <div id="cashInputArea" class="space-y-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <label class="block text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-2">Uang Diterima (Rp)</label>
+                        <input type="number" id="payAmountModal" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-700 font-black text-2xl text-center shadow-inner mb-3">
+                        
+                        <div class="grid grid-cols-3 gap-2" id="quickNominalButtons">
+                            </div>
+                    </div>
+
+                    <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex justify-between items-center shadow-inner">
+                        <span class="text-[11px] font-bold text-orange-800 uppercase tracking-widest">KEMBALIAN</span>
+                        <span id="changeAmountModal" class="text-xl font-black text-orange-600 tracking-tighter">Rp 0</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-100">
+                <button onclick="finalizePayment()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition flex justify-center items-center gap-2 shadow-[0_4px_15px_rgba(34,197,94,0.3)]">
+                    <i class="fa-solid fa-check-circle"></i> PENYELESAIAN
+                </button>
+            </div>
+
+        </div>
+    </div>
+    
     <script>
         // Variabel Global
         let scanMode = '';
@@ -1356,37 +1377,50 @@
             }
         }
         
-        function updateCartUI() {
-            const container = document.getElementById('cartItems');
-            let total = 0, count = 0;
+                function updateCartUI() {
+            const list = document.getElementById('cartItems');
+            if(!list) return;
+            list.innerHTML = "";
+            let total = 0;
+            let count = 0;
+
             if(cart.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p>Belum Ada Belanjaan</p></div>`;
+                list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p>Belum Ada Belanjaan</p></div>`;
             } else {
-                container.innerHTML = "";
                 cart.forEach(item => {
-                    total += (item.price * item.qty); count += item.qty;
-                    const d = document.createElement('div');
-                    d.className = "p-4 bg-white rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center gap-3";
-                    d.innerHTML = `
-                        <div class="flex-1">
-                            <div class="font-bold text-sm text-gray-800 mb-1 leading-snug">${item.name}</div>
-                            <div class="text-blue-600 font-black text-sm">${formatRp(item.price)}</div>
+                    total += (item.price * item.qty);
+                    count += item.qty;
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-2";
+                    div.innerHTML = `
+                        <div class="flex-1 pr-2">
+                            <div class="font-bold text-gray-800 text-sm leading-tight">${item.name}</div>
+                            <div class="text-blue-600 font-black text-xs mt-1">${formatRp(item.price)}</div>
                         </div>
-                        <div class="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-200">
-                            <button onclick="adjQty('${item.id}', -1)" class="w-9 h-9 bg-white text-red-500 rounded-lg font-black shadow-sm hover:bg-red-50 active:scale-95 transition">-</button>
-                            <span class="font-black text-base min-w-[35px] text-center text-gray-800">${item.qty}</span>
-                            <button onclick="adjQty('${item.id}', 1)" class="w-9 h-9 bg-blue-500 text-white rounded-lg font-black shadow-sm hover:bg-blue-600 active:scale-95 transition">+</button>
-                        </div>`;
-                    container.appendChild(d);
+                        <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                            <button onclick="adjQty('${item.id}', -1)" class="w-7 h-7 bg-white rounded shadow-sm text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center">-</button>
+                            <span class="font-black text-gray-800 w-5 text-center text-sm">${item.qty}</span>
+                            <button onclick="adjQty('${item.id}', 1)" class="w-7 h-7 bg-white rounded shadow-sm text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center">+</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
                 });
             }
-            document.getElementById('totalPrice').innerText = formatRp(total);
-            document.getElementById('totalPrice').dataset.total = total;
-            document.getElementById('floatingCartTotal').innerText = formatRp(total);
-            document.getElementById('floatingCartCount').innerText = count;
-            document.getElementById('floatingCartCount').classList.toggle('hidden', count === 0);
-            document.getElementById('cartCountDesktop').innerText = `${count} Barang`;
-            calculateChange();
+
+            const totalEl = document.getElementById('totalPrice');
+            if(totalEl) {
+                totalEl.innerText = formatRp(total);
+                totalEl.dataset.total = total;
+            }
+
+            const floatTotal = document.getElementById('floatingCartTotal');
+            const floatCount = document.getElementById('floatingCartCount');
+            if(floatTotal) floatTotal.innerText = formatRp(total);
+            if(floatCount) {
+                floatCount.innerText = count;
+                if(count > 0) floatCount.classList.remove('hidden');
+                else floatCount.classList.add('hidden');
+            }
         }
 
         function setQuickCash(amount) {
@@ -2290,6 +2324,131 @@
             });
             document.getElementById('asetTotalModal').innerText = formatRp(totalModal);
             document.getElementById('asetTotalJual').innerText = formatRp(totalJual);
+        }
+        let currentModalPaymentMethod = 'cash';
+        let currentTransactionTotal = 0;
+
+        function openPaymentModal() {
+            if (cart.length === 0) return showToast("Keranjang kosong!", true);
+            
+            // Ambil total tagihan dari keranjang
+            currentTransactionTotal = parseInt(document.getElementById('totalPrice').dataset.total || 0);
+            document.getElementById('paymentModalTotal').innerText = formatRp(currentTransactionTotal);
+            
+            // Reset form input
+            document.getElementById('payAmountModal').value = '';
+            document.getElementById('changeAmountModal').innerText = 'Rp 0';
+            setModalPaymentMethod('cash'); // Default selalu Tunai
+            generateQuickNominals(currentTransactionTotal); // Buat saran tombol uang
+            
+            // Tampilkan layar modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+            
+            // Fokus otomatis ke input uang
+            setTimeout(() => { document.getElementById('payAmountModal').focus(); }, 100);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function setModalPaymentMethod(method) {
+            currentModalPaymentMethod = method;
+            const btnCash = document.getElementById('btn-pay-modal-cash');
+            const btnQris = document.getElementById('btn-pay-modal-qris');
+            const cashArea = document.getElementById('cashInputArea');
+            
+            // Ubah warna tombol sesuai pilihan
+            if (method === 'cash') {
+                btnCash.className = "flex-1 py-3 rounded-xl font-bold border-2 border-blue-600 bg-blue-600 text-white text-sm shadow-md transition active:scale-95 flex justify-center items-center gap-2";
+                btnQris.className = "flex-1 py-3 rounded-xl font-bold border-2 border-gray-200 bg-white text-gray-600 text-sm shadow-sm transition active:scale-95 flex justify-center items-center gap-2 hover:border-blue-400";
+                cashArea.classList.remove('hidden'); // Tampilkan input uang kembalian
+            } else {
+                btnQris.className = "flex-1 py-3 rounded-xl font-bold border-2 border-blue-600 bg-blue-600 text-white text-sm shadow-md transition active:scale-95 flex justify-center items-center gap-2";
+                btnCash.className = "flex-1 py-3 rounded-xl font-bold border-2 border-gray-200 bg-white text-gray-600 text-sm shadow-sm transition active:scale-95 flex justify-center items-center gap-2 hover:border-blue-400";
+                cashArea.classList.add('hidden'); // Sembunyikan kembalian kalau pakai QRIS
+                
+                // Jika QRIS, otomatis uang pas
+                document.getElementById('payAmountModal').value = currentTransactionTotal;
+            }
+        }
+
+        // Fungsi membuat tombol saran uang pas (Misal tagihan 12.000, muncul tombol: Pas, 15rb, 20rb, 50rb)
+        function generateQuickNominals(total) {
+            const container = document.getElementById('quickNominalButtons');
+            container.innerHTML = '';
+            
+            // Tombol Uang Pas
+            const btnUangPas = document.createElement('button');
+            btnUangPas.className = "py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 active:scale-95 transition";
+            btnUangPas.innerText = "UANG PAS";
+            btnUangPas.onclick = () => { document.getElementById('payAmountModal').value = total; calculateModalChange(); };
+            container.appendChild(btnUangPas);
+
+            // Logika Saran Nominal Terdekat
+            const nominals = [5000, 10000, 20000, 50000, 100000];
+            let addedCount = 0;
+            
+            // Tambahkan pembulatan puluhan/ratusan ribu terdekat
+            let roundedUp = Math.ceil(total / 10000) * 10000;
+            if(roundedUp > total && roundedUp <= 100000 && !nominals.includes(roundedUp)) {
+                 nominals.push(roundedUp);
+                 nominals.sort((a,b)=>a-b);
+            }
+
+            nominals.forEach(nom => {
+                if (nom > total && addedCount < 2) {
+                    const btn = document.createElement('button');
+                    btn.className = "py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold text-blue-700 active:scale-95 transition";
+                    btn.innerText = (nom / 1000) + "k"; // Tulis 50k, 100k
+                    btn.onclick = () => { document.getElementById('payAmountModal').value = nom; calculateModalChange(); };
+                    container.appendChild(btn);
+                    addedCount++;
+                }
+            });
+        }
+
+        // Menghitung kembalian setiap kali angka diketik
+        document.getElementById('payAmountModal').addEventListener('input', calculateModalChange);
+        function calculateModalChange() {
+            const pay = parseInt(document.getElementById('payAmountModal').value || 0);
+            const change = pay - currentTransactionTotal;
+            const changeDisplay = document.getElementById('changeAmountModal');
+            
+            if (change < 0) {
+                changeDisplay.innerText = "Kurang " + formatRp(Math.abs(change));
+                changeDisplay.className = "text-xl font-black text-red-500 tracking-tighter";
+            } else {
+                changeDisplay.innerText = formatRp(change);
+                changeDisplay.className = "text-xl font-black text-orange-600 tracking-tighter";
+            }
+        }
+
+        // Tombol Penyelesaian (Simpan Transaksi)
+                        function finalizePayment() {
+            const pay = parseInt(document.getElementById('payAmountModal').value || 0);
+            
+            if (currentModalPaymentMethod === 'cash' && pay < currentTransactionTotal) {
+                playErrorBeep();
+                return showToast("Uang pembayaran masih kurang!", true);
+            }
+
+            // Transfer data ke input asli agar dibaca oleh struk
+            let oldPayInput = document.getElementById('payAmount');
+            if(!oldPayInput) {
+                oldPayInput = document.createElement('input');
+                oldPayInput.type = 'hidden';
+                oldPayInput.id = 'payAmount';
+                document.body.appendChild(oldPayInput);
+            }
+            oldPayInput.value = pay; 
+            currentPaymentMethod = currentModalPaymentMethod; 
+            
+            // Tutup layar popup input uang
+            closePaymentModal();
+            
+            // TAMPILKAN LAYAR STRUK DULU (Data akan otomatis tersimpan saat Mas Sahal klik tombol Print/WA/Tutup di struk)
+            showReceipt(); 
         }
        
         function initApp() {
