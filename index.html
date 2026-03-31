@@ -933,57 +933,109 @@
 
         // Fungsi menghitung dan mendistribusikan data ke grafik
                 // Fungsi menghitung dan mendistribusikan data ke grafik
+                // ==========================================
+        // MESIN GRAFIK LINE CHART (VERSI SAPU JAGAT)
+        // ==========================================
         function updateAdvancedLineCharts() {
             const type = document.getElementById('reportType').value;
-            const dateVal = document.getElementById('reportDate').value;
-            const monthVal = document.getElementById('reportMonth').value;
+            const dateVal = document.getElementById('reportDate').value; // Contoh: "2026-03-31"
+            const monthVal = document.getElementById('reportMonth').value; // Contoh: "2026-03"
 
-            // PERBAIKAN: Ambil data langsung dari brankas memori HP (localStorage)
-            let allTx = JSON.parse(localStorage.getItem('transactions') || '[]');
-            
-            // Jaga-jaga kalau datanya pakai nama variabel 'transactions'
-            if (allTx.length === 0 && typeof transactions !== 'undefined') {
+            // 1. CARI DATA TRANSAKSI (Otomatis mendeteksi semua brankas memori)
+            let allTx = [];
+            if (typeof transactions !== 'undefined' && Array.isArray(transactions)) {
                 allTx = transactions;
-            }
-
-            // Filter riwayat transaksi berdasarkan tanggal/bulan
-            let filtered = type === 'daily' ? 
-                allTx.filter(tx => tx.date === dateVal) : 
-                allTx.filter(tx => tx.date.startsWith(monthVal));
-
-            let dataLaba = [], dataTrx = [], labels = [];
-
-            if (type === 'daily') {
-                dataLaba = new Array(24).fill(0);
-                dataTrx = new Array(24).fill(0);
-                labels = ['00:00', '06:00', '12:00', '18:00', '23:59'];
-                
-                filtered.forEach(tx => {
-                    // Pastikan jam ada, kalau tidak anggap jam 12
-                    const hour = tx.time ? parseInt(tx.time.split(':')[0]) : 12;
-                    dataLaba[hour] += (tx.profit || 0);
-                    dataTrx[hour] += 1;
-                });
             } else {
-                const year = parseInt(monthVal.split('-')[0]);
-                const month = parseInt(monthVal.split('-')[1]);
-                const daysInMonth = new Date(year, month, 0).getDate();
-                
-                dataLaba = new Array(daysInMonth).fill(0);
-                dataTrx = new Array(daysInMonth).fill(0);
-                labels = ['Tgl 1', 'Tgl 10', 'Tgl 20', `Tgl ${daysInMonth}`];
-
-                filtered.forEach(tx => {
-                    // Pastikan tanggal ada
-                    if(tx.date) {
-                        const day = parseInt(tx.date.split('-')[2]) - 1;
-                        dataLaba[day] += (tx.profit || 0);
-                        dataTrx[day] += 1;
-                    }
-                });
+                for (let i = 0; i < localStorage.length; i++) {
+                    try {
+                        let d = JSON.parse(localStorage.getItem(localStorage.key(i)));
+                        // Cari array yang punya ciri-ciri keranjang (cart/items) atau total harga
+                        if (Array.isArray(d) && d.length > 0 && (d[0].cart || d[0].items || d[0].date || d[0].total)) {
+                            allTx = d; break;
+                        }
+                    } catch(e){}
+                }
             }
 
-            // Eksekusi gambarnya (Hijau untuk Laba, Nila/Indigo untuk Transaksi)
+            const isDaily = (type === 'daily');
+            let daysInMonth = 31;
+            
+            if (!isDaily) {
+                const parts = monthVal.split('-');
+                daysInMonth = new Date(parts[0], parts[1], 0).getDate(); // Deteksi jumlah hari di bulan itu (28/30/31)
+            }
+
+            let dataLaba = new Array(isDaily ? 24 : daysInMonth).fill(0);
+            let dataTrx = new Array(isDaily ? 24 : daysInMonth).fill(0);
+            let labels = isDaily ? ['00:00', '06:00', '12:00', '18:00', '23:59'] : ['Tgl 1', 'Tgl 10', 'Tgl 20', `Tgl ${daysInMonth}`];
+
+            // 2. PROSES SEMUA TRANSAKSI
+            allTx.forEach(tx => {
+                let isMatch = false;
+                let txDay = 1, txHour = 12;
+
+                // A. Hitung Laba Bersih Transaksi (Otomatis hitung selisih harga jual dan modal)
+                let profit = 0;
+                if (tx.profit !== undefined) profit = Number(tx.profit);
+                else {
+                    let items = tx.cart || tx.items || [];
+                    items.forEach(item => {
+                        let modal = Number(item.buyPrice || item.modal || 0);
+                        let jual = Number(item.price || item.harga || 0);
+                        let qty = Number(item.qty || item.jumlah || 1);
+                        profit += ((jual - modal) * qty);
+                    });
+                }
+
+                // B. Deteksi Jam
+                let dStr = String(tx.date || tx.tanggal || "");
+                let tStr = String(tx.time || tx.waktu || "");
+                if (tStr.includes(':')) txHour = parseInt(tStr.split(':')[0]);
+
+                // C. Deteksi Tanggal Pintar (Apapun formatnya akan dibongkar)
+                let dParts = dStr.split(/[-/]/);
+                if (dParts.length >= 3) {
+                    let y = parseInt(dParts.find(p => p.length === 4) || new Date().getFullYear());
+                    let m = parseInt(dParts[1]); // Asumsi tengah itu bulan
+                    let d = parseInt(dParts[0]); // Asumsi depan itu hari
+                    
+                    if (dParts[0].length === 4) { m = parseInt(dParts[1]); d = parseInt(dParts[2]); } // Jika YYYY-MM-DD
+                    else if (parseInt(dParts[1]) > 12) { m = parseInt(dParts[0]); d = parseInt(dParts[1]); } // Jika MM/DD/YYYY
+
+                    if (isDaily) {
+                        let sy = parseInt(dateVal.split('-')[0]), sm = parseInt(dateVal.split('-')[1]), sd = parseInt(dateVal.split('-')[2]);
+                        if (y == sy && m == sm && d == sd) isMatch = true;
+                    } else {
+                        let sy = parseInt(monthVal.split('-')[0]), sm = parseInt(monthVal.split('-')[1]);
+                        if (y == sy && m == sm) {
+                            isMatch = true;
+                            txDay = d;
+                        }
+                    }
+                } else if (dStr !== "") {
+                    // Fallback aman
+                    if (isDaily && dStr.includes(dateVal)) isMatch = true;
+                    if (!isDaily && dStr.includes(monthVal)) {
+                        isMatch = true;
+                        txDay = parseInt(dStr.match(/\d+/g)?.pop() || 1);
+                    }
+                }
+
+                // D. Masukkan Data ke Grafik
+                if (isMatch) {
+                    let index = isDaily ? txHour : (txDay - 1);
+                    
+                    // Jaga-jaga agar tidak error melampaui batas hari
+                    if (index < 0) index = 0;
+                    if (isDaily && index > 23) index = 23;
+                    if (!isDaily && index >= daysInMonth) index = daysInMonth - 1;
+
+                    dataLaba[index] += profit;
+                    dataTrx[index] += 1;
+                }
+            });
+
+            // 3. Gambar Garisnya!
             drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
             drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
         }
