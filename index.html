@@ -244,6 +244,23 @@
                     </div>
                 </div>
 
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
+                        <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>Tren Laba Bersih</h3>
+                        <p class="text-[10px] text-gray-400 mb-2">Pergerakan laba berdasarkan waktu</p>
+                        <div class="relative h-28 w-full border-b border-gray-200 mt-2">
+                            <svg id="chart-laba-svg" class="w-full h-full overflow-visible" preserveAspectRatio="none"></svg>
+                        </div>
+                        <div id="chart-laba-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-4">
+                        <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-wave-square text-indigo-500 mr-2"></i>Tren Jumlah Transaksi</h3>
+                        <p class="text-[10px] text-gray-400 mb-2">Fluktuasi jumlah nota transaksi</p>
+                        <div class="relative h-28 w-full border-b border-gray-200 mt-2">
+                            <svg id="chart-trx-svg" class="w-full h-full overflow-visible" preserveAspectRatio="none"></svg>
+                        </div>
+                        <div id="chart-trx-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
+                    </div>
                 <div id="laporan-riwayat" class="hidden p-4 w-full max-w-4xl mx-auto animation-fadeIn">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                         <div id="reportList" class="divide-y divide-gray-100"></div>
@@ -783,7 +800,7 @@
                 <div id="cashInputArea" class="space-y-4">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                         <label class="block text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-2">Uang Diterima (Rp)</label>
-                        <input type="number" id="payAmountModal" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-700 font-black text-2xl text-center shadow-inner mb-3">
+                                                <input type="tel" id="payAmountModal" oninput="formatInputUang(this); calculateModalChange();" placeholder="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-blue-700 font-black text-2xl text-center shadow-inner mb-3">
                         
                         <div class="grid grid-cols-3 gap-2" id="quickNominalButtons">
                             </div>
@@ -798,8 +815,9 @@
             </div>
 
             <div class="p-4 bg-white border-t border-gray-100">
-                <button onclick="finalizePayment()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition flex justify-center items-center gap-2 shadow-[0_4px_15px_rgba(34,197,94,0.3)]">
-                    <i class="fa-solid fa-check-circle"></i> PENYELESAIAN
+                            <div class="p-4 bg-white border-t border-gray-100">
+                <button onclick="finalizePayment()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-3 rounded-xl transition flex justify-center items-center shadow-[0_4px_15px_rgba(34,197,94,0.3)]">
+                    <i class="fa-solid fa-check text-4xl"></i>
                 </button>
             </div>
 
@@ -875,6 +893,101 @@
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
         };
 
+        // Fungsi Otomatis Kasih Titik Ribuan Saat Ngetik
+        function formatInputUang(input) {
+            let value = input.value.replace(/[^0-9]/g, '');
+            input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // ==========================================
+        // MESIN PENGGAMBAR LINE CHART (SVG)
+        // ==========================================
+        function drawLineChart(svgId, labelId, dataArray, colorHex, labelsArray) {
+            const svg = document.getElementById(svgId);
+            const labelEl = document.getElementById(labelId);
+            if(!svg || !labelEl) return;
+
+            const maxVal = Math.max(...dataArray, 1); // Hindari bagi nol jika data kosong
+            const width = 100;
+            const height = 100;
+            const stepX = width / (dataArray.length - 1 || 1);
+            
+            let points = "";
+            dataArray.forEach((val, i) => {
+                const x = i * stepX;
+                const y = height - ((val / maxVal) * height);
+                points += `${x},${y} `;
+            });
+
+            // Set kotak gambar
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            // Gambar area bawah berbayang transparan + Garis mulus di atasnya
+            svg.innerHTML = `
+                <polygon points="0,${height} ${points} ${width},${height}" fill="${colorHex}22" />
+                <polyline points="${points}" fill="none" stroke="${colorHex}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            `;
+
+            // Tampilkan teks jam/tanggal di bawah grafik
+            labelEl.innerHTML = labelsArray.map(lbl => `<span>${lbl}</span>`).join('');
+        }
+
+        // Fungsi menghitung dan mendistribusikan data ke grafik
+                // Fungsi menghitung dan mendistribusikan data ke grafik
+        function updateAdvancedLineCharts() {
+            const type = document.getElementById('reportType').value;
+            const dateVal = document.getElementById('reportDate').value;
+            const monthVal = document.getElementById('reportMonth').value;
+
+            // PERBAIKAN: Ambil data langsung dari brankas memori HP (localStorage)
+            let allTx = JSON.parse(localStorage.getItem('transactions') || '[]');
+            
+            // Jaga-jaga kalau datanya pakai nama variabel 'transactions'
+            if (allTx.length === 0 && typeof transactions !== 'undefined') {
+                allTx = transactions;
+            }
+
+            // Filter riwayat transaksi berdasarkan tanggal/bulan
+            let filtered = type === 'daily' ? 
+                allTx.filter(tx => tx.date === dateVal) : 
+                allTx.filter(tx => tx.date.startsWith(monthVal));
+
+            let dataLaba = [], dataTrx = [], labels = [];
+
+            if (type === 'daily') {
+                dataLaba = new Array(24).fill(0);
+                dataTrx = new Array(24).fill(0);
+                labels = ['00:00', '06:00', '12:00', '18:00', '23:59'];
+                
+                filtered.forEach(tx => {
+                    // Pastikan jam ada, kalau tidak anggap jam 12
+                    const hour = tx.time ? parseInt(tx.time.split(':')[0]) : 12;
+                    dataLaba[hour] += (tx.profit || 0);
+                    dataTrx[hour] += 1;
+                });
+            } else {
+                const year = parseInt(monthVal.split('-')[0]);
+                const month = parseInt(monthVal.split('-')[1]);
+                const daysInMonth = new Date(year, month, 0).getDate();
+                
+                dataLaba = new Array(daysInMonth).fill(0);
+                dataTrx = new Array(daysInMonth).fill(0);
+                labels = ['Tgl 1', 'Tgl 10', 'Tgl 20', `Tgl ${daysInMonth}`];
+
+                filtered.forEach(tx => {
+                    // Pastikan tanggal ada
+                    if(tx.date) {
+                        const day = parseInt(tx.date.split('-')[2]) - 1;
+                        dataLaba[day] += (tx.profit || 0);
+                        dataTrx[day] += 1;
+                    }
+                });
+            }
+
+            // Eksekusi gambarnya (Hijau untuk Laba, Nila/Indigo untuk Transaksi)
+            drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
+            drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
+        }
+        
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
@@ -1646,6 +1759,9 @@
                         }
                     });
                 }
+            // Panggil grafik line chart baru
+            updateAdvancedLineCharts();
+               
             });
 
             window.currentTopSales = Object.values(itemStats).sort((a, b) => b.qty - a.qty).slice(0, 5);
@@ -2369,27 +2485,28 @@
                 cashArea.classList.add('hidden'); // Sembunyikan kembalian kalau pakai QRIS
                 
                 // Jika QRIS, otomatis uang pas
-                document.getElementById('payAmountModal').value = currentTransactionTotal;
+                                document.getElementById('payAmountModal').value = currentTransactionTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
             }
         }
 
         // Fungsi membuat tombol saran uang pas (Misal tagihan 12.000, muncul tombol: Pas, 15rb, 20rb, 50rb)
-        function generateQuickNominals(total) {
+                function generateQuickNominals(total) {
             const container = document.getElementById('quickNominalButtons');
             container.innerHTML = '';
             
-            // Tombol Uang Pas
             const btnUangPas = document.createElement('button');
             btnUangPas.className = "py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 active:scale-95 transition";
             btnUangPas.innerText = "UANG PAS";
-            btnUangPas.onclick = () => { document.getElementById('payAmountModal').value = total; calculateModalChange(); };
+            btnUangPas.onclick = () => { 
+                document.getElementById('payAmountModal').value = total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+                calculateModalChange(); 
+            };
             container.appendChild(btnUangPas);
 
-            // Logika Saran Nominal Terdekat
             const nominals = [5000, 10000, 20000, 50000, 100000];
             let addedCount = 0;
             
-            // Tambahkan pembulatan puluhan/ratusan ribu terdekat
             let roundedUp = Math.ceil(total / 10000) * 10000;
             if(roundedUp > total && roundedUp <= 100000 && !nominals.includes(roundedUp)) {
                  nominals.push(roundedUp);
@@ -2400,18 +2517,25 @@
                 if (nom > total && addedCount < 2) {
                     const btn = document.createElement('button');
                     btn.className = "py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold text-blue-700 active:scale-95 transition";
-                    btn.innerText = (nom / 1000) + "k"; // Tulis 50k, 100k
-                    btn.onclick = () => { document.getElementById('payAmountModal').value = nom; calculateModalChange(); };
+                    btn.innerText = (nom / 1000) + "k"; 
+                    btn.onclick = () => { 
+                        document.getElementById('payAmountModal').value = nom.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+                        calculateModalChange(); 
+                    };
                     container.appendChild(btn);
                     addedCount++;
                 }
             });
         }
+        
 
         // Menghitung kembalian setiap kali angka diketik
         document.getElementById('payAmountModal').addEventListener('input', calculateModalChange);
-        function calculateModalChange() {
-            const pay = parseInt(document.getElementById('payAmountModal').value || 0);
+                function calculateModalChange() {
+            // Ambil angka dan buang titiknya sebelum dihitung
+            let rawValue = document.getElementById('payAmountModal').value.replace(/\./g, '');
+            const pay = parseInt(rawValue || 0);
+            
             const change = pay - currentTransactionTotal;
             const changeDisplay = document.getElementById('changeAmountModal');
             
@@ -2425,15 +2549,16 @@
         }
 
         // Tombol Penyelesaian (Simpan Transaksi)
-                        function finalizePayment() {
-            const pay = parseInt(document.getElementById('payAmountModal').value || 0);
+                                        function finalizePayment() {
+            // Ambil angka dan buang titiknya sebelum disimpan
+            let rawValue = document.getElementById('payAmountModal').value.replace(/\./g, '');
+            const pay = parseInt(rawValue || 0);
             
             if (currentModalPaymentMethod === 'cash' && pay < currentTransactionTotal) {
                 playErrorBeep();
                 return showToast("Uang pembayaran masih kurang!", true);
             }
 
-            // Transfer data ke input asli agar dibaca oleh struk
             let oldPayInput = document.getElementById('payAmount');
             if(!oldPayInput) {
                 oldPayInput = document.createElement('input');
@@ -2444,12 +2569,11 @@
             oldPayInput.value = pay; 
             currentPaymentMethod = currentModalPaymentMethod; 
             
-            // Tutup layar popup input uang
             closePaymentModal();
-            
-            // TAMPILKAN LAYAR STRUK DULU (Data akan otomatis tersimpan saat Mas Sahal klik tombol Print/WA/Tutup di struk)
             showReceipt(); 
+            playBeep(); 
         }
+        
        
         function initApp() {
             loadStoreSettings();
