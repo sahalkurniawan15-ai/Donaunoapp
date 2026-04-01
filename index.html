@@ -254,12 +254,238 @@
                     <div class="relative h-32 w-full flex items-end border-b border-gray-200">
                         <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-[1px] px-1 pb-0 pt-5"></div>
                     </div>
-                    <div class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1">
-                        <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <h3 class="font-bold text-gray-800"><i class="fa-solid fa-list-check text-indigo-500 mr-2"></i>Rekap Harian</h3>
+            <p class="text-[10px] text-gray-400">Total omset & laba bersih per tanggal</p>
+        </div>
+        <button onclick="prosesRekapHarian()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all">
+            <i class="fa-solid fa-sync mr-1"></i> Update
+        </button>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase border-b border-gray-100">
+                    <th class="p-3 font-bold">TGL</th>
+                    <th class="p-3 font-bold text-center">NOTA</th>
+                    <th class="p-3 font-bold text-right">OMSET</th>
+                    <th class="p-3 font-bold text-right">LABA</th>
+                </tr>
+            </thead>
+            <tbody id="body-rekap-harian" class="text-xs">
+                <tr><td colspan="4" class="text-center py-8 text-gray-400">Memproses data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <h3 class="font-bold text-gray-800"><i class="fa-solid fa-list-check text-indigo-500 mr-2"></i>Rekap Harian</h3>
+        </div>
+        <button onclick="prosesRekapHarian()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all">
+            <i class="fa-solid fa-sync mr-1"></i> Update Data
+        </button>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase border-b border-gray-100">
+                    <th class="p-3 font-bold">TGL</th>
+                    <th class="p-3 font-bold text-center">NOTA</th>
+                    <th class="p-3 font-bold text-right">OMSET</th>
+                    <th class="p-3 font-bold text-right">LABA</th>
+                </tr>
+            </thead>
+            <tbody id="body-rekap-harian" class="text-xs">
+                <tr><td colspan="4" class="text-center py-8 text-gray-400">Klik "Update Data"</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// 1. MESIN GAMBAR GRAFIK ESTETIK (LANGSING)
+// ==========================================
+function drawLineChart(svgId, labelsId, data, color, labels) {
+    const svgEl = document.getElementById(svgId);
+    const labelsEl = document.getElementById(labelsId);
+    if (!svgEl || !labelsEl || data.length === 0) return;
+
+    let max = Math.max(...data);
+    if (max === 0) max = 1; 
+
+    const width = 400; const height = 100;
+    
+    let points = data.map((val, i) => {
+        let x = (i / (data.length - 1)) * width;
+        let y = height - ((val / max) * (height - 10)); 
+        return `${x},${y}`;
+    });
+
+    let pathData = `M ${points[0]} ` + points.slice(1).map(p => `L ${p}`).join(' ');
+    let fillPathData = `${pathData} L ${width},${height} L 0,${height} Z`;
+
+    svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svgEl.innerHTML = `
+        <defs>
+            <linearGradient id="grad-${svgId}" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
+            </linearGradient>
+        </defs>
+        <path d="${fillPathData}" fill="url(#grad-${svgId})" />
+        <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    `;
+
+    if (labels && labels.length > 0) {
+        labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-medium">${lbl}</span>`).join('');
+    }
+}
+
+// ==========================================
+// 2. MESIN BACA GRAFIK DARI soka_transactions
+// ==========================================
+function updateAdvancedLineCharts() {
+    let targetY = new Date().getFullYear();
+    let targetM = new Date().getMonth() + 1;
+
+    let reportMonthEl = document.getElementById('reportMonth');
+    if (reportMonthEl) {
+        let selectedText = reportMonthEl.options ? reportMonthEl.options[reportMonthEl.selectedIndex].text.toLowerCase() : String(reportMonthEl.value).toLowerCase();
+        let yearMatch = selectedText.match(/\d{4}/);
+        if (yearMatch) targetY = parseInt(yearMatch[0]);
+
+        const namaBulan = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"];
+        let indexBulan = namaBulan.findIndex(b => selectedText.includes(b));
+        if (indexBulan !== -1) targetM = indexBulan + 1;
+        else {
+            let numMatch = selectedText.match(/\d+/g);
+            if (numMatch && numMatch.length >= 2) {
+                let m = numMatch.find(n => n.length <= 2 && parseInt(n) <= 12);
+                if (m) targetM = parseInt(m);
+            }
+        }
+    }
+
+    const daysInMonth = new Date(targetY, targetM, 0).getDate() || 31;
+    let dataLaba = new Array(daysInMonth).fill(0);
+    let dataTrx = new Array(daysInMonth).fill(0);
+    let labels = ['1', '5', '10', '15', '20', '25', String(daysInMonth)];
+
+    let allTx = [];
+    let savedData = localStorage.getItem('soka_transactions');
+    if (savedData) { try { allTx = JSON.parse(savedData); } catch(e){} }
+
+    allTx.forEach(tx => {
+        let dStr = String(tx.date || tx.tanggal || tx.waktu || "").trim();
+        if (!dStr) return;
+        let txY = 0, txM = 0, txD = 0;
+        let parts = dStr.split(/[-/]/);
+        if (parts.length >= 3) {
+            if (parts[0].length === 4) { txY = parseInt(parts[0]); txM = parseInt(parts[1]); txD = parseInt(parts[2]); } 
+            else if (parts[2].length === 4) { txY = parseInt(parts[2]); txM = parseInt(parts[1]); txD = parseInt(parts[0]); }
+        }
+
+        if (txY === targetY && txM === targetM) {
+            let profit = Number(tx.profit || tx.laba || 0);
+            let totalOmzet = Number(tx.total || tx.totalPrice || tx.grandTotal || 0);
+
+            if (profit === 0 && Array.isArray(tx.items)) {
+                tx.items.forEach(item => profit += (Number(item.price||0) - Number(item.buyPrice||tx.modal||0)) * Number(item.qty||1));
+            }
+            if (profit === 0 && totalOmzet > 0) profit = totalOmzet * 0.1;
+
+            let index = txD - 1;
+            if (index < 0) index = 0;
+            if (index >= daysInMonth) index = daysInMonth - 1;
+
+            dataLaba[index] += profit;
+            dataTrx[index] += 1;
+        }
+    });
+
+    drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
+    drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
+}
+
+// ==========================================
+// 3. MESIN BACA TABEL REKAP soka_transactions
+// ==========================================
+function prosesRekapHarian() {
+    let tbody = document.getElementById('body-rekap-harian');
+    if(!tbody) return;
+
+    let allTx = [];
+    let saved = localStorage.getItem('soka_transactions');
+    if (saved) { try { allTx = JSON.parse(saved); } catch(e){} }
+
+    if (allTx.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold">Data transaksi 0</td></tr>';
+        return;
+    }
+
+    let rekap = {};
+    allTx.forEach(tx => {
+        let tglRaw = tx.date || tx.tanggal || tx.waktu || "Tanpa Tgl";
+        let tgl = String(tglRaw).trim().split(' ')[0]; 
+        if (!rekap[tgl]) rekap[tgl] = { nota: 0, omzet: 0, laba: 0 };
+        rekap[tgl].nota += 1;
+
+        let omzet = Number(tx.total || tx.totalPrice || tx.grandTotal || 0);
+        rekap[tgl].omzet += omzet;
+
+        let laba = Number(tx.profit || tx.laba || 0);
+        if (laba === 0 && Array.isArray(tx.items)) {
+            tx.items.forEach(i => laba += (Number(i.price||0) - Number(i.buyPrice||tx.modal||0)) * Number(i.qty||1));
+        }
+        if (laba === 0 && omzet > 0) laba = omzet * 0.1; 
+        rekap[tgl].laba += laba;
+    });
+
+    let sorted = Object.keys(rekap).sort().reverse();
+    let html = ""; let tNota = 0, tOmzet = 0, tLaba = 0;
+
+    sorted.forEach(tgl => {
+        let d = rekap[tgl]; tNota += d.nota; tOmzet += d.omzet; tLaba += d.laba;
+        html += `<tr class="border-b border-gray-50"><td class="p-3 font-medium">${tgl}</td><td class="p-3 text-center text-indigo-600 font-bold">${d.nota}</td><td class="p-3 text-right text-blue-600 font-bold">Rp ${d.omzet.toLocaleString('id-ID')}</td><td class="p-3 text-right text-emerald-600 font-bold">Rp ${d.laba.toLocaleString('id-ID')}</td></tr>`;
+    });
+    html += `<tr class="bg-indigo-50 font-black border-t-2 border-indigo-200"><td class="p-3 text-indigo-900">TOTAL</td><td class="p-3 text-center text-indigo-900">${tNota}</td><td class="p-3 text-right text-blue-800">Rp ${tOmzet.toLocaleString('id-ID')}</td><td class="p-3 text-right text-emerald-800">Rp ${tLaba.toLocaleString('id-ID')}</td></tr>`;
+    tbody.innerHTML = html;
+}
+
+// ==========================================
+// PELATUK OTOMATIS SAAT DIBUKA
+// ==========================================
+setTimeout(() => {
+    updateAdvancedLineCharts();
+    prosesRekapHarian();
+    
+    // Pancing grafik kalau Mas Sahal ganti bulan
+    let reportMonthEl = document.getElementById('reportMonth');
+    if(reportMonthEl) reportMonthEl.addEventListener('change', updateAdvancedLineCharts);
+}, 500);
+
+
+</script>
+
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+        </table>
+    </div>
+</div>
+                
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-[10px] sm:text-xs">
+                        </table>
                     </div>
                 </div>
-            </div>
-
+                      
+                   
                         <div id="chart-trx-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
                     </div>
                 <div id="laporan-riwayat" class="hidden p-4 w-full max-w-4xl mx-auto animation-fadeIn">
@@ -906,118 +1132,7 @@
                 // ==========================================
         // MESIN PENGGAMBAR LINE CHART (BEBAS LAG & RAPI)
         // ==========================================
-        function drawLineChart(svgId, labelId, dataArray, colorHex, labelsArray) {
-            const svg = document.getElementById(svgId);
-            const labelEl = document.getElementById(labelId);
-            if(!svg || !labelEl) return;
-
-            // SOLUSI BOCOR: Kunci bingkai agar garis yang mbleber dipotong rapi
-            svg.classList.remove('overflow-visible');
-            svg.classList.add('overflow-hidden');
-
-            const maxVal = Math.max(...dataArray, 1);
-            const width = 100;
-            const height = 100;
-            const stepX = width / (dataArray.length - 1 || 1);
-            
-            let points = "";
-            dataArray.forEach((val, i) => {
-                const x = i * stepX;
-                const y = height - ((val / maxVal) * height);
-                points += `${x},${y} `;
-            });
-
-            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-            svg.innerHTML = `
-                <polygon points="0,${height} ${points} ${width},${height}" fill="${colorHex}22" />
-                <polyline points="${points}" fill="none" stroke="${colorHex}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-            `;
-
-            labelEl.innerHTML = labelsArray.map(lbl => `<span>${lbl}</span>`).join('');
-        }
-
-        // Fungsi Filter Data (Versi Khusus: Selalu Tampil Bulanan)
-        function updateAdvancedLineCharts() {
-            const type = document.getElementById('reportType').value;
-            const dateVal = document.getElementById('reportDate').value; // Contoh: "2026-04-01"
-            const monthVal = document.getElementById('reportMonth').value; // Contoh: "2026-03"
-
-            // 1. CARI BRANKAS DATA
-            let allTx = [];
-            if (typeof transactionHistory !== 'undefined' && Array.isArray(transactionHistory)) allTx = transactionHistory;
-            else if (typeof transactions !== 'undefined' && Array.isArray(transactions)) allTx = transactions;
-            else allTx = JSON.parse(localStorage.getItem('transactions') || '[]');
-
-            // 2. TENTUKAN TAHUN DAN BULAN TARGET (Paksa selalu ambil format sebulan penuh)
-            let targetYear = 0, targetMonth = 0;
-            
-            if (type === 'daily') {
-                // Jika sedang di mode Harian, ambil bulan dari tanggal yang dipilih
-                const parts = dateVal.split('-');
-                targetYear = parseInt(parts[0]);
-                targetMonth = parseInt(parts[1]);
-            } else {
-                // Jika sedang di mode Bulanan, ambil dari bulan yang dipilih
-                const parts = monthVal.split('-');
-                targetYear = parseInt(parts[0]);
-                targetMonth = parseInt(parts[1]);
-            }
-
-            // Hitung ada berapa hari di bulan tersebut (apakah 28, 29, 30, atau 31)
-            const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
-
-            let dataLaba = new Array(daysInMonth).fill(0);
-            let dataTrx = new Array(daysInMonth).fill(0);
-            
-            // Buat label keterangan di bawah grafik
-            let labels = ['1', '5', '10', '15', '20', '25', String(daysInMonth)];
-
-            // 3. BONGKAR DATA TRANSAKSI
-            allTx.forEach(tx => {
-                let dStr = String(tx.date || tx.tanggal || "");
-                if(!dStr) return;
-
-                // Bongkar format tanggal (Bisa baca 2026-04-01 atau 01/04/2026)
-                let parts = dStr.split(/[-/]/);
-                let txY = 0, txM = 0, txD = 0;
-                
-                if (parts.length >= 3) {
-                    if (parts[0].length === 4) { 
-                        txY = parseInt(parts[0]); txM = parseInt(parts[1]); txD = parseInt(parts[2]); 
-                    } else if (parts[2].length === 4) { 
-                        txY = parseInt(parts[2]); txM = parseInt(parts[1]); txD = parseInt(parts[0]); 
-                    }
-                }
-
-                // COCOKKAN HANYA TAHUN DAN BULANNYA SAJA
-                if (txY === targetYear && txM === targetMonth) {
-                    
-                    // Hitung Laba
-                    let profit = Number(tx.profit || 0);
-                    if (profit === 0 && Array.isArray(tx.cart)) {
-                        tx.cart.forEach(item => {
-                            let modal = Number(item.buyPrice || item.modal || 0);
-                            let jual = Number(item.price || item.harga || 0);
-                            profit += ((jual - modal) * Number(item.qty || 1));
-                        });
-                    }
-
-                    // Tentukan tanggal berapa transaksi ini terjadi (Tgl 1 masuk ke index 0)
-                    let index = txD - 1;
-                    if (index < 0) index = 0;
-                    if (index >= daysInMonth) index = daysInMonth - 1;
-
-                    // Masukkan angka ke koordinat grafik
-                    dataLaba[index] += profit;
-                    dataTrx[index] += 1;
-                }
-            });
-
-            // 4. PERINTAHKAN GAMBAR!
-            drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
-            drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
-        }
-    
+        
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
@@ -1037,6 +1152,7 @@
                 osc.start(); osc.stop(ctx.currentTime + 0.1);
             } catch(e) {}
         }
+
 
         function playErrorBeep() {
             try {
@@ -1168,6 +1284,7 @@
             const s = now.getSeconds().toString().padStart(2, '0');
             return `INV-${h}${m}${s}`;
         }
+
 
         function loadMasterData() {
             const saved = localStorage.getItem('soka_master_products');
@@ -2626,7 +2743,8 @@
         if (document.readyState === "complete" || document.readyState === "interactive") { 
             setTimeout(initApp, 100); 
         }
-        
-    </script>
-</body>
+
+ 
+    </script> 
+    </body>
 </html>
