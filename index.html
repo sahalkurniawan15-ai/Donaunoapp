@@ -212,7 +212,7 @@
                             <button onclick="exportTransactionsToCSV()" class="w-full sm:w-auto text-green-700 bg-green-50 hover:bg-green-100 font-bold py-2.5 px-5 rounded-xl border border-green-200 transition shadow-sm text-sm active:scale-95">
                                 <i class="fa-solid fa-file-excel mr-1"></i> Download Excel
                             </button>
-                        </div>
+                            </div
                     </div>
                 </div>
 
@@ -229,41 +229,42 @@
                         <div class="bg-indigo-600 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
                             <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">TRANSAKSI</p>
                             <h3 id="reportTotalTx" class="text-sm sm:text-2xl font-black truncate">0 Nota</h3>
-                        </div>
+                  </div>
+                </div> <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
+                    <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>Tren Laba Bersih</h3>
+                    <p class="text-[10px] text-gray-400 mb-2">Pergerakan laba berdasarkan waktu</p>
+                    <div class="relative h-28 w-full border-b border-gray-200 mt-2">
+                        <svg id="chart-laba-svg" class="w-full h-full overflow-hidden" preserveAspectRatio="none"></svg>
                     </div>
+                    <div id="chart-laba-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
+                </div> 
 
-                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
-                        <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-simple text-blue-500 mr-2"></i>Analisis Jam Sibuk</h3>
-                        <p class="text-[10px] text-gray-400 mb-4">Grafik frekuensi transaksi berdasarkan jam</p>
-                        <div class="relative h-32 w-full flex items-end border-b border-gray-200">
-                            <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-[1px] px-1 pb-0 pt-5"></div>
-                        </div>
-                        <div class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1">
-                            <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>
-                        </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-4">
+                    <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-wave-square text-indigo-500 mr-2"></i>Tren Jumlah Transaksi</h3>
+                    <p class="text-[10px] text-gray-400 mb-2">Fluktuasi jumlah nota transaksi</p>
+                    <div class="relative h-28 w-full border-b border-gray-200 mt-2">
+                        <svg id="chart-trx-svg" class="w-full h-full overflow-hidden" preserveAspectRatio="none"></svg>
                     </div>
+                    <div id="chart-trx-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
                 </div>
 
-<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
-                        <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>Tren Laba Bersih</h3>
-                        <p class="text-[10px] text-gray-400 mb-2">Pergerakan laba berdasarkan waktu</p>
-                        <div class="relative h-28 w-full border-b border-gray-200 mt-2">
-                            <svg id="chart-laba-svg" class="w-full h-full overflow-visible" preserveAspectRatio="none"></svg>
-                        </div>
-                        <div id="chart-laba-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
+                    <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-chart-simple text-blue-500 mr-2"></i>Analisis Jam Sibuk</h3>
+                    <p class="text-[10px] text-gray-400 mb-4">Grafik frekuensi transaksi berdasarkan jam</p>
+                    <div class="relative h-32 w-full flex items-end border-b border-gray-200">
+                        <div id="chart-bars" class="w-full flex justify-between h-full items-end gap-[1px] px-1 pb-0 pt-5"></div>
                     </div>
+                    <div class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1">
+                        <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-4">
-                        <h3 class="font-bold text-gray-800 mb-2"><i class="fa-solid fa-wave-square text-indigo-500 mr-2"></i>Tren Jumlah Transaksi</h3>
-                        <p class="text-[10px] text-gray-400 mb-2">Fluktuasi jumlah nota transaksi</p>
-                        <div class="relative h-28 w-full border-b border-gray-200 mt-2">
-                            <svg id="chart-trx-svg" class="w-full h-full overflow-visible" preserveAspectRatio="none"></svg>
-                        </div>
                         <div id="chart-trx-labels" class="flex justify-between text-[8px] text-gray-400 mt-2 font-bold px-1"></div>
                     </div>
                 <div id="laporan-riwayat" class="hidden p-4 w-full max-w-4xl mx-auto animation-fadeIn">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div id="reportList" class="divide-y divide-gray-100"></div>
+                        <div id="reportList" class="divide-y divide-gray-100"></div>                    
                     </div>
                 </div>
 
@@ -935,64 +936,62 @@
             labelEl.innerHTML = labelsArray.map(lbl => `<span>${lbl}</span>`).join('');
         }
 
-        // Fungsi Filter Data (Versi Ngebut)
+        // Fungsi Filter Data (Versi Khusus: Selalu Tampil Bulanan)
         function updateAdvancedLineCharts() {
             const type = document.getElementById('reportType').value;
-            const dateVal = document.getElementById('reportDate').value; 
-            const monthVal = document.getElementById('reportMonth').value; 
+            const dateVal = document.getElementById('reportDate').value; // Contoh: "2026-04-01"
+            const monthVal = document.getElementById('reportMonth').value; // Contoh: "2026-03"
 
-            // SOLUSI LAG: Langsung tembak ke brankas "transactions", jangan geledah memori lain
+            // 1. CARI BRANKAS DATA
             let allTx = [];
-            if (typeof transactions !== 'undefined' && Array.isArray(transactions)) {
-                allTx = transactions;
-            } else {
-                let saved = localStorage.getItem('transactions');
-                if (saved) allTx = JSON.parse(saved);
-            }
+            if (typeof transactionHistory !== 'undefined' && Array.isArray(transactionHistory)) allTx = transactionHistory;
+            else if (typeof transactions !== 'undefined' && Array.isArray(transactions)) allTx = transactions;
+            else allTx = JSON.parse(localStorage.getItem('transactions') || '[]');
 
-            const isDaily = (type === 'daily');
-            let daysInMonth = 31;
+            // 2. TENTUKAN TAHUN DAN BULAN TARGET (Paksa selalu ambil format sebulan penuh)
+            let targetYear = 0, targetMonth = 0;
             
-            if (!isDaily) {
+            if (type === 'daily') {
+                // Jika sedang di mode Harian, ambil bulan dari tanggal yang dipilih
+                const parts = dateVal.split('-');
+                targetYear = parseInt(parts[0]);
+                targetMonth = parseInt(parts[1]);
+            } else {
+                // Jika sedang di mode Bulanan, ambil dari bulan yang dipilih
                 const parts = monthVal.split('-');
-                daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+                targetYear = parseInt(parts[0]);
+                targetMonth = parseInt(parts[1]);
             }
 
-            let dataLaba = new Array(isDaily ? 24 : daysInMonth).fill(0);
-            let dataTrx = new Array(isDaily ? 24 : daysInMonth).fill(0);
-            let labels = isDaily ? ['00:00', '06:00', '12:00', '18:00', '23:59'] : ['Tgl 1', 'Tgl 10', 'Tgl 20', `Tgl ${daysInMonth}`];
+            // Hitung ada berapa hari di bulan tersebut (apakah 28, 29, 30, atau 31)
+            const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
 
+            let dataLaba = new Array(daysInMonth).fill(0);
+            let dataTrx = new Array(daysInMonth).fill(0);
+            
+            // Buat label keterangan di bawah grafik
+            let labels = ['1', '5', '10', '15', '20', '25', String(daysInMonth)];
+
+            // 3. BONGKAR DATA TRANSAKSI
             allTx.forEach(tx => {
                 let dStr = String(tx.date || tx.tanggal || "");
-                if(!dStr) return; 
+                if(!dStr) return;
 
-                let isMatch = false;
-                let txDay = 1, txHour = 12;
-
-                // Pencocokan Tanggal (Ringan & Cepat)
-                if (isDaily) {
-                    let dParts = dateVal.split('-');
-                    let altDate1 = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
-                    let altDate2 = `${parseInt(dParts[2])}/${parseInt(dParts[1])}/${dParts[0]}`;
-                    if (dStr === dateVal || dStr === altDate1 || dStr === altDate2) isMatch = true;
-                } else {
-                    let mParts = monthVal.split('-'); 
-                    if (dStr.startsWith(monthVal)) {
-                        isMatch = true;
-                        txDay = parseInt(dStr.split('-')[2]);
-                    } else if (dStr.includes('/')) {
-                        let p = dStr.split('/');
-                        if (parseInt(p[1]) === parseInt(mParts[1]) && parseInt(p[2]) === parseInt(mParts[0])) {
-                            isMatch = true;
-                            txDay = parseInt(p[0]);
-                        }
+                // Bongkar format tanggal (Bisa baca 2026-04-01 atau 01/04/2026)
+                let parts = dStr.split(/[-/]/);
+                let txY = 0, txM = 0, txD = 0;
+                
+                if (parts.length >= 3) {
+                    if (parts[0].length === 4) { 
+                        txY = parseInt(parts[0]); txM = parseInt(parts[1]); txD = parseInt(parts[2]); 
+                    } else if (parts[2].length === 4) { 
+                        txY = parseInt(parts[2]); txM = parseInt(parts[1]); txD = parseInt(parts[0]); 
                     }
                 }
 
-                if (isMatch) {
-                    let tStr = String(tx.time || tx.waktu || "");
-                    if (tStr.includes(':')) txHour = parseInt(tStr.split(':')[0]);
-
+                // COCOKKAN HANYA TAHUN DAN BULANNYA SAJA
+                if (txY === targetYear && txM === targetMonth) {
+                    
                     // Hitung Laba
                     let profit = Number(tx.profit || 0);
                     if (profit === 0 && Array.isArray(tx.cart)) {
@@ -1003,22 +1002,22 @@
                         });
                     }
 
-                    // Tentukan Titik Koordinat
-                    let index = isDaily ? txHour : (txDay - 1);
+                    // Tentukan tanggal berapa transaksi ini terjadi (Tgl 1 masuk ke index 0)
+                    let index = txD - 1;
                     if (index < 0) index = 0;
-                    if (isDaily && index > 23) index = 23;
-                    if (!isDaily && index >= daysInMonth) index = daysInMonth - 1;
+                    if (index >= daysInMonth) index = daysInMonth - 1;
 
+                    // Masukkan angka ke koordinat grafik
                     dataLaba[index] += profit;
                     dataTrx[index] += 1;
                 }
             });
 
+            // 4. PERINTAHKAN GAMBAR!
             drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
             drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
         }
-
-        
+    
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
