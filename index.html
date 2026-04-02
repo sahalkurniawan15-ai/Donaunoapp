@@ -1832,7 +1832,7 @@
             loadReport();
         }
         
-        function renderHourlyChart(transactions) {
+                function renderHourlyChart(transactions) {
             const chartContainer = document.getElementById('chart-bars');
             if(!chartContainer) return;
             
@@ -1850,26 +1850,24 @@
             let barsHtml = "";
             for(let i=0; i<24; i++) {
                 let percentage = (hoursCount[i] / maxCount) * 100;
+                // Label angka di atas tiang kalau ada transaksi
                 let numLabel = hoursCount[i] > 0 ? `<div class="absolute -top-4 text-[9px] sm:text-[10px] font-black text-blue-600 w-full text-center">${hoursCount[i]}</div>` : '';
                 let h = percentage > 0 ? percentage : 2; 
                 let bgClass = hoursCount[i] > 0 ? "bg-blue-500 shadow-sm" : "bg-gray-200 opacity-50";
 
+                // Tiang grafik beserta label jam (00-23) yang nempel di bawahnya
                 barsHtml += `
                     <div class="relative flex-1 flex flex-col justify-end items-center h-full group" title="Jam ${i.toString().padStart(2, '0')}:00 - ${hoursCount[i]} Transaksi">
                         ${numLabel}
                         <div class="w-[80%] max-w-[16px] ${bgClass} rounded-t-sm transition-all duration-500 hover:bg-orange-500 cursor-pointer" style="height: ${h}%;"></div>
+                        <span class="text-[7px] sm:text-[9px] text-gray-400 mt-1 font-bold">${i.toString().padStart(2, '0')}</span>
                     </div>
                 `;
             }
 
+            // Pasang ke dalam HTML
             chartContainer.className = "w-full flex justify-between h-full items-end gap-[1px] sm:gap-1 px-1 pb-0 pt-5";
             chartContainer.innerHTML = barsHtml;
-
-            const labelContainer = chartContainer.parentElement.nextElementSibling;
-            if(labelContainer) {
-                labelContainer.className = "flex justify-between text-[8px] sm:text-[10px] text-gray-400 mt-2 font-bold px-1";
-                labelContainer.innerHTML = `<span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>`;
-            }
         }
 
                 function loadReport() {
