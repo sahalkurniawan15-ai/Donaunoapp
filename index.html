@@ -1701,6 +1701,26 @@
             }
             updateCartUI();
         }
+        function setCustomQty(id, inputElement) {
+            let newQty = parseInt(inputElement.value);
+            
+            // Validasi: Jika dikosongkan atau huruf, kembalikan ke 1
+            if (isNaN(newQty) || newQty < 0) {
+                newQty = 1;
+            }
+
+            const itemIndex = cart.findIndex(i => String(i.id) === String(id));
+            if (itemIndex !== -1) {
+                if (newQty === 0) {
+                    // Jika diketik angka 0, langsung hapus barang dari keranjang
+                    cart.splice(itemIndex, 1);
+                } else {
+                    // Update dengan jumlah ketikan baru
+                    cart[itemIndex].qty = newQty;
+                }
+            }
+            updateCartUI(); // Refresh tampilan dan total harga
+        }
         
         function updateItemPrice(id, inputElement) {
             const newPrice = parseInt(inputElement.value);
@@ -1715,7 +1735,7 @@
             }
         }
         
-                function updateCartUI() {
+                        function updateCartUI() {
             const list = document.getElementById('cartItems');
             if(!list) return;
             list.innerHTML = "";
@@ -1723,13 +1743,15 @@
             let count = 0;
 
             if(cart.length === 0) {
-                list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p>Belum Ada Belanjaan</p></div>`;
+                list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p class="font-medium text-lg">Keranjang Masih Kosong</p></div>`;
             } else {
                 cart.forEach(item => {
                     total += (item.price * item.qty);
                     count += item.qty;
                     const div = document.createElement('div');
                     div.className = "flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-2";
+                    
+                    // PENYUSUNAN HTML KERANJANG
                     div.innerHTML = `
                         <div class="flex-1 pr-2">
                             <div class="font-bold text-gray-800 text-sm leading-tight">${item.name}</div>
@@ -1737,7 +1759,9 @@
                         </div>
                         <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
                             <button onclick="adjQty('${item.id}', -1)" class="w-7 h-7 bg-white rounded shadow-sm text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center">-</button>
-                            <span class="font-black text-gray-800 w-5 text-center text-sm">${item.qty}</span>
+                            
+                            <input type="number" value="${item.qty}" onchange="setCustomQty('${item.id}', this)" onfocus="this.select()" class="w-10 bg-transparent text-center font-black text-gray-800 text-sm focus:outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors">
+                            
                             <button onclick="adjQty('${item.id}', 1)" class="w-7 h-7 bg-white rounded shadow-sm text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center">+</button>
                         </div>
                     `;
@@ -1916,7 +1940,7 @@
 
             if(!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
             if(actionType !== 'image') { closeReceipt(); }
-        }
+        }        
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
             if(type === 'daily') { document.getElementById('reportDate').classList.remove('hidden'); document.getElementById('reportMonth').classList.add('hidden'); } 
@@ -2313,7 +2337,7 @@
         }
 
         // CARI fungsi processTransaction(actionType) dan TIMPA isinya dengan ini:
-        function processTransaction(actionType) {
+function processTransaction(actionType) {
             let textReceipt = "";
             if(!isReprintMode) {
                 const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
@@ -2375,7 +2399,7 @@
             if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
             closeReceipt(); 
         }                
-
+        
         // ================= SISTEM BUKU HUTANG (KASBON) =================
         function loadDebtsData() { const saved = localStorage.getItem('soka_debts'); if (saved) { debtsData = JSON.parse(saved); } }
         function saveDebtsData() { localStorage.setItem('soka_debts', JSON.stringify(debtsData)); }
