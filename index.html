@@ -7,30 +7,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* Pengaturan Khusus Printer Thermal 58mm */
+        /* ==========================================
+           PENGATURAN KHUSUS PRINTER THERMAL & STRUK
+           ========================================== */
+        .font-receipt { 
+            font-family: 'Courier New', Courier, monospace; 
+            line-height: 1.2;
+        }
+
+        .dashed-line {
+            border-top: 1px dashed #ccc;
+            margin: 8px 0;
+        }
+
         @media print {
-            @page { margin: 0; size: 58mm auto; }
-            body { background-color: white; margin: 0; padding: 0; }
+            @page { 
+                /* Mengatur ukuran kertas dan menghilangkan margin bawaan browser */
+                size: 58mm auto; 
+                margin: 0mm !important; 
+            }
+            
+            body { 
+                background-color: white; 
+                margin: 0; 
+                padding: 0; 
+            }
+            
+            /* Sembunyikan SEMUA elemen di layar aplikasi */
             body * { visibility: hidden; }
+            
+            /* Tampilkan HANYA area struk */
             #receipt-area, #receipt-area * { visibility: visible; }
+            
             #receipt-area {
                 position: absolute; 
                 left: 0; 
                 top: 0;
-                width: 58mm;
-                max-width: 58mm;
+                width: var(--paper-width, 58mm); /* Lebar fleksibel 58mm atau 80mm */
+                max-width: var(--paper-width, 58mm);
                 margin: 0;
-                padding: 2mm; /* Sedikit jarak agar tidak terpotong tepi */
+                padding: 2mm; /* Sedikit jarak aman dari tepi kertas */
                 background: white;
                 color: black;
+                font-family: 'Courier New', Courier, monospace;
             }
+            
             .no-print { display: none !important; }
-            /* Menyembunyikan elemen shadow/modal saat print */
-            #receiptModal { background: transparent !important; box-shadow: none !important; }
+            
+            /* Hilangkan efek gelap (backdrop) dari modal saat nge-print */
+            #receiptModal { 
+                background: transparent !important; 
+                box-shadow: none !important; 
+            }
+            
+            /* Garis putus-putus yang tajam untuk struk cetak */
+            .dashed-line {
+                border-top: 1px dashed black !important;
+                margin: 2mm 0;
+            }
         }
-
-        .font-receipt { font-family: 'Courier New', Courier, monospace; }
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; margin: 0; 
@@ -435,9 +472,21 @@
                             <input type="text" id="set-store-address" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
                         </div>
                         <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Nomor Kontak / WA</label>
+                            <input type="text" id="set-store-phone" placeholder="Contoh: 0822-2022-0414" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
+                        </div>
+                                                <div>
                             <label class="block text-gray-600 text-xs font-bold mb-1">Pesan Penutup (Footer)</label>
                             <input type="text" id="set-store-footer" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
                         </div>
+                        
+                        <div>
+                            <label class="block text-gray-600 text-xs font-bold mb-1">Ukuran Kertas Printer</label>
+                            <select id="set-paper-size" class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-bold bg-white">
+                                <option value="58mm">Thermal 58mm (Kecil)</option>
+                                <option value="80mm">Thermal 80mm (Besar)</option>
+                            </select>
+                        </div>  
                         <button onclick="saveStoreSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition">
                             <i class="fa-solid fa-save mr-2"></i>Simpan Pengaturan Struk
                         </button>
@@ -613,9 +662,11 @@
             
             <div class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
                 <div id="receipt-area" class="font-receipt text-xs text-black w-full max-w-[58mm] bg-white p-4 shadow-md">
-                    <div class="text-center font-bold text-sm mb-1 uppercase" id="print-store-name">SOKA CELLULER</div>
-                    <div class="text-center mb-2" id="print-store-address">Sembako & Konter Pulsa</div>
-                    <div class="border-t border-dashed border-gray-500 my-1"></div>
+                        <div class="text-center">
+        <div class="font-black text-base uppercase" id="print-store-name">SOKA CELLULER</div>
+        <div class="text-[10px] leading-tight" id="print-store-address">Konter pulsa, agen keuangan & sembako</div>
+        <div class="text-[10px] font-bold mt-0.5" id="print-store-phone"></div>
+    </div>
                     <div class="flex justify-between text-[10px]">
                         <span>TRX: <span id="receiptInvoice">INV-000000</span></span>
                     </div>
@@ -643,12 +694,15 @@
                 <button id="btn-save-tx" onclick="processTransaction('save_only')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition active:scale-95">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Transaksi Saja
                 </button>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="processTransaction('printer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
-                        <i class="fa-solid fa-print mr-2"></i> Cetak Struk
+                                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="processTransaction('printer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-print text-lg"></i> Cetak
                     </button>
-                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition active:scale-95">
-                        <i class="fa-brands fa-whatsapp mr-2 text-lg"></i> Kirim WA
+                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> Teks WA
+                    </button>
+                    <button onclick="processTransaction('image')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-image text-lg"></i> Gambar
                     </button>
                 </div>
             </div>
@@ -1201,26 +1255,46 @@
             showToast("Password berhasil diubah!");
         }
 
-        function loadStoreSettings() {
+                function loadStoreSettings() {
             const saved = localStorage.getItem('soka_store_settings');
             if(saved) { storeSettings = JSON.parse(saved); }
             
-            document.getElementById('set-store-name').value = storeSettings.name;
-            document.getElementById('set-store-address').value = storeSettings.address;
-            document.getElementById('set-store-footer').value = storeSettings.footer;
+            document.getElementById('set-store-name').value = storeSettings.name || 'SOKA CELLULER';
+            document.getElementById('set-store-address').value = storeSettings.address || '-';
+            document.getElementById('set-store-phone').value = storeSettings.phone || ''; // Memuat No HP
+            document.getElementById('set-store-footer').value = storeSettings.footer || 'Terima Kasih';
+            
+            const paperSize = storeSettings.paperSize || '58mm';
+            const paperSelect = document.getElementById('set-paper-size');
+            if(paperSelect) paperSelect.value = paperSize;
+            
+            document.documentElement.style.setProperty('--paper-width', paperSize);
+            const receiptArea = document.getElementById('receipt-area');
+            if(receiptArea) { receiptArea.style.maxWidth = paperSize; }
 
-            document.getElementById('header-store-name').innerText = storeSettings.name;
+            document.getElementById('header-store-name').innerText = storeSettings.name || 'SOKA CELLULER';
+            
+            // Memasukkan No HP ke Struk jika ada isinya
+            const phoneEl = document.getElementById('print-store-phone');
+            if (phoneEl) {
+                phoneEl.innerText = storeSettings.phone ? `WA: ${storeSettings.phone}` : '';
+            }
         }
 
         function saveStoreSettings() {
             storeSettings.name = document.getElementById('set-store-name').value || 'SOKA CELLULER';
             storeSettings.address = document.getElementById('set-store-address').value || '-';
+            storeSettings.phone = document.getElementById('set-store-phone').value || ''; // Menyimpan No HP
             storeSettings.footer = document.getElementById('set-store-footer').value || 'Terima Kasih';
             
+            const paperSelect = document.getElementById('set-paper-size');
+            storeSettings.paperSize = paperSelect ? paperSelect.value : '58mm';
+            
             localStorage.setItem('soka_store_settings', JSON.stringify(storeSettings));
-            document.getElementById('header-store-name').innerText = storeSettings.name;
-            showToast("Pengaturan struk disimpan!");
+            loadStoreSettings(); 
+            showToast("Pengaturan struk & printer disimpan!");
         }
+
 
         // ================= SISTEM BACKUP & RESTORE =================
         function backupData() {
@@ -1752,10 +1826,12 @@
         
         function closeReceipt() { document.getElementById('receiptModal').classList.add('hidden'); }
         
-        function generateRawTextReceipt(invoice, itemsList, total, pay, change, dateStr, timeStr) {
-            let text = `${storeSettings.name}\n${storeSettings.address}\n--------------------------------\n`;
+                function generateRawTextReceipt(invoice, itemsList, total, pay, change, dateStr, timeStr) {
+            let text = `${storeSettings.name}\n${storeSettings.address}\n`;
+            if (storeSettings.phone) { text += `WA: ${storeSettings.phone}\n`; }
+            text += `--------------------------------\n`;
             text += `TRX : ${invoice}\n`;
-            text += `Tgl : ${dateStr} ${timeStr}\n--------------------------------\n`;
+            // ... (biarkan sisa kode di bawahnya tetap sama)
             itemsList.forEach(item => {
                 text += `${item.name}\n`;
                 let qtyPrice = `${item.qty}x ${item.price.toLocaleString('id-ID')}`;
@@ -1808,23 +1884,39 @@
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-            if (actionType === 'printer') {
+          if (actionType === 'printer') {
                 if (navigator.share) {
-                    navigator.share({
-                        title: 'Struk Soka Celluler',
-                        text: textReceipt
-                    }).catch((error) => console.log('Batal memilih printer', error));
+                    navigator.share({ title: 'Struk', text: textReceipt }).catch((error) => console.log('Batal', error));
                 } else {
                     alert("Maaf, browser HP kamu tidak mendukung fitur pilih aplikasi printer.");
                 }
             } else if (actionType === 'whatsapp') { 
                 window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
+            } else if (actionType === 'image') {
+                // JURUS BARU: Menyimpan struk sebagai gambar
+                const receiptEl = document.getElementById('receipt-area');
+                
+                // Beri jeda sedikit agar CSS struk termuat sempurna sebelum difoto
+                setTimeout(() => {
+                    html2canvas(receiptEl, { 
+                        scale: 3, // Skala 3x lipat agar gambar tidak pecah saat di-zoom
+                        backgroundColor: '#ffffff' // Pastikan background putih
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        const inv = isReprintMode ? (reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`) : document.getElementById('receiptInvoice').innerText;
+                        
+                        link.download = `Struk_${inv}.png`;
+                        link.href = imgData;
+                        link.click();
+                        showToast("Struk gambar berhasil diunduh!");
+                    });
+                }, 100);
             }
 
-            if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
-            closeReceipt(); 
+            if(!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
+            if(actionType !== 'image') { closeReceipt(); }
         }
-
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
             if(type === 'daily') { document.getElementById('reportDate').classList.remove('hidden'); document.getElementById('reportMonth').classList.add('hidden'); } 
