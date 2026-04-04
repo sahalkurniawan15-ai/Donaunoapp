@@ -991,7 +991,7 @@
             input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
-                                    function drawBarChart(svgId, labelsId, data, color, labels) {
+                  function drawBarChart(svgId, labelsId, data, color, labels) {
             const svgEl = document.getElementById(svgId);
             const labelsEl = document.getElementById(labelsId);
             if (!svgEl || !labelsEl || data.length === 0) return;
@@ -999,31 +999,27 @@
             let max = Math.max(...data);
             if (max === 0) max = 1; 
 
-            const width = 400; const height = 100;
+            const width = 400; 
+            const height = 120; // Tinggi grafik ditambah sedikit agar angka vertikalnya muat
             const barWidth = (width / data.length) - 2; 
-            
-            // FUNGSI PINTAR PEMBULATAN ANGKA (84.664 -> 85k)
-            const formatSingkat = (num) => {
-                if (num === 0) return ''; // Kosongkan jika 0 agar bersih
-                if (num >= 1000000) return (num / 1000000).toFixed(1).replace('.0', '') + 'M'; // Format Juta
-                if (num >= 1000) return Math.round(num / 1000) + 'k'; // Format Ribu dibulatkan
-                return num; // Angka di bawah 1000
-            };
 
             let rectsHtml = data.map((val, i) => {
                 let x = i * (width / data.length) + 1; 
-                // Kurangi batas tinggi (height - 25) agar ada ruang kosong di atas balok untuk teks
-                let barHeight = (val / max) * (height - 25); 
+                // Kurangi tinggi balok agar ada ruang luas di atasnya untuk angka konkret
+                let barHeight = (val / max) * (height - 40); 
                 if (barHeight < 2 && val > 0) barHeight = 2; 
                 let y = height - barHeight;
                 
-                let teksAngka = formatSingkat(val);
-                let textX = x + (barWidth / 2);
-                let textY = y - 4; // Posisi teks sedikit di atas balok
+                // Murni angka pasti dengan titik pemisah ribuan (contoh: 84.664)
+                let teksAngka = val === 0 ? '' : val.toLocaleString('id-ID'); 
                 
+                let textX = x + (barWidth / 2);
+                let textY = y - 3; 
+                
+                // Angka diputar -90 derajat agar berdiri tegak menjulang ke atas (ramping)
                 return `
                     <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="2" class="hover:opacity-75 transition-opacity" />
-                    <text x="${textX}" y="${textY}" font-size="8" fill="#6b7280" font-weight="900" text-anchor="middle">${teksAngka}</text>
+                    <text x="${textX}" y="${textY}" font-size="7" fill="#6b7280" font-weight="bold" transform="rotate(-90 ${textX} ${textY})" text-anchor="start" dy="0.3em">${teksAngka}</text>
                 `;
             }).join('');
 
@@ -1034,6 +1030,7 @@
                 labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-bold text-[9px] flex justify-center" style="width: ${100/labels.length}%">${lbl}</span>`).join('');
             }
         }
+
                function updateAdvancedLineCharts() {
             let targetY = new Date().getFullYear();
             let targetM = new Date().getMonth() + 1;
