@@ -2502,12 +2502,16 @@ function processTransaction(actionType) {
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-            if (actionType === 'printer') {
+                        if (actionType === 'printer') {
                 if (navigator.share) {
                     navigator.share({ title: 'Struk', text: textReceipt }).catch((error) => console.log('Batal', error));
                 } else {
-                    alert("Maaf, browser HP kamu tidak mendukung fitur pilih aplikasi printer.");
+                    // JURUS ANDROID INTENT (MEMAKSA MUNCUL MENU SHARE DI APK)
+                    const teksStruk = encodeURIComponent(textReceipt);
+                    const intentUrl = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + teksStruk + ";end";
+                    window.location.href = intentUrl;
                 }
+
             } else if (actionType === 'whatsapp') { 
                 window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
             }
