@@ -1006,15 +1006,6 @@
 
         // Data Dummy Barang
         const newProductsBatch = [
-            { id: 1, name: "Bale Emas", buyPrice: 15300, price: 17000, barcode: "" },
-            { id: 2, name: "Bentoel Lucky Putih", buyPrice: 28400, price: 30500, barcode: "" },
-            { id: 6, name: "Djarum 76 12", buyPrice: 15500, price: 17000, barcode: "" },
-            { id: 10, name: "Djarum LA Ice 16", buyPrice: 34850, price: 37000, barcode: "" },
-            { id: 13, name: "Djarum Super 12", buyPrice: 22900, price: 24500, barcode: "" },
-            { id: 101, name: "Kapal Api Kopi 7gr (Pcs)", buyPrice: 925, price: 1500, barcode: "" },
-            { id: 120, name: "Beng-Beng (Pcs)", buyPrice: 1775, price: 2500, barcode: "" },
-            { id: 150, name: "Sedaap Mie Soto", buyPrice: 2950, price: 3500, barcode: "" },
-            { id: 171, name: "Pocari Sweat 350ml", buyPrice: 5750, price: 6500, barcode: "" },
             { id: 201, name: "Gula Pasir 1/4kg", buyPrice: 4500, price: 6000, barcode: "" }
         ];
 
@@ -2410,17 +2401,30 @@
 function deleteProduct(id) {
     if (confirm("Yakin ingin menghapus barang ini dari database?")) {
         
-        // 1. Buka laci yang BENAR: soka_master_products
+        // 1. Ambil dari laci soka_master_products
         let dbBarang = JSON.parse(localStorage.getItem('soka_master_products')) || [];
         
         // 2. Buang barangnya
         dbBarang = dbBarang.filter(barang => String(barang.id) !== String(id));
         
-        // 3. Simpan lagi ke laci yang BENAR
+        // 3. Simpan lagi ke laci
         localStorage.setItem('soka_master_products', JSON.stringify(dbBarang));
         
+        // 4. Update memori sementara di aplikasi
+        masterProducts = dbBarang;
+        
+        // 5. GAMBAR ULANG LAYARNYA (Tanpa Refresh & Tanpa Minta Login!)
+        try {
+            renderProducts(); // Update layar kasir
+            // Jaga-jaga kalau fungsi database-nya beda nama, kita panggil juga:
+            if (typeof renderMasterList === "function") renderMasterList();
+            if (typeof renderDatabase === "function") renderDatabase();
+            if (typeof loadProducts === "function") loadProducts();
+        } catch(e) {
+            console.log("Ada fungsi yang tidak perlu dipanggil");
+        }
+        
         alert("Barang berhasil dihapus!");
-        location.reload(); 
     }
 }
         
