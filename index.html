@@ -980,7 +980,7 @@
             input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
-        function drawLineChart(svgId, labelsId, data, color, labels) {
+                function drawLineChart(svgId, labelsId, data, color, labels) {
             const svgEl = document.getElementById(svgId);
             const labelsEl = document.getElementById(labelsId);
             if (!svgEl || !labelsEl || data.length === 0) return;
@@ -1012,11 +1012,13 @@
             `;
 
             if (labels && labels.length > 0) {
-                labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-medium">${lbl}</span>`).join('');
+                // Ukuran teks diubah jadi text-[6px] agar tidak tabrakan saat dijejer 31 hari
+                labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-bold text-[6px] sm:text-[8px]">${lbl}</span>`).join('');
             }
         }
 
-        function updateAdvancedLineCharts() {
+
+               function updateAdvancedLineCharts() {
             let targetY = new Date().getFullYear();
             let targetM = new Date().getMonth() + 1;
 
@@ -1041,7 +1043,13 @@
             const daysInMonth = new Date(targetY, targetM, 0).getDate() || 31;
             let dataLaba = new Array(daysInMonth).fill(0);
             let dataTrx = new Array(daysInMonth).fill(0);
-            let labels = ['1', '5', '10', '15', '20', '25', String(daysInMonth)];
+            
+            // --- BAGIAN YANG DIUBAH: Membuat tanggal full 1 sampai 31 ---
+            let labels = [];
+            for(let i = 1; i <= daysInMonth; i++) {
+                labels.push(String(i));
+            }
+            // -------------------------------------------------------------
 
             let allTx = [];
             let savedData = localStorage.getItem('soka_transactions');
