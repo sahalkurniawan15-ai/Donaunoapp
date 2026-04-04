@@ -2021,15 +2021,21 @@
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-             if (actionType === 'printer') {
-                if (navigator.share) {
-                    navigator.share({ title: 'Struk', text: textReceipt }).catch((error) => console.log('Batal', error));
-                } else {
-                    // JURUS ANDROID INTENT (MEMAKSA MUNCUL MENU SHARE DI APK)
-                    const teksStruk = encodeURIComponent(textReceipt);
-                    const intentUrl = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + teksStruk + ";end";
-                    window.location.href = intentUrl;
+                                                 if (actionType === 'printer') {
+                // DETEKSI OTOMATIS: Apakah kita ada di dalam APK Kodular?
+                if (typeof window.AppInventor !== 'undefined') {
+                    // Ya, kita di dalam APK. Gunakan Jembatan Kodular!
+                    window.AppInventor.setWebViewString(textReceipt);
+                } 
+                // Jika bukan di APK, apakah browser HP ini mendukung fitur Share?
+                else if (navigator.share) {
+                    navigator.share({ title: 'Struk Soka Celluler', text: textReceipt }).catch(console.error);
+                } 
+                // Kalau dibuka di Laptop atau browser jadul
+                else {
+                    alert("Maaf, fitur cetak tidak didukung di layar ini.");
                 }
+
             } else if (actionType === 'whatsapp') { 
                 window.open(`https://wa.me/?text=${encodeURIComponent(textReceipt)}`, '_blank'); 
             } else if (actionType === 'image') {
@@ -2502,14 +2508,19 @@ function processTransaction(actionType) {
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-                        if (actionType === 'printer') {
-                if (navigator.share) {
-                    navigator.share({ title: 'Struk', text: textReceipt }).catch((error) => console.log('Batal', error));
-                } else {
-                    // JURUS ANDROID INTENT (MEMAKSA MUNCUL MENU SHARE DI APK)
-                    const teksStruk = encodeURIComponent(textReceipt);
-                    const intentUrl = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + teksStruk + ";end";
-                    window.location.href = intentUrl;
+                                                 if (actionType === 'printer') {
+                // DETEKSI OTOMATIS: Apakah kita ada di dalam APK Kodular?
+                if (typeof window.AppInventor !== 'undefined') {
+                    // Ya, kita di dalam APK. Gunakan Jembatan Kodular!
+                    window.AppInventor.setWebViewString(textReceipt);
+                } 
+                // Jika bukan di APK, apakah browser HP ini mendukung fitur Share?
+                else if (navigator.share) {
+                    navigator.share({ title: 'Struk Soka Celluler', text: textReceipt }).catch(console.error);
+                } 
+                // Kalau dibuka di Laptop atau browser jadul
+                else {
+                    alert("Maaf, fitur cetak tidak didukung di layar ini.");
                 }
 
             } else if (actionType === 'whatsapp') { 
