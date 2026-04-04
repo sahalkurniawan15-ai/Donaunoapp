@@ -991,7 +991,7 @@
             input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
-                        function drawLineChart(svgId, labelsId, data, color, labels) {
+                                    function drawBarChart(svgId, labelsId, data, color, labels) {
             const svgEl = document.getElementById(svgId);
             const labelsEl = document.getElementById(labelsId);
             if (!svgEl || !labelsEl || data.length === 0) return;
@@ -1000,39 +1000,40 @@
             if (max === 0) max = 1; 
 
             const width = 400; const height = 100;
+            const barWidth = (width / data.length) - 2; 
             
-            let points = data.map((val, i) => {
-                let x = (i / (data.length - 1)) * width;
-                // Beri jarak atas bawah sedikit biar titiknya tidak terpotong tepi kotak
-                let y = height - ((val / max) * (height - 20)) - 10; 
-                return {x, y};
-            });
+            // FUNGSI PINTAR PEMBULATAN ANGKA (84.664 -> 85k)
+            const formatSingkat = (num) => {
+                if (num === 0) return ''; // Kosongkan jika 0 agar bersih
+                if (num >= 1000000) return (num / 1000000).toFixed(1).replace('.0', '') + 'M'; // Format Juta
+                if (num >= 1000) return Math.round(num / 1000) + 'k'; // Format Ribu dibulatkan
+                return num; // Angka di bawah 1000
+            };
 
-            let pathData = `M ${points[0].x},${points[0].y} ` + points.slice(1).map(p => `L ${p.x},${p.y}`).join(' ');
-            let fillPathData = `${pathData} L ${width},${height} L 0,${height} Z`;
-
-            // Bikin lingkaran kecil (dots) di setiap sudut/tanggal
-            let dotsHtml = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="white" stroke="${color}" stroke-width="1.5" />`).join('');
+            let rectsHtml = data.map((val, i) => {
+                let x = i * (width / data.length) + 1; 
+                // Kurangi batas tinggi (height - 25) agar ada ruang kosong di atas balok untuk teks
+                let barHeight = (val / max) * (height - 25); 
+                if (barHeight < 2 && val > 0) barHeight = 2; 
+                let y = height - barHeight;
+                
+                let teksAngka = formatSingkat(val);
+                let textX = x + (barWidth / 2);
+                let textY = y - 4; // Posisi teks sedikit di atas balok
+                
+                return `
+                    <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="2" class="hover:opacity-75 transition-opacity" />
+                    <text x="${textX}" y="${textY}" font-size="8" fill="#6b7280" font-weight="900" text-anchor="middle">${teksAngka}</text>
+                `;
+            }).join('');
 
             svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
-            svgEl.innerHTML = `
-                <defs>
-                    <linearGradient id="grad-${svgId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="${color}" stop-opacity="0.4" />
-                        <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
-                    </linearGradient>
-                </defs>
-                <path d="${fillPathData}" fill="url(#grad-${svgId})" />
-                <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                ${dotsHtml}
-            `;
+            svgEl.innerHTML = rectsHtml;
 
             if (labels && labels.length > 0) {
-                // Label dibuat rata tengah agar pas posisinya di bawah titik grafik
-                labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-bold text-[9px] w-5 flex justify-center">${lbl}</span>`).join('');
+                labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-bold text-[9px] flex justify-center" style="width: ${100/labels.length}%">${lbl}</span>`).join('');
             }
         }
-
                function updateAdvancedLineCharts() {
             let targetY = new Date().getFullYear();
             let targetM = new Date().getMonth() + 1;
@@ -1098,8 +1099,8 @@
                 }
             });
 
-            drawLineChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
-            drawLineChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
+            drawBarChart('chart-laba-svg', 'chart-laba-labels', dataLaba, '#10b981', labels);
+            drawBarChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels);
         }
 
                 function prosesRekapHarian() {
