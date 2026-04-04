@@ -2409,24 +2409,21 @@
 
 function deleteProduct(id) {
     if (confirm("Yakin ingin menghapus barang ini dari database?")) {
-        // Ambil data database barang
-        let dbBarang = JSON.parse(localStorage.getItem('soka_products')) || JSON.parse(localStorage.getItem('products')) || [];
         
-        // Buang barang yang ID-nya sama dengan yang dihapus
-        dbBarang = dbBarang.filter(barang => barang.id != id);
+        // 1. Buka laci yang BENAR: soka_master_products
+        let dbBarang = JSON.parse(localStorage.getItem('soka_master_products')) || [];
         
-        // Simpan versi terbarunya kembali ke memori
-        if (localStorage.getItem('soka_products')) {
-            localStorage.setItem('soka_products', JSON.stringify(dbBarang));
-        } else {
-            localStorage.setItem('products', JSON.stringify(dbBarang));
-        }
+        // 2. Buang barangnya
+        dbBarang = dbBarang.filter(barang => String(barang.id) !== String(id));
         
-        // Notifikasi dan refresh layar
+        // 3. Simpan lagi ke laci yang BENAR
+        localStorage.setItem('soka_master_products', JSON.stringify(dbBarang));
+        
         alert("Barang berhasil dihapus!");
         location.reload(); 
     }
-}        
+}
+        
         function openProductModal(id = null) {
             document.getElementById('productModal').classList.remove('hidden');
             if (id) {
