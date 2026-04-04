@@ -991,7 +991,7 @@
             input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
-                  function drawBarChart(svgId, labelsId, data, color, labels) {
+               function drawBarChart(svgId, labelsId, data, color, labels) {
             const svgEl = document.getElementById(svgId);
             const labelsEl = document.getElementById(labelsId);
             if (!svgEl || !labelsEl || data.length === 0) return;
@@ -1000,26 +1000,40 @@
             if (max === 0) max = 1; 
 
             const width = 400; 
-            const height = 120; // Tinggi grafik ditambah sedikit agar angka vertikalnya muat
+            const height = 120; 
             const barWidth = (width / data.length) - 2; 
 
             let rectsHtml = data.map((val, i) => {
                 let x = i * (width / data.length) + 1; 
-                // Kurangi tinggi balok agar ada ruang luas di atasnya untuk angka konkret
                 let barHeight = (val / max) * (height - 40); 
                 if (barHeight < 2 && val > 0) barHeight = 2; 
                 let y = height - barHeight;
                 
-                // Murni angka pasti dengan titik pemisah ribuan (contoh: 84.664)
                 let teksAngka = val === 0 ? '' : val.toLocaleString('id-ID'); 
                 
-                let textX = x + (barWidth / 2);
-                let textY = y - 3; 
+                // Perkiraan panjang teks (misal "84.664" itu sekitar 30 pixel)
+                let estimasiPanjangTeks = teksAngka.length * 4.5; 
                 
-                // Angka diputar -90 derajat agar berdiri tegak menjulang ke atas (ramping)
+                let textX = x + (barWidth / 2);
+                let textY;
+                let textColor;
+                let fontTebal = "bold";
+
+                // JURUS TEKS PINTAR
+                if (barHeight > estimasiPanjangTeks + 10) {
+                    // Jika balok tinggi: Angka di DALAM balok (Warna Putih)
+                    textY = y + barHeight - 4; // Nempel dari dasar balok menjulang ke atas
+                    textColor = "#ffffff";
+                } else {
+                    // Jika balok pendek: Angka di ATAS balok (Warna menyesuaikan balok)
+                    textY = y - 3; // Nempel di pucuk balok
+                    textColor = color; 
+                    fontTebal = "900"; // Ditebalkan sedikit biar makin jelas
+                }
+                
                 return `
-                    <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="2" class="hover:opacity-75 transition-opacity" />
-                    <text x="${textX}" y="${textY}" font-size="7" fill="#6b7280" font-weight="bold" transform="rotate(-90 ${textX} ${textY})" text-anchor="start" dy="0.3em">${teksAngka}</text>
+                    <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="2" class="hover:opacity-80 transition-opacity cursor-pointer" />
+                    <text x="${textX}" y="${textY}" font-size="7" fill="${textColor}" font-weight="${fontTebal}" transform="rotate(-90 ${textX} ${textY})" text-anchor="start" dy="0.3em" class="pointer-events-none">${teksAngka}</text>
                 `;
             }).join('');
 
@@ -1030,7 +1044,6 @@
                 labelsEl.innerHTML = labels.map(lbl => `<span class="text-gray-400 font-bold text-[9px] flex justify-center" style="width: ${100/labels.length}%">${lbl}</span>`).join('');
             }
         }
-
                function updateAdvancedLineCharts() {
             let targetY = new Date().getFullYear();
             let targetM = new Date().getMonth() + 1;
