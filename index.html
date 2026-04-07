@@ -10,6 +10,7 @@
     <meta name="theme-color" content="#1d4ed8">
     <title>Soka Celluler POS Barcode</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -131,6 +132,13 @@
                 BUKA APLIKASI
             </button>
             <p class="text-xs text-gray-400 mt-4 text-center">Default Password: 1234</p>
+        </div>
+        <div class="absolute bottom-8 text-center flex flex-col items-center justify-center">
+            <p class="text-[10px] text-blue-300 uppercase tracking-[0.2em] font-bold mb-1">Didesain & Dibuat Oleh</p>
+            <div class="flex items-center gap-2 text-white bg-blue-800/50 px-4 py-2 rounded-full border border-blue-500/30 backdrop-blur-sm">
+                <i class="fa-solid fa-code text-blue-300"></i>
+                <span class="text-sm font-black tracking-wide">Sahal Kurniawan</span>
+            </div>
         </div>
     </div>
 
@@ -282,20 +290,27 @@
                 </div>
 
                 <div id="laporan-ringkasan" class="hidden p-4 w-full max-w-4xl mx-auto space-y-4 animation-fadeIn">
-                    <div class="grid grid-cols-3 gap-2 sm:gap-4">
-                        <div class="bg-blue-600 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                            <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">OMZET KOTOR</p>
-                            <h3 id="reportTotalOmzet" class="text-sm sm:text-2xl font-black truncate">Rp 0</h3>
-                        </div>
-                        <div class="bg-emerald-500 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                            <p class="text-[9px] sm:text-xs font-bold opacity-90 mb-1">LABA BERSIH</p>
-                            <h3 id="reportTotalProfit" class="text-sm sm:text-2xl font-black truncate">Rp 0</h3>
-                        </div>
-                        <div class="bg-indigo-600 p-3 sm:p-5 rounded-2xl shadow-md text-white flex flex-col justify-center">
-                            <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">TRANSAKSI</p>
-                            <h3 id="reportTotalTx" class="text-sm sm:text-2xl font-black truncate">0 Nota</h3>
-                        </div>
-                    </div> 
+                    <div class="grid grid-cols-2 gap-3 sm:gap-4">
+    <div class="bg-blue-600 p-4 rounded-2xl shadow-md text-white flex flex-col justify-center">
+        <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">OMZET FISIK <i class="fa-solid fa-box ml-1"></i></p>
+        <h3 id="reportTotalOmzet" class="text-base sm:text-xl font-black truncate">Rp 0</h3>
+    </div>
+    
+    <div class="bg-purple-600 p-4 rounded-2xl shadow-md text-white flex flex-col justify-center">
+        <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">OMZET DIGITAL <i class="fa-solid fa-mobile-screen ml-1"></i></p>
+        <h3 id="reportTotalDigital" class="text-base sm:text-xl font-black truncate">Rp 0</h3>
+    </div>
+    
+    <div class="bg-emerald-500 p-4 rounded-2xl shadow-md text-white flex flex-col justify-center">
+        <p class="text-[9px] sm:text-xs font-bold opacity-90 mb-1">LABA BERSIH TOTAL</p>
+        <h3 id="reportTotalProfit" class="text-base sm:text-xl font-black truncate">Rp 0</h3>
+    </div>
+    
+    <div class="bg-indigo-600 p-4 rounded-2xl shadow-md text-white flex flex-col justify-center">
+        <p class="text-[9px] sm:text-xs font-bold opacity-80 mb-1">TOTAL TRANSAKSI</p>
+        <h3 id="reportTotalTx" class="text-base sm:text-xl font-black truncate">0 Nota</h3>
+    </div>
+</div>
 
                                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4">
                         <div class="flex justify-between items-end mb-2">
@@ -664,7 +679,7 @@
         </div>
     </div>
 
-    <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
+            <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
             <div class="flex justify-between items-center mb-5 border-b pb-3">
                 <h2 class="font-black text-xl text-gray-800"><i class="fa-solid fa-keyboard mr-2 text-indigo-600"></i>Input Manual</h2>
@@ -672,21 +687,31 @@
             </div>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-gray-600 text-xs font-bold mb-1">Nama Barang / Transaksi</label>
-                    <input type="text" id="manName" placeholder="Contoh: Pulsa Tsel 20" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800">
+                    <label class="block text-gray-600 text-[10px] font-bold mb-1 uppercase tracking-wider">Jenis Transaksi</label>
+                    <select id="manType" onchange="updateManualLabels()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800 bg-gray-50">
+                        <option value="fisik">📦 Produk Fisik (Sembako/Lainnya)</option>
+                        <option value="digital_pulsa">📱 Isi Pulsa / Paket Data</option>
+                        <option value="digital_token">⚡ Token Listrik PLN</option>
+                        <option value="digital_tarik">🏧 Tarik Tunai (Ambil Cash)</option>
+                        <option value="digital_setor">💸 Setor Tunai / Transfer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Keterangan / Tujuan</label>
+                    <input type="text" id="manName" placeholder="Contoh: Transfer BRI Budi" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-gray-800">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Modal (Beli)</label>
+                        <label id="lblManBuy" class="block text-gray-600 text-xs font-bold mb-1">Modal (Rp)</label>
                         <input type="number" id="manBuy" placeholder="20000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-red-600">
                     </div>
                     <div>
-                        <label class="block text-gray-600 text-xs font-bold mb-1">Tagihan (Jual)</label>
+                        <label id="lblManSell" class="block text-gray-600 text-xs font-bold mb-1">Harga Jual (Rp)</label>
                         <input type="number" id="manSell" placeholder="22000" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-indigo-600">
                     </div>
                 </div>
             </div>
-            <button onclick="submitManualItem()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg transition active:scale-95">
+            <button onclick="submitManualItem()" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg transition active:scale-95">
                 Tambahkan ke Keranjang
             </button>
         </div>
@@ -1401,7 +1426,7 @@
 
 
         // ================= SISTEM BACKUP & RESTORE =================
-        function backupData() {
+                function backupData() {
             const data = {
                 soka_master_products: localStorage.getItem('soka_master_products'),
                 soka_transactions: localStorage.getItem('soka_transactions'),
@@ -1412,20 +1437,29 @@
             };
 
             const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
             
-            const a = document.createElement('a');
-            a.href = url;
-            const dateStr = new Date().toISOString().slice(0, 10);
-            a.download = `Backup_SokaPOS_${dateStr}.json`;
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showToast("Backup data berhasil diunduh!");
+            // JURUS JEMBATAN KODULAR
+            if (typeof window.AppInventor !== 'undefined') {
+                // Kasih kode rahasia "BACKUP:" di depan datanya biar Kodular paham
+                window.AppInventor.setWebViewString("BACKUP:" + dataStr);
+                showToast("Memproses backup ke memori HP...");
+            } else {
+                // JIKA DIBUKA DI BROWSER BIASA / LAPTOP
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().slice(0, 10);
+                a.download = `Backup_SokaPOS_${dateStr}.json`;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showToast("Backup data berhasil diunduh!");
+            }
         }
 
         function restoreData(event) {
@@ -1781,22 +1815,85 @@
         
         function closeManualModal() { document.getElementById('manualModal').classList.add('hidden'); }
         
+                        // FUNGSI BARU: Mengubah teks Modal/Jual jadi Nominal/Admin
+        function updateManualLabels() {
+            const type = document.getElementById('manType').value;
+            const lblBuy = document.getElementById('lblManBuy');
+            const lblSell = document.getElementById('lblManSell');
+            const inputBuy = document.getElementById('manBuy');
+            const inputSell = document.getElementById('manSell');
+
+            if (type === 'digital_tarik' || type === 'digital_setor') {
+                lblBuy.innerText = "Nominal (Rp)";
+                lblSell.innerText = "Biaya Admin (Rp)";
+                inputBuy.placeholder = "100000";
+                inputSell.placeholder = "5000";
+            } else {
+                lblBuy.innerText = "Modal (Rp)";
+                lblSell.innerText = "Harga Jual (Rp)";
+                inputBuy.placeholder = "20000";
+                inputSell.placeholder = "22000";
+            }
+        }
+
+        // FUNGSI BARU UNTUK BUKA MODAL (Agar form keriset otomatis)
+        function openManualModal() {
+            document.getElementById('manName').value = ""; 
+            document.getElementById('manBuy').value = ""; 
+            document.getElementById('manSell').value = "";
+            document.getElementById('manType').value = "fisik"; // Set kembali ke fisik
+            updateManualLabels(); // Panggil biar labelnya ikut keriset
+            document.getElementById('manualModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('manName').focus(), 100);
+        }
+
+        // FUNGSI SIMPAN KERANJANG (DIUBAH LOGIKANYA)
         function submitManualItem() {
             const name = document.getElementById('manName').value.trim();
-            const buy = parseInt(document.getElementById('manBuy').value);
-            const sell = parseInt(document.getElementById('manSell').value);
+            const buyInput = parseInt(document.getElementById('manBuy').value);
+            const sellInput = parseInt(document.getElementById('manSell').value);
+            const type = document.getElementById('manType').value;
 
-            if(!name || isNaN(buy) || isNaN(sell)) return showToast("Isi data manual dengan lengkap!", true);
-            cart.push({ id: "M"+Date.now(), name: name, buyPrice: buy, price: sell, originalPrice: sell, qty: 1 });
+            if(!name || isNaN(buyInput) || isNaN(sellInput)) return showToast("Isi data manual dengan lengkap!", true);
+
+            let buyPrice = 0;
+            let sellPrice = 0;
+
+            // RUMUS CERDAS KHUSUS TRANSFER/TARIK TUNAI
+            if (type === 'digital_tarik' || type === 'digital_setor') {
+                buyPrice = buyInput; // Modal = Uang Pokok (Misal 100rb)
+                sellPrice = buyInput + sellInput; // Tagihan Pelanggan = Pokok + Admin (105rb)
+            } else {
+                buyPrice = buyInput;
+                sellPrice = sellInput;
+            }
+
+            let isDigital = type.startsWith('digital_');
+            let prefix = "";
+            if(type === 'digital_pulsa') prefix = "[PULSA] ";
+            if(type === 'digital_token') prefix = "[TOKEN] ";
+            if(type === 'digital_tarik') prefix = "[TARIK] ";
+            if(type === 'digital_setor') prefix = "[SETOR] ";
+
+            cart.push({ 
+                id: "M"+Date.now(), 
+                name: prefix + name, 
+                buyPrice: buyPrice, 
+                price: sellPrice, 
+                originalPrice: sellPrice, 
+                qty: 1,
+                itemType: type // Simpan tipe spesifiknya untuk dibaca di Laporan
+            });
             updateCartUI(); closeManualModal(); playBeep(); showToast(`${name} ditambahkan!`);
         }
         
-                    function addToCart(id, name, price, buyPrice) {
+                            function addToCart(id, name, price, buyPrice) {
             const existing = cart.find(item => String(item.id) === String(id));
-            if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1 }); }
+            if (existing) { existing.qty += 1; } 
+            else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1, itemType: 'fisik' }); } // <-- tambah itemType: 'fisik'
             updateCartUI();
         }
-        
+
         function adjQty(id, delta) {
             const item = cart.find(i => String(i.id) === String(id));
             if (item) {
@@ -2117,6 +2214,10 @@
             let totalOmzet = 0, totalProfit = 0, totalTunai = 0, totalQris = 0;
             let itemStats = {}; 
 
+                        // Variabel pemisah dana
+            let totalFisik = 0, modalFisik = 0;
+            let totalDigital = 0, modalDigital = 0;
+
             filteredTransactions.forEach(tx => { 
                 totalOmzet += (Number(tx.total) || 0); 
                 totalProfit += (Number(tx.profit) || 0); 
@@ -2133,12 +2234,32 @@
                             
                             let modal = Number(i.buyPrice) || 0;
                             let jual = Number(i.price) || 0;
-                            itemStats[namaBarang].profit += ((jual - modal) * (Number(i.qty) || 0));
+                            let labaItem = ((jual - modal) * (Number(i.qty) || 0));
+                            let omzetItem = jual * (Number(i.qty) || 0);
+                            let modalItem = modal * (Number(i.qty) || 0);
+
+                            itemStats[namaBarang].profit += labaItem;
+                            // PEMISAHAN DANA FISIK VS DIGITAL (ANTI BENGKAK - HANYA UNTUNG)
+                            if(i.itemType && i.itemType.startsWith('digital')) {
+                                // SEMUA DIGITAL (Pulsa, Token, Tarik, Setor):
+                                // Yang dihitung sebagai Omzet murni hanya UNTUNG/ADMIN-nya saja.
+                                totalDigital += labaItem; 
+                                // modalDigital dibiarkan 0, agar perhitungan Laba Digital selaras.
+                            } 
+                            else {
+                                // JIKA FISIK (Sembako dll): Hitung normal.
+                                totalFisik += omzetItem;
+                                modalFisik += modalItem; 
+                            }
                         }
                     });
                 }
             });
 
+            // Tampilkan pemisahan dana di daftar Laporan
+            let labaBersihFisik = totalFisik - modalFisik;
+            let labaBersihDigital = totalDigital - modalDigital;
+            
             window.currentTopSales = Object.values(itemStats).sort((a, b) => b.qty - a.qty).slice(0, 5);
             window.currentTopProfit = Object.values(itemStats).sort((a, b) => b.profit - a.profit).slice(0, 5);
             
@@ -2162,8 +2283,14 @@
             }
 
             let realProfit = totalProfit - totalPengeluaran;
-            let omzetEl = document.getElementById('reportTotalOmzet');
-            if(omzetEl) omzetEl.innerText = formatRp(totalOmzet);
+                        let omzetEl = document.getElementById('reportTotalOmzet');
+            if(omzetEl) omzetEl.innerText = formatRp(totalFisik); // Ubah jadi nampilin uang fisik aja
+
+            // --- INI KODE UNTUK KOTAK BARU ---
+            let omzetDigEl = document.getElementById('reportTotalDigital');
+            if(omzetDigEl) omzetDigEl.innerText = formatRp(totalDigital); 
+            // ---------------------------------
+
             let profitEl = document.getElementById('reportTotalProfit');
             if(profitEl) profitEl.innerText = formatRp(realProfit); 
             let txEl = document.getElementById('reportTotalTx');
@@ -2171,20 +2298,23 @@
 
             if(typeof renderHourlyChart === 'function') renderHourlyChart(filteredTransactions);
 
-            let sisaLaci = totalTunai - totalPengeluaran;
+                        let sisaLaci = totalTunai - totalPengeluaran;
             listContainer.innerHTML = `
-                <div class="bg-indigo-50 p-3 flex flex-col gap-2 text-xs font-bold border-b border-indigo-200">
-                    <div class="flex justify-between items-center">
-                        <span class="text-blue-700"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tunai: ${formatRp(totalTunai)}</span>
-                        <span class="text-purple-700"><i class="fa-solid fa-qrcode mr-1"></i> QRIS: ${formatRp(totalQris)}</span>
+                <div class="bg-indigo-50 p-3 flex flex-col gap-2 text-[10px] sm:text-xs font-bold border-b border-indigo-200">
+                    <div class="flex justify-between items-center text-blue-800">
+                        <span>📦 Jual Fisik: ${formatRp(totalFisik)}</span>
+                        <span>(Laba Fisik: ${formatRp(labaBersihFisik)})</span>
                     </div>
-                    <div class="flex justify-between items-center border-t border-indigo-100 pt-2">
-                        <span class="text-orange-600"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Keluar: ${formatRp(totalPengeluaran)}</span>
-                        <span class="text-emerald-700 font-black text-[13px]"><i class="fa-solid fa-cash-register mr-1"></i> Saldo Laci: ${formatRp(sisaLaci)}</span>
+                    <div class="flex justify-between items-center text-purple-800">
+                        <span>📱 Jasa Digital: ${formatRp(totalDigital)}</span>
+                        <span>(Laba Digital: ${formatRp(labaBersihDigital)})</span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-indigo-200 pt-2 mt-1">
+                        <span class="text-orange-600">Keluar: ${formatRp(totalPengeluaran)}</span>
+                        <span class="text-emerald-700 font-black text-[12px] sm:text-[13px]">Saldo Tunai: ${formatRp(sisaLaci)}</span>
                     </div>
                 </div>
             `;
-            
             filteredExpenses.slice().reverse().forEach(exp => {
                 const expDiv = document.createElement('div');
                 expDiv.className = "p-4 bg-orange-50 transition border-b border-orange-100";
