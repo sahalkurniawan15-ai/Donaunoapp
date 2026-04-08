@@ -552,14 +552,14 @@
                     <div class="space-y-4">
                         <p class="text-[11px] text-gray-500 font-medium">Amankan data toko Anda dengan menyimpannya ke perangkat, atau pulihkan data dari file backup sebelumnya.</p>
                         <div class="flex gap-3">
-                            <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-                                <i class="fa-solid fa-download mr-2"></i> Backup
-                            </button>
-                            <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-                                <i class="fa-solid fa-upload mr-2"></i> Restore
-                            </button>
-                            <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
-                        </div>
+    <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
+        <i class="fa-solid fa-download mr-2"></i> Backup
+    </button>
+    <button onclick="klikTombolRestore()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
+        <i class="fa-solid fa-upload mr-2"></i> Restore
+    </button>
+    <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
+</div>
                     </div>
                 </div>
 
@@ -1426,42 +1426,81 @@
 
 
         // ================= SISTEM BACKUP & RESTORE =================
-                function backupData() {
-            const data = {
-                soka_master_products: localStorage.getItem('soka_master_products'),
-                soka_transactions: localStorage.getItem('soka_transactions'),
-                soka_debts: localStorage.getItem('soka_debts'),
-                soka_rekap_history: localStorage.getItem('soka_rekap_history'),
-                soka_store_settings: localStorage.getItem('soka_store_settings'),
-                soka_password: localStorage.getItem('soka_password')
-            };
+function backupData() {
+    const data = {
+        soka_master_products: localStorage.getItem('soka_master_products'),
+        soka_transactions: localStorage.getItem('soka_transactions'),
+        soka_debts: localStorage.getItem('soka_debts'),
+        soka_rekap_history: localStorage.getItem('soka_rekap_history'),
+        soka_store_settings: localStorage.getItem('soka_store_settings'),
+        soka_password: localStorage.getItem('soka_password')
+    };
 
-            const dataStr = JSON.stringify(data, null, 2);
+    const dataStr = JSON.stringify(data, null, 2);
+    
+    // JURUS JEMBATAN KODULAR
+    if (typeof window.AppInventor !== 'undefined') {
+        // MENGIRIM DATA BACKUP KE KODULAR
+        window.AppInventor.setWebViewString("BACKUP:" + dataStr);
+        showToast("Memproses backup ke memori HP...");
+    } else {
+        // JIKA DIBUKA DI BROWSER BIASA / LAPTOP
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date().toISOString().slice(0, 10);
+        a.download = `Backup_SokaPOS_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Backup data berhasil diunduh!");
+    }
+}
+
+// PEMICU TOMBOL RESTORE
+function klikTombolRestore() {
+    if (typeof window.AppInventor !== 'undefined') {
+        // Panggil Kodular untuk membaca file
+        window.AppInventor.setWebViewString("RESTORE"); 
+    } else {
+        // Panggil file manager Laptop jika dibuka di browser
+        document.getElementById('restore-file').click(); 
+    }
+}
+
+// FUNGSI KHUSUS UNTUK MENERIMA DATA DARI KODULAR
+function prosesRestoreDariKodular(dataString) {
+    try {
+        const data = JSON.parse(dataString);
+        if(confirm("Peringatan: Restore data akan menimpa SEMUA data toko Anda saat ini. Lanjutkan?")) {
+            if(data.soka_master_products) localStorage.setItem('soka_master_products', data.soka_master_products);
+            if(data.soka_transactions) localStorage.setItem('soka_transactions', data.soka_transactions);
+            if(data.soka_debts) localStorage.setItem('soka_debts', data.soka_debts);
+            if(data.soka_rekap_history) localStorage.setItem('soka_rekap_history', data.soka_rekap_history);
+            if(data.soka_store_settings) localStorage.setItem('soka_store_settings', data.soka_store_settings);
+            if(data.soka_password) localStorage.setItem('soka_password', data.soka_password);
             
-            // JURUS JEMBATAN KODULAR
-            if (typeof window.AppInventor !== 'undefined') {
-                // Kasih kode rahasia "BACKUP:" di depan datanya biar Kodular paham
-                window.AppInventor.setWebViewString("RESTORE");
-                showToast("Memproses backup ke memori HP...");
-            } else {
-                // JIKA DIBUKA DI BROWSER BIASA / LAPTOP
-                const blob = new Blob([dataStr], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                const dateStr = new Date().toISOString().slice(0, 10);
-                a.download = `Backup_SokaPOS_${dateStr}.json`;
-                
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showToast("Backup data berhasil diunduh!");
-            }
+            showToast("Restore data berhasil! Aplikasi akan dimuat ulang...");
+            setTimeout(() => { window.location.reload(); }, 2000);
         }
+    } catch (err) {
+        showToast("Gagal memproses data dari Kodular!", true);
+    }
+}
 
+// FUNGSI RESTORE LAMA (Hanya untuk versi Laptop/Browser)
+function restoreData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        prosesRestoreDariKodular(e.target.result); // Arahkan ke fungsi utama
+        event.target.value = ""; 
+    };
+    reader.readAsText(file);
+}
         function restoreData(event) {
             const file = event.target.files[0];
             if (!file) return;
