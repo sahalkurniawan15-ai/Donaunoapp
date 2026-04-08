@@ -551,12 +551,15 @@
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-database text-emerald-500 mr-2"></i>Backup & Restore Data</h2>
                     <div class="space-y-4">
                         <p class="text-[11px] text-gray-500 font-medium">Amankan data toko Anda dengan menyimpannya ke perangkat, atau pulihkan data dari file backup sebelumnya.</p>
-                        <div class="flex gap-3">
-    <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-        <i class="fa-solid fa-download mr-2"></i> Backup
+                        <div class="flex gap-2 sm:gap-3">
+    <button onclick="backupData()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
+        <i class="fa-solid fa-download mr-1"></i> Backup
     </button>
-    <button onclick="klikTombolRestore()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center">
-        <i class="fa-solid fa-upload mr-2"></i> Restore
+    <button onclick="klikTombolRestore()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
+        <i class="fa-solid fa-upload mr-1"></i> Restore
+    </button>
+    <button onclick="kirimBackup()" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
+        <i class="fa-solid fa-share-nodes mr-1"></i> Kirim
     </button>
     <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
 </div>
@@ -1460,7 +1463,7 @@ function backupData() {
 }
 
 // PEMICU TOMBOL RESTORE
-function klikTombolRestore() {
+         function klikTombolRestore() {
     if (typeof window.AppInventor !== 'undefined') {
         // Panggil Kodular untuk membaca file
         window.AppInventor.setWebViewString("RESTORE"); 
@@ -1470,8 +1473,17 @@ function klikTombolRestore() {
     }
 }
 
+// FUNGSI UNTUK MENGIRIM FILE BACKUP
+         function kirimBackup() {
+    if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString("KIRIM_BACKUP");
+    } else {
+        alert("Fitur ini khusus untuk di dalam Aplikasi SOKA POS.");
+    }
+}
+
 // FUNGSI KHUSUS UNTUK MENERIMA DATA DARI KODULAR
-function prosesRestoreDariKodular(dataString) {
+          function prosesRestoreDariKodular(dataString) {
     try {
         const data = JSON.parse(dataString);
         if(confirm("Peringatan: Restore data akan menimpa SEMUA data toko Anda saat ini. Lanjutkan?")) {
