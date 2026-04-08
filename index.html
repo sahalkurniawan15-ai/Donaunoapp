@@ -2113,8 +2113,8 @@
                 // DETEKSI OTOMATIS: Apakah kita ada di dalam APK Kodular?
                 if (typeof window.AppInventor !== 'undefined') {
                     // Ya, kita di dalam APK. Gunakan Jembatan Kodular!
-                    window.AppInventor.setWebViewString(textReceipt);
-                } 
+                    window.AppInventor.setWebViewString("CETAK:" + textReceipt); // <--- TAMBAHKAN "CETAK:"
+    }  
                 // Jika bukan di APK, apakah browser HP ini mendukung fitur Share?
                 else if (navigator.share) {
                     navigator.share({ title: 'Struk Soka Celluler', text: textReceipt }).catch(console.error);
