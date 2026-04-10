@@ -762,17 +762,21 @@
                 <button id="btn-save-tx" onclick="processTransaction('save_only')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition active:scale-95">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Transaksi Saja
                 </button>
-                                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="processTransaction('printer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
-                        <i class="fa-solid fa-print text-lg"></i> Cetak
-                    </button>
-                    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
-                        <i class="fa-brands fa-whatsapp text-lg"></i> Teks WA
-                    </button>
-                    <button onclick="processTransaction('image')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
-                        <i class="fa-solid fa-image text-lg"></i> Gambar
-                    </button>
-                </div>
+            <div class="grid grid-cols-3 gap-2">
+    
+    <button onclick="processTransaction('printer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+        <i class="fa-solid fa-print text-lg"></i> Cetak HP
+    </button>
+
+    <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+        <i class="fa-brands fa-whatsapp text-lg"></i> Teks WA
+    </button>
+
+    <button onclick="printKhususLaptop()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+        <i class="fa-solid fa-laptop text-lg"></i> Print Laptop
+    </button>
+
+            </div>
             </div>
         </div>
     </div>
@@ -2202,7 +2206,49 @@ function restoreData(event) {
 
             if(!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
             if(actionType !== 'image') { closeReceipt(); }
-        }        
+        }
+        // --- FUNGSI BARU KHUSUS CETAK LAPTOP ---
+        // --- FUNGSI FINAL CETAK LAPTOP ANTI MUNTUL ---
+// --- FUNGSI CETAK LAPTOP FINAL & RAPI ---
+function printKhususLaptop() {
+    var areaStruk = document.getElementById("receipt-area");
+    if (!areaStruk) {
+        alert("Area struk tidak ditemukan!");
+        return;
+    }
+    var isiStruk = areaStruk.innerHTML;
+
+    var jendelaPrint = window.open('', '', 'height=600,width=400');
+    
+    jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
+    jendelaPrint.document.write('<style>');
+    
+    /* 1. KUNCI POTONG OTOMATIS: Lebar 58mm, tinggi "auto" biar nggak keluar 21cm */
+    jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }'); 
+    
+    /* 2. Format Body biar teks tidak gepeng ke bawah */
+    jendelaPrint.document.write('body { font-family: "Courier New", Courier, monospace; width: 55mm; margin: 0; padding: 2mm 0; color: black; font-size: 12px; }');
+    jendelaPrint.document.write('table { width: 100%; font-size: 12px; border-collapse: collapse; }');
+    jendelaPrint.document.write('.dashed-line { border-top: 1px dashed black; margin: 4px 0; }');
+    jendelaPrint.document.write('.no-print { display: none !important; }');
+    
+    /* Matikan margin bawah biar nggak ada sisa spasi kosong */
+    jendelaPrint.document.write('p, div, h4 { margin: 2px 0; }'); 
+    jendelaPrint.document.write('</style></head><body>');
+    
+    /* 3. Bungkus isi struk dengan div 58mm biar bentuknya kokoh */
+    jendelaPrint.document.write('<div style="width: 55mm; overflow: hidden;">' + isiStruk + '</div>');
+    
+    jendelaPrint.document.write('</body></html>');
+    jendelaPrint.document.close();
+    jendelaPrint.focus();
+    
+    setTimeout(function() {
+        jendelaPrint.print();
+        jendelaPrint.close();
+        processTransaction('printer'); 
+    }, 500);
+}  
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
             if(type === 'daily') { document.getElementById('reportDate').classList.remove('hidden'); document.getElementById('reportMonth').classList.add('hidden'); } 
