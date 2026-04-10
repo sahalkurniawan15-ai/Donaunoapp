@@ -2207,49 +2207,47 @@ function restoreData(event) {
             if(!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
             if(actionType !== 'image') { closeReceipt(); }
         }
-        // --- FUNGSI BARU KHUSUS CETAK LAPTOP ---
+// --- FUNGSI CETAK LAPTOP FINAL  ---
 function printKhususLaptop() {
     var areaStruk = document.getElementById("receipt-area");
     if (!areaStruk) {
         alert("Area struk tidak ditemukan!");
         return;
     }
-    // Pakai outerHTML biar kotak utamanya ikut kebawa
-    var isiStruk = areaStruk.outerHTML;
+    var isiStruk = areaStruk.innerHTML;
 
     var jendelaPrint = window.open('', '', 'height=600,width=400');
     
     jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
-    
-    // RAHASIA 1: Copy SEMUA gaya desain (Tailwind/CSS) dari web asli Mas Sahal
-    jendelaPrint.document.write(document.head.innerHTML); 
-    
     jendelaPrint.document.write('<style>');
-    // RAHASIA 2: Settingan kertas & Paksa teks jadi hitam tebal!
-    jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }'); 
-    jendelaPrint.document.write('body { width: 55mm; margin: 0; padding: 2mm 0; background: white; }');
-    jendelaPrint.document.write('#receipt-area { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }');
     
-    /* Paksa semua teks pakai font kasir, tebal, dan hitam pekat */
-    jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; color: #000 !important; font-weight: bold !important; font-size: 11px !important; }');
-    /* Biar harganya nggak nempel sama nama barang */
-    jendelaPrint.document.write('.flex { display: flex !important; justify-content: space-between !important; }');
-    jendelaPrint.document.write('.text-center { text-align: center !important; }');
-    jendelaPrint.document.write('.text-right { text-align: right !important; }');
+    /* Ukuran kertas tetap auto biar langsung potong */
+    jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }'); 
+    
+    /* KUNCI: Lebar diubah jadi 48mm (area tinta maksimal) dan huruf dikecilkan jadi 11px */
+    jendelaPrint.document.write('body { font-family: "Courier New", Courier, monospace; width: 48mm; margin: 0; padding: 2mm 0; color: black; font-size: 11px; }');
+    jendelaPrint.document.write('table { width: 100%; font-size: 11px; border-collapse: collapse; }');
+    jendelaPrint.document.write('.dashed-line { border-top: 1px dashed black; margin: 4px 0; }');
     jendelaPrint.document.write('.no-print { display: none !important; }');
+    
+    /* Biar teks yang kepanjangan otomatis turun ke bawah, nggak bablas ke kanan */
+    jendelaPrint.document.write('* { word-wrap: break-word; }'); 
+    
+    jendelaPrint.document.write('p, div, h4 { margin: 2px 0; }'); 
     jendelaPrint.document.write('</style></head><body>');
     
-    jendelaPrint.document.write(isiStruk);
+    /* Bungkus dengan div 100% biar ngikutin body yang 48mm */
+    jendelaPrint.document.write('<div style="width: 100%; overflow: hidden;">' + isiStruk + '</div>');
+    
     jendelaPrint.document.write('</body></html>');
     jendelaPrint.document.close();
     jendelaPrint.focus();
     
-    // Kasih jeda 1 detik biar desainnya selesai dimuat
     setTimeout(function() {
         jendelaPrint.print();
         jendelaPrint.close();
         processTransaction('printer'); 
-    }, 1000);
+    }, 500);
 }
         function toggleReportFilter() {
             const type = document.getElementById('reportType').value;
