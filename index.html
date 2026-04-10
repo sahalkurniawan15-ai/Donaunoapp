@@ -2221,27 +2221,30 @@ function printKhususLaptop() {
     jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
     jendelaPrint.document.write('<style>');
     
-    /* 1. Kertas tetap 58mm, tinggi auto (Sudah aman) */
+    /* 1. Kertas 58mm, tinggi potong otomatis */
     jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }'); 
     
-    /* 2. AREA TINTA 48mm & Font 11px & HURUF DITEBALKAN (font-weight: bold) */
-    jendelaPrint.document.write('body { font-family: "Courier New", Courier, monospace; font-weight: bold; width: 48mm; max-width: 48mm; margin: 0; padding: 2mm 0; color: black; font-size: 11px; }');
+    /* 2. PAKSA TEBAL MAKSIMAL KE SEMUA TULISAN (!important) */
+    jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; font-weight: 900 !important; color: black !important; box-sizing: border-box; }');
     
-    /* 3. Paksa tabel agar tidak meluber ke kanan */
-    jendelaPrint.document.write('table { width: 100%; font-size: 11px; border-collapse: collapse; table-layout: fixed; font-weight: bold; }');
-    jendelaPrint.document.write('td { word-wrap: break-word; overflow-wrap: break-word; }');
+    /* 3. LEBAR TINTA 48mm, RATA KIRI, ADA JARAK AMAN DI KANAN */
+    jendelaPrint.document.write('body { width: 48mm; max-width: 48mm; margin: 0; padding: 0 3mm 0 0; font-size: 11px; }');
     
-    /* 4. STRIP PEMISAH DIPERTEBAL (jadi 2px) */
-    jendelaPrint.document.write('.dashed-line { border-top: 2px dashed black; margin: 4px 0; }');
+    /* 4. Paksa tabel gak meluber */
+    jendelaPrint.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; }');
+    jendelaPrint.document.write('td, th { word-wrap: break-word; overflow-wrap: break-word; }');
+    
+    /* 5. Garis strip lebih tebal */
+    jendelaPrint.document.write('.dashed-line { border-top: 2px dashed black !important; margin: 4px 0; width: 100%; }');
     jendelaPrint.document.write('.no-print { display: none !important; }');
     
-    /* 5. Paksa teks turun ke baris baru jika kepanjangan */
-    jendelaPrint.document.write('p, div, h4, span { margin: 2px 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }'); 
+    /* 6. Teks yang panjang otomatis turun ke bawah */
+    jendelaPrint.document.write('p, div, h4, span { margin: 2px 0; word-wrap: break-word; white-space: normal; }'); 
     
     jendelaPrint.document.write('</style></head><body>');
     
-    /* Bungkus rapat dengan div 48mm */
-    jendelaPrint.document.write('<div style="width: 48mm; overflow: hidden; margin: 0 auto;">' + isiStruk + '</div>');
+    /* WADAH UTAMA RATA KIRI BIAR GAK KEPOTONG DI KANAN */
+    jendelaPrint.document.write('<div style="width: 100%; overflow: hidden; text-align: left;">' + isiStruk + '</div>');
     
     jendelaPrint.document.write('</body></html>');
     jendelaPrint.document.close();
