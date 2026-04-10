@@ -2207,7 +2207,6 @@ function restoreData(event) {
             if(!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
             if(actionType !== 'image') { closeReceipt(); }
         }
-// --- FUNGSI CETAK LAPTOP (FIX TERPOTONG KANAN) ---
 function printKhususLaptop() {
     var areaStruk = document.getElementById("receipt-area");
     if (!areaStruk) {
@@ -2221,30 +2220,37 @@ function printKhususLaptop() {
     jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
     jendelaPrint.document.write('<style>');
     
-    /* 1. Kertas 58mm, tinggi potong otomatis */
+    /* 1. Kertas 58mm & Font Dasar */
     jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }'); 
-    
-    /* 2. PAKSA TEBAL MAKSIMAL KE SEMUA TULISAN (!important) */
     jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; font-weight: 900 !important; color: black !important; box-sizing: border-box; }');
-    
-    /* 3. LEBAR TINTA 48mm, RATA KIRI, ADA JARAK AMAN DI KANAN */
     jendelaPrint.document.write('body { width: 48mm; max-width: 48mm; margin: 0; padding: 0 3mm 0 0; font-size: 11px; }');
     
-    /* 4. Paksa tabel gak meluber */
+    /* 2. GAYA LAYOUT (Ini yang bikin struk jadi rapi dan punya gaya) */
+    jendelaPrint.document.write('.text-center { text-align: center !important; }');
+    jendelaPrint.document.write('.text-right { text-align: right !important; }');
+    jendelaPrint.document.write('.text-left { text-align: left !important; }');
+    jendelaPrint.document.write('.flex { display: flex !important; }');
+    jendelaPrint.document.write('.justify-between { justify-content: space-between !important; }');
+    jendelaPrint.document.write('.justify-center { justify-content: center !important; }');
+    jendelaPrint.document.write('.items-center { align-items: center !important; }');
+    jendelaPrint.document.write('.w-full { width: 100% !important; }');
+    jendelaPrint.document.write('.font-bold { font-weight: 900 !important; }');
+    
+    /* 3. Gaya Tabel (Jika pakai tabel untuk daftar barang) */
     jendelaPrint.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; }');
     jendelaPrint.document.write('td, th { word-wrap: break-word; overflow-wrap: break-word; }');
+    jendelaPrint.document.write('td.text-right, th.text-right { text-align: right !important; }');
+    jendelaPrint.document.write('td.text-center, th.text-center { text-align: center !important; }');
     
-    /* 5. Garis strip lebih tebal */
+    /* 4. Garis Strip & Elemen Dasar */
     jendelaPrint.document.write('.dashed-line { border-top: 2px dashed black !important; margin: 4px 0; width: 100%; }');
     jendelaPrint.document.write('.no-print { display: none !important; }');
-    
-    /* 6. Teks yang panjang otomatis turun ke bawah */
     jendelaPrint.document.write('p, div, h4, span { margin: 2px 0; word-wrap: break-word; white-space: normal; }'); 
     
     jendelaPrint.document.write('</style></head><body>');
     
-    /* WADAH UTAMA RATA KIRI BIAR GAK KEPOTONG DI KANAN */
-    jendelaPrint.document.write('<div style="width: 100%; overflow: hidden; text-align: left;">' + isiStruk + '</div>');
+    /* Wadah utama */
+    jendelaPrint.document.write('<div style="width: 100%; overflow: hidden;">' + isiStruk + '</div>');
     
     jendelaPrint.document.write('</body></html>');
     jendelaPrint.document.close();
