@@ -91,6 +91,7 @@
         /* Sembunyikan scrollbar untuk grafik & menu bawah */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
@@ -768,9 +769,9 @@
                     <button onclick="processTransaction('whatsapp')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
                         <i class="fa-brands fa-whatsapp text-lg"></i> Teks WA
                     </button>
-                    <button onclick="processTransaction('image')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
-                        <i class="fa-solid fa-image text-lg"></i> Gambar
-                    </button>
+                    <button onclick="processTransaction('printer'); setTimeout(function(){ window.print(); }, 1000);" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 flex flex-col items-center justify-center gap-1">
+        <i class="fa-solid fa-laptop text-lg"></i> Print Laptop
+    </button>
                 </div>
             </div>
         </div>
