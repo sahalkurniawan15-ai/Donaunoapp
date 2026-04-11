@@ -11,6 +11,11 @@
     <title>Soka Celluler POS Barcode</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- Firebase SDK v8 (Compat) via CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -639,6 +644,40 @@
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud text-blue-500 mr-2"></i>Cloud Backup (Firebase)</h2>
+                    <div class="space-y-4">
+                        <p class="text-[11px] text-gray-500 font-medium">Sinkronkan data toko Anda dengan cloud untuk backup otomatis dan akses dari device lain.</p>
+
+                        <!-- User Info -->
+                        <div id="firebase-user-info" class="hidden bg-blue-50 p-3 rounded-xl border border-blue-200"></div>
+
+                        <!-- Firebase Buttons -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="firebase-login-btn" onclick="loginGoogle()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-sm">
+                                <i class="fa-brands fa-google mr-2"></i> Login Google
+                            </button>
+                            <button id="firebase-logout-btn" onclick="logoutGoogle()" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-sm">
+                                <i class="fa-solid fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="firebase-backup-btn" onclick="backupKeCloud()" disabled class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-cloud-upload-alt mr-2"></i> Backup ke Cloud
+                            </button>
+                            <button id="firebase-restore-btn" onclick="restoreDariCloud()" disabled class="bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-cloud-download-alt mr-2"></i> Restore dari Cloud
+                            </button>
+                        </div>
+
+                        <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
+                            <p class="text-yellow-800 font-bold text-xs mb-1"><i class="fa-solid fa-info-circle mr-1"></i>Penting:</p>
+                            <p class="text-yellow-700 text-[10px]">Login Google diperlukan untuk menggunakan fitur cloud backup. Data disimpan dengan aman di Firebase Realtime Database.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-shield-halved text-red-500 mr-2"></i>Keamanan Aplikasi</h2>
                     <div class="space-y-4">
                         <div>
@@ -1056,6 +1095,210 @@
             deviceId = Math.floor(10000 + Math.random() * 90000).toString();
             localStorage.setItem('soka_device_id', deviceId);
         }
+
+        // ================= FIREBASE INITIALIZATION =================
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRJ1oMT5RMRs0RiTNN6ZLmQsxk0yfEuGw",
+            authDomain: "soka-pos-cloud.firebaseapp.com",
+            databaseURL: "https://soka-pos-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "soka-pos-cloud",
+            storageBucket: "soka-pos-cloud.firebasestorage.app",
+            messagingSenderId: "629469967684",
+            appId: "1:629469967684:web:75e08bda77eb7167961311"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize Firebase services
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Global variables for Firebase
+        let currentUser = null;
+
+        // ================= FIREBASE AUTHENTICATION =================
+        function loginGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            // Set custom parameters
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    currentUser = result.user;
+                    showToast(`Login berhasil! Selamat datang, ${currentUser.displayName}`, false);
+
+                    // Update UI setelah login
+                    updateAuthUI(true);
+
+                    // Auto-backup setelah login
+                    setTimeout(() => {
+                        if (confirm('Apakah Anda ingin backup data ke cloud sekarang?')) {
+                            backupKeCloud();
+                        }
+                    }, 2000);
+
+                })
+                .catch((error) => {
+                    console.error('Login error:', error);
+                    let errorMessage = 'Login gagal! ';
+
+                    switch(error.code) {
+                        case 'auth/popup-blocked':
+                            errorMessage += 'Popup diblokir browser. Izinkan popup untuk domain ini.';
+                            break;
+                        case 'auth/popup-closed-by-user':
+                            errorMessage += 'Popup ditutup sebelum selesai.';
+                            break;
+                        case 'auth/network-request-failed':
+                            errorMessage += 'Koneksi internet bermasalah.';
+                            break;
+                        default:
+                            errorMessage += error.message;
+                    }
+
+                    showToast(errorMessage, true);
+                });
+        }
+
+        function logoutGoogle() {
+            auth.signOut()
+                .then(() => {
+                    currentUser = null;
+                    showToast('Logout berhasil!', false);
+                    updateAuthUI(false);
+                })
+                .catch((error) => {
+                    console.error('Logout error:', error);
+                    showToast('Logout gagal: ' + error.message, true);
+                });
+        }
+
+        // ================= FIREBASE DATABASE OPERATIONS =================
+        function backupKeCloud() {
+            if (!currentUser) {
+                showToast('Silakan login dengan Google terlebih dahulu!', true);
+                return;
+            }
+
+            // Kumpulkan semua data dari localStorage
+            const dataToko = {
+                masterProducts: JSON.parse(localStorage.getItem('soka_master_products') || '[]'),
+                transactions: JSON.parse(localStorage.getItem('soka_transactions') || '[]'),
+                debts: JSON.parse(localStorage.getItem('soka_debts') || '[]'),
+                rekapHistory: JSON.parse(localStorage.getItem('soka_rekap_history') || '[]'),
+                storeSettings: JSON.parse(localStorage.getItem('soka_store_settings') || '{}'),
+                lastBackup: new Date().toISOString(),
+                deviceId: deviceId
+            };
+
+            // Simpan ke Firebase Realtime Database
+            const userRef = database.ref('users/' + currentUser.uid + '/dataToko');
+
+            userRef.set(dataToko)
+                .then(() => {
+                    showToast('✅ Backup ke cloud berhasil! Data tersimpan dengan aman.', false);
+                    console.log('Backup successful for user:', currentUser.uid);
+                })
+                .catch((error) => {
+                    console.error('Backup error:', error);
+                    showToast('❌ Backup gagal: ' + error.message, true);
+                });
+        }
+
+        function restoreDariCloud() {
+            if (!currentUser) {
+                showToast('Silakan login dengan Google terlebih dahulu!', true);
+                return;
+            }
+
+            if (!confirm('⚠️ PERINGATAN: Restore akan menimpa semua data lokal Anda dengan data dari cloud. Lanjutkan?')) {
+                return;
+            }
+
+            showToast('Mengambil data dari cloud...', false);
+
+            // Ambil data dari Firebase
+            const userRef = database.ref('users/' + currentUser.uid + '/dataToko');
+
+            userRef.once('value')
+                .then((snapshot) => {
+                    const data = snapshot.val();
+
+                    if (!data) {
+                        showToast('❌ Tidak ada data backup di cloud untuk akun ini.', true);
+                        return;
+                    }
+
+                    // Restore data ke localStorage
+                    if (data.masterProducts) localStorage.setItem('soka_master_products', JSON.stringify(data.masterProducts));
+                    if (data.transactions) localStorage.setItem('soka_transactions', JSON.stringify(data.transactions));
+                    if (data.debts) localStorage.setItem('soka_debts', JSON.stringify(data.debts));
+                    if (data.rekapHistory) localStorage.setItem('soka_rekap_history', JSON.stringify(data.rekapHistory));
+                    if (data.storeSettings) localStorage.setItem('soka_store_settings', JSON.stringify(data.storeSettings));
+
+                    showToast('✅ Restore dari cloud berhasil! Aplikasi akan dimuat ulang...', false);
+
+                    // Reload aplikasi untuk menerapkan data baru
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+
+                })
+                .catch((error) => {
+                    console.error('Restore error:', error);
+                    showToast('❌ Restore gagal: ' + error.message, true);
+                });
+        }
+
+        // ================= UI UPDATE FUNCTIONS =================
+        function updateAuthUI(isLoggedIn) {
+            const loginBtn = document.getElementById('firebase-login-btn');
+            const logoutBtn = document.getElementById('firebase-logout-btn');
+            const backupBtn = document.getElementById('firebase-backup-btn');
+            const restoreBtn = document.getElementById('firebase-restore-btn');
+            const userInfo = document.getElementById('firebase-user-info');
+
+            if (isLoggedIn && currentUser) {
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+                if (backupBtn) backupBtn.disabled = false;
+                if (restoreBtn) restoreBtn.disabled = false;
+                if (userInfo) {
+                    userInfo.style.display = 'block';
+                    userInfo.innerHTML = `
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <img src="${currentUser.photoURL}" class="w-6 h-6 rounded-full" alt="Profile">
+                            <span>${currentUser.displayName}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                if (loginBtn) loginBtn.style.display = 'inline-flex';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (backupBtn) backupBtn.disabled = true;
+                if (restoreBtn) restoreBtn.disabled = true;
+                if (userInfo) userInfo.style.display = 'none';
+            }
+        }
+
+        // ================= AUTH STATE LISTENER =================
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            updateAuthUI(!!user);
+
+            if (user) {
+                console.log('User logged in:', user.displayName, user.uid);
+            } else {
+                console.log('User logged out');
+            }
+        });
+
+        // --- SISTEM LISENSI APLIKASI (BERBAYAR) ---
 
         // FUNGSI CEK STATUS LISENSI SAAT APLIKASI DIBUKA
         document.addEventListener("DOMContentLoaded", () => {
