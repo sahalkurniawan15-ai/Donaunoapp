@@ -672,7 +672,7 @@
 
                         <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
                             <p class="text-yellow-800 font-bold text-xs mb-1"><i class="fa-solid fa-info-circle mr-1"></i>Penting:</p>
-                            <p class="text-yellow-700 text-[10px]">Login Google diperlukan untuk menggunakan fitur cloud backup. Data disimpan dengan aman di Firebase Realtime Database.</p>
+                            <p class="text-yellow-700 text-[10px]">Login Google diperlukan untuk menggunakan fitur cloud backup. Data disimpan dengan aman di Firebase Realtime Database. Aplikasi akan redirect ke Google untuk autentikasi.</p>
                         </div>
                     </div>
                 </div>
@@ -1120,6 +1120,11 @@
 
         // ================= FIREBASE AUTHENTICATION =================
         function loginGoogle() {
+            // Cek apakah sedang dalam proses redirect
+            if (auth.currentUser === null) {
+                showToast('Mengarahkan ke Google untuk login...', false);
+            }
+
             const provider = new firebase.auth.GoogleAuthProvider();
 
             // Set custom parameters
@@ -1127,32 +1132,23 @@
                 prompt: 'select_account'
             });
 
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    currentUser = result.user;
-                    showToast(`Login berhasil! Selamat datang, ${currentUser.displayName}`, false);
-
-                    // Update UI setelah login
-                    updateAuthUI(true);
-
-                    // Auto-backup setelah login
-                    setTimeout(() => {
-                        if (confirm('Apakah Anda ingin backup data ke cloud sekarang?')) {
-                            backupKeCloud();
-                        }
-                    }, 2000);
-
-                })
+            // Gunakan signInWithRedirect untuk kompatibilitas WebView Android
+            auth.signInWithRedirect(provider)
                 .catch((error) => {
-                    console.error('Login error:', error);
+                    console.error('Login redirect error:', error);
                     let errorMessage = 'Login gagal! ';
 
                     switch(error.code) {
-                        case 'auth/popup-blocked':
-                            errorMessage += 'Popup diblokir browser. Izinkan popup untuk domain ini.';
+                        case 'auth/redirect-cancelled-by-user':
+                            errorMessage += 'Login dibatalkan oleh user.';
                             break;
-                        case 'auth/popup-closed-by-user':
-                            errorMessage += 'Popup ditutup sebelum selesai.';
+                        case 'auth/redirect-operation-pending':
+                            errorMessage += 'Login sedang diproses, tunggu sebentar.';
+                            break;
+                        case 'auth/popup-blocked':
+                            errorMessage += 'Popup diblokir. Menggunakan redirect method.';
+                            // Fallback ke redirect jika popup blocked
+                            return auth.signInWithRedirect(provider);
                             break;
                         case 'auth/network-request-failed':
                             errorMessage += 'Koneksi internet bermasalah.';
@@ -1293,9 +1289,47 @@
 
             if (user) {
                 console.log('User logged in:', user.displayName, user.uid);
+
+                // Cek apakah ini hasil dari redirect login
+                auth.getRedirectResult().then((result) => {
+                    if (result.user && result.credential) {
+                        // Ini adalah login baru via redirect
+                        showToast(`Login berhasil! Selamat datang, ${user.displayName}`, false);
+
+                        // Auto-backup setelah login redirect
+                        setTimeout(() => {
+                            if (confirm('Apakah Anda ingin backup data ke cloud sekarang?')) {
+                                backupKeCloud();
+                            }
+                        }, 2000);
+                    }
+                }).catch((error) => {
+                    // Handle redirect errors - biasanya sudah ditangani di auth state change
+                    if (error.code !== 'auth/null-user') {
+                        console.error('Redirect result error:', error);
+                    }
+                });
             } else {
                 console.log('User logged out');
             }
+        });
+
+        // ================= CHECK REDIRECT RESULT ON PAGE LOAD =================
+        document.addEventListener("DOMContentLoaded", () => {
+            // Cek apakah ini hasil redirect dari Google OAuth
+            auth.getRedirectResult().then((result) => {
+                if (result.user) {
+                    console.log('Redirect login successful:', result.user.displayName);
+                    // Auth state listener akan menangani UI update
+                }
+            }).catch((error) => {
+                if (error.code === 'auth/null-user') {
+                    // Normal case - no redirect result
+                    return;
+                }
+                console.error('Redirect result check error:', error);
+                showToast('Error saat memproses login: ' + error.message, true);
+            });
         });
 
         // --- SISTEM LISENSI APLIKASI (BERBAYAR) ---
