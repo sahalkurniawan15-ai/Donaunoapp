@@ -8,6 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1d4ed8">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.svg">
+    <link rel="shortcut icon" href="icon-192.svg">
     <title>Soka Celluler POS Barcode</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -19,6 +22,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- JSZip untuk compress file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         /* ==========================================
            PENGATURAN KHUSUS PRINTER THERMAL & STRUK
@@ -270,36 +277,6 @@
                         <h2 class="font-black text-2xl mb-1">Pusat Laporan</h2>
                         <p class="text-sm text-blue-100 font-medium">Pilih laporan yang ingin dilihat, lalu gunakan filter periode untuk mempersempit data.</p>
                     </div>
-
-                    <div class="report-panel p-4 mb-4">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                            <div>
-                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-chart-area text-blue-500 mr-2"></i>Perkembangan Toko</h3>
-                                <p class="text-[11px] text-gray-500">7 hari terakhir</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-500">Total Penjualan</p>
-                                <p id="mainChartSum" class="text-xl font-black text-blue-600">Rp 0</p>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto no-scrollbar">
-                            <div class="w-full min-w-[320px] sm:min-w-[400px]">
-                                <div class="relative h-40 sm:h-36 border border-gray-200 rounded-2xl overflow-hidden bg-white">
-                                    <svg id="main-store-chart" class="w-full h-full" preserveAspectRatio="none"></svg>
-                                </div>
-                                <div id="main-store-chart-labels" class="flex justify-between text-[10px] text-gray-400 mt-2 font-bold px-1"></div>
-                            </div>
-                        </div>
-                        <p class="report-chart-caption mt-2">Grafik penjualan harian untuk melihat tren perkembangan toko.</p>
-                    </div>
-
-                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-200">
-                        <div class="flex flex-col gap-2">
-                            <h3 class="font-black text-gray-900 text-lg">Mulai dari sini</h3>
-                            <p class="text-sm text-gray-500">Gunakan tombol di bawah untuk melihat ringkasan omzet, riwayat nota, nilai aset, atau analisis produk terlaris.</p>
-                        </div>
-                    </div>
-
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                         <button onclick="openReportMenu('ringkasan', 'Ringkasan Laba & Omzet')" class="bg-white border border-gray-200 p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 hover:border-blue-500 hover:shadow-md transition active:scale-95 text-blue-600 min-h-[120px] sm:min-h-[140px]">
                             <div class="bg-blue-50 w-14 h-14 rounded-full flex items-center justify-center text-2xl"><i class="fa-solid fa-chart-line"></i></div>
@@ -635,7 +612,7 @@
     <button onclick="klikTombolRestore()" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
         <i class="fa-solid fa-upload mr-1"></i> Restore
     </button>
-    <button onclick="kirimBackup()" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
+    <button onclick="openKirimBackupModal()" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-xs sm:text-sm">
         <i class="fa-solid fa-share-nodes mr-1"></i> Kirim
     </button>
     <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreData(event)">
@@ -669,6 +646,10 @@
                                 <i class="fa-solid fa-cloud-download-alt mr-2"></i> Restore dari Cloud
                             </button>
                         </div>
+
+                        <button id="installBtn" class="hidden w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center text-sm mt-3" onclick="promptInstallApp()">
+                            <i class="fa-solid fa-plus mr-2"></i> Install Aplikasi
+                        </button>
 
                         <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
                             <p class="text-yellow-800 font-bold text-xs mb-1"><i class="fa-solid fa-info-circle mr-1"></i>Penting:</p>
@@ -1084,6 +1065,76 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Modal Pilihan Kirim Backup -->
+    <div id="kirimBackupModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-xs sm:max-w-sm flex flex-col shadow-2xl relative">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white rounded-t-3xl">
+                <h2 class="font-black text-lg"><i class="fa-solid fa-share-nodes mr-2"></i>Pilih Metode Kirim</h2>
+                <p class="text-sm text-blue-100 mt-1">Backup data toko Anda melalui berbagai channel</p>
+            </div>
+            
+            <div class="p-5 space-y-3">
+                <button onclick="kirimViaWhatsApp()" class="w-full bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 text-emerald-700 font-bold py-3 rounded-xl transition active:scale-95 flex items-center justify-start px-4">
+                    <i class="fa-brands fa-whatsapp text-2xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-bold">WhatsApp</div>
+                        <div class="text-[11px] opacity-75">Kirim via WhatsApp</div>
+                    </div>
+                </button>
+
+                <button onclick="kirimViaEmail()" class="w-full bg-red-50 hover:bg-red-100 border-2 border-red-200 text-red-700 font-bold py-3 rounded-xl transition active:scale-95 flex items-center justify-start px-4">
+                    <i class="fa-solid fa-envelope text-2xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-bold">Email</div>
+                        <div class="text-[11px] opacity-75">Kirim sebagai email</div>
+                    </div>
+                </button>
+
+                <button onclick="kirimKeGoogleDrive()" class="w-full bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 text-blue-700 font-bold py-3 rounded-xl transition active:scale-95 flex items-center justify-start px-4">
+                    <i class="fa-brands fa-google-drive text-2xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-bold">Google Drive</div>
+                        <div class="text-[11px] opacity-75">Upload ke Google Drive</div>
+                    </div>
+                </button>
+
+                <button onclick="showQRCodeBackup()" class="w-full bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 text-purple-700 font-bold py-3 rounded-xl transition active:scale-95 flex items-center justify-start px-4">
+                    <i class="fa-solid fa-qrcode text-2xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="font-bold">QR Code</div>
+                        <div class="text-[11px] opacity-75">Buat QR code backup</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t pt-4 px-5 pb-5">
+                <button onclick="closeKirimBackupModal()" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal QR Code Backup -->
+    <div id="qrBackupModal" class="fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-xs sm:max-w-sm flex flex-col shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div class="bg-purple-600 p-4 text-white rounded-t-3xl sticky top-0">
+                <h2 class="font-black text-lg"><i class="fa-solid fa-qrcode mr-2"></i>QR Code Backup</h2>
+                <p class="text-sm text-purple-100 mt-1">Scan untuk mengakses & download backup</p>
+            </div>
+            
+            <div class="p-6 flex flex-col items-center">
+                <div id="qrCodeContainer" class="bg-white p-4 rounded-xl border-4 border-purple-200"></div>
+                <p class="text-xs text-gray-500 mt-4 text-center">Scan QR code ini untuk mendownload backup data</p>
+                <button onclick="downloadQRImage()" class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition">
+                    <i class="fa-solid fa-download mr-2"></i>Unduh QR Code
+                </button>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t p-4">
+                <button onclick="closeQRBackupModal()" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg transition">Tutup</button>
+            </div>
         </div>
     </div>
     
@@ -1780,6 +1831,207 @@
 
 
         // ================= SISTEM BACKUP & RESTORE =================
+
+// Fungsi membuka modal pilihan kirim backup
+function openKirimBackupModal() {
+    document.getElementById('kirimBackupModal').classList.remove('hidden');
+}
+
+function closeKirimBackupModal() {
+    document.getElementById('kirimBackupModal').classList.add('hidden');
+}
+
+// Fungsi helper membuat data backup
+function getBackupData() {
+    const storeName = storeSettings.name || 'SOKA_POS';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Backup_${storeName.replace(/\s+/g, '_')}_${dateStr}.json`;
+    
+    const data = {
+        version: "1.0",
+        backupDate: new Date().toISOString(),
+        storeName: storeName,
+        deviceId: deviceId,
+        soka_master_products: localStorage.getItem('soka_master_products'),
+        soka_transactions: localStorage.getItem('soka_transactions'),
+        soka_debts: localStorage.getItem('soka_debts'),
+        soka_rekap_history: localStorage.getItem('soka_rekap_history'),
+        soka_store_settings: localStorage.getItem('soka_store_settings'),
+        soka_password: localStorage.getItem('soka_password')
+    };
+    
+    return { data, fileName, dateStr };
+}
+
+// METODE 1: KIRIM VIA WHATSAPP
+function kirimViaWhatsApp() {
+    try {
+        const { data, fileName, dateStr } = getBackupData();
+        const dataStr = JSON.stringify(data, null, 2);
+        
+        // Buat text yang ringkas untuk preview
+        const storeName = storeSettings.name || 'SOKA POS';
+        const nomor = storeSettings.phone || '0822-2022-0414';
+        
+        const message = `📦 *BACKUP DATA TOKO ${storeName}*\n\n` +
+                       `📅 Tanggal: ${dateStr}\n` +
+                       `📊 Produk: ${JSON.parse(localStorage.getItem('soka_master_products') || '[]').length} item\n` +
+                       `💳 Transaksi: ${JSON.parse(localStorage.getItem('soka_transactions') || '[]').length} nota\n\n` +
+                       `📎 File backup: ${fileName}\n\n` +
+                       `⚠️ *PENTING: Simpan file backup ini dengan aman!*\n` +
+                       `Gunakan untuk restore data jika ada masalah.`;
+        
+        // Copy data ke clipboard otomatis
+        navigator.clipboard.writeText(dataStr).then(() => {
+            showToast("✅ Data backup disalin ke clipboard!");
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            closeKirimBackupModal();
+        }).catch(err => {
+            showToast("Kirim manual: " + message, false);
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            closeKirimBackupModal();
+        });
+        
+    } catch(err) {
+        showToast("Gagal kirim via WhatsApp: " + err.message, true);
+    }
+}
+
+// METODE 2: KIRIM VIA EMAIL
+function kirimViaEmail() {
+    try {
+        const { data, fileName, dateStr } = getBackupData();
+        const dataStr = JSON.stringify(data, null, 2);
+        const storeName = storeSettings.name || 'SOKA POS';
+        
+        const emailSubject = `Backup Data Toko ${storeName} - ${dateStr}`;
+        const emailBody = `Laporan Backup Data Toko\n\n` +
+                         `Nama Toko: ${storeName}\n` +
+                         `Tanggal: ${new Date().toLocaleString('id-ID')}\n` +
+                         `File: ${fileName}\n\n` +
+                         `Ringkasan:\n` +
+                         `- Total Produk: ${JSON.parse(localStorage.getItem('soka_master_products') || '[]').length} item\n` +
+                         `- Total Transaksi: ${JSON.parse(localStorage.getItem('soka_transactions') || '[]').length} nota\n` +
+                         `- Hutang: ${JSON.parse(localStorage.getItem('soka_debts') || '[]').length} catatan\n\n` +
+                         `Data: Lihat file JSON yang dilampirkan.\n\n` +
+                         `---\nPesan otomatis dari SOKA POS`;
+        
+        // Copy ke clipboard
+        navigator.clipboard.writeText(dataStr).then(() => {
+            showToast("✅ Data disalin ke clipboard!");
+        });
+        
+        // Buka email client
+        window.location.href = `mailto:admin@example.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        closeKirimBackupModal();
+        
+    } catch(err) {
+        showToast("Gagal kirim via Email: " + err.message, true);
+    }
+}
+
+// METODE 3: KIRIM KE GOOGLE DRIVE
+function kirimKeGoogleDrive() {
+    try {
+        const { data, fileName } = getBackupData();
+        const dataStr = JSON.stringify(data, null, 2);
+        
+        // Buat blob
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        
+        // Generate download link
+        const url = URL.createObjectURL(blob);
+        
+        // Download otomatis
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast("✅ File backup diunduh! Silakan upload ke Google Drive");
+        closeKirimBackupModal();
+        
+        // Buka Google Drive
+        setTimeout(() => {
+            window.open('https://drive.google.com', '_blank');
+        }, 1000);
+        
+    } catch(err) {
+        showToast("Gagal kirim ke Google Drive: " + err.message, true);
+    }
+}
+
+// METODE 4: BUAT QR CODE
+function showQRCodeBackup() {
+    try {
+        const { data, fileName, dateStr } = getBackupData();
+        const dataStr = JSON.stringify(data);
+        
+        // Buat ringkasan backup untuk QR
+        const backupCode = `BACKUP-${new Date().getTime().toString(36).toUpperCase()}`;
+        
+        // Tampilkan modal QR Code
+        document.getElementById('qrBackupModal').classList.remove('hidden');
+        
+        // Kosongkan container QR sebelumnya
+        const container = document.getElementById('qrCodeContainer');
+        container.innerHTML = '';
+        
+        // Generate QR Code berisi info backup
+        const qrText = `SOKA_BACKUP|${storeSettings.name}|${dateStr}|${backupCode}|Items:${JSON.parse(localStorage.getItem('soka_master_products') || '[]').length}|TRX:${JSON.parse(localStorage.getItem('soka_transactions') || '[]').length}`;
+        
+        new QRCode(container, {
+            text: qrText,
+            width: 250,
+            height: 250,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        closeKirimBackupModal();
+        
+    } catch(err) {
+        showToast("Gagal membuat QR Code: " + err.message, true);
+    }
+}
+
+function closeQRBackupModal() {
+    document.getElementById('qrBackupModal').classList.add('hidden');
+}
+
+function downloadQRImage() {
+    try {
+        const canvas = document.querySelector('#qrCodeContainer canvas');
+        if (!canvas) {
+            showToast("QR Code belum di-generate!", true);
+            return;
+        }
+        
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = `QR_Backup_${new Date().toISOString().slice(0, 10)}.png`;
+        link.click();
+        
+        showToast("✅ QR Code berhasil diunduh!");
+        
+    } catch(err) {
+        showToast("Gagal unduh QR Code: " + err.message, true);
+    }
+}
+
+// Fungsi kirimBackup yang diperbaharui
+function kirimBackup() {
+    if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString("KIRIM_BACKUP");
+    } else {
+        openKirimBackupModal();
+    }
+}
+
 function backupData() {
     const data = {
         soka_master_products: localStorage.getItem('soka_master_products'),
@@ -1821,15 +2073,6 @@ function backupData() {
     } else {
         // Panggil file manager Laptop jika dibuka di browser
         document.getElementById('restore-file').click(); 
-    }
-}
-
-// FUNGSI UNTUK MENGIRIM FILE BACKUP
-         function kirimBackup() {
-    if (typeof window.AppInventor !== 'undefined') {
-        window.AppInventor.setWebViewString("KIRIM_BACKUP");
-    } else {
-        alert("Fitur ini khusus untuk di dalam Aplikasi SOKA POS.");
     }
 }
 
@@ -3735,6 +3978,54 @@ function processTransaction(actionType) {
             setTimeout(initApp, 100); 
         }
 
+        let deferredInstallPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+            }
+        });
+
+        function promptInstallApp() {
+            if (!deferredInstallPrompt) return;
+
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.then((choiceResult) => {
+                const installBtn = document.getElementById('installBtn');
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                if (installBtn) {
+                    installBtn.classList.add('hidden');
+                }
+                deferredInstallPrompt = null;
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installed');
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.classList.add('hidden');
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.warn('Service Worker registration failed:', error);
+                    });
+            });
+        }
  
     </script> 
     </body>
