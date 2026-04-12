@@ -398,28 +398,24 @@
                  <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mt-4 mb-8">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-list-check text-indigo-500 mr-2"></i>Rekap Harian</h3>
-                                <p class="text-[10px] text-gray-400">Total omset & laba bersih per tanggal</p>
+                                <h3 class="font-black text-gray-800 text-lg"><i class="fa-solid fa-calendar-days text-indigo-600 mr-2"></i>Rekap Harian</h3>
+                                <p class="text-[10px] text-gray-500 mt-1">📊 Omzet & keuntungan per hari</p>
                             </div>
-                            <button onclick="toggleRekapHarian()" id="btn-toggle-rekap" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all">
+                            <button onclick="toggleRekapHarian()" id="btn-toggle-rekap" class="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl text-xs font-black shadow-md active:scale-95 transition-all flex items-center gap-2 min-h-[44px]">
                                 <i class="fa-solid fa-eye mr-1"></i> Buka Data
                             </button>
                         </div>
                         
-                        <div id="wadah-tabel-rekap" class="hidden mt-4 pt-4 border-t border-gray-100 overflow-x-auto animation-fadeIn">
-                            <table class="report-table w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase border-b border-gray-100">
-                                        <th class="p-3 font-bold">TGL</th>
-                                        <th class="p-3 font-bold text-center">NOTA</th>
-                                        <th class="p-3 font-bold text-right">OMSET</th>
-                                        <th class="p-3 font-bold text-right">LABA</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="body-rekap-harian" class="text-xs">
-                                    <tr><td colspan="4" class="text-center py-8 text-gray-400">Memproses data...</td></tr>
-                                </tbody>
-                            </table>
+                        <div id="wadah-tabel-rekap" class="hidden mt-6 pt-4 animation-fadeIn">
+                            <!-- Summary Cards -->
+                            <div id="recap-summary-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                                <!-- Will be populated by prosesRekapHarian() -->
+                            </div>
+
+                            <!-- Daily Cards -->
+                            <div id="recap-cards-container" class="space-y-3">
+                                <!-- Will be populated by prosesRekapHarian() -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -430,7 +426,7 @@
                             <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                                 <i class="fa-solid fa-search"></i>
                             </span>
-                            <input type="text" id="searchReport" onkeyup="filterReportHistory()" placeholder="Cari berdasarkan invoice, tanggal, atau nama barang..." class="w-full pl-12 pr-4 py-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium min-h-[44px]">
+                            <input type="text" id="searchReport" onkeyup="debouncedFilterReportHistory()" placeholder="Cari berdasarkan invoice, tanggal, atau nama barang..." class="w-full pl-12 pr-4 py-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium min-h-[44px]">
                         </div>
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -455,17 +451,22 @@
                 </div>
 
                 <div id="laporan-analisis" class="hidden p-3 sm:p-4 w-full max-w-full sm:max-w-4xl mx-auto animation-fadeIn">
-                    <div class="flex gap-2 sm:gap-4 mb-4">
-                        <button onclick="showAnalytic('sales')" class="flex-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold py-3 rounded-2xl shadow-sm transition active:scale-95 text-xs sm:text-sm flex flex-col items-center justify-center gap-1">
-                            <i class="fa-solid fa-fire text-orange-500 text-lg"></i><span>Barang Terlaris</span>
+                    <div class="flex gap-2 sm:gap-4 mb-6">
+                        <button onclick="showAnalytic('sales')" class="flex-1 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-200 hover:border-amber-400 text-amber-700 font-black py-4 rounded-2xl shadow-md transition active:scale-95 text-xs sm:text-sm flex flex-col items-center justify-center gap-2 relative overflow-hidden group">
+                            <i class="fa-solid fa-fire text-orange-500 text-2xl group-hover:scale-110 transition"></i>
+                            <span>Barang Terlaris</span>
+                            <span class="text-[10px] opacity-70">Penjualan Terbanyak</span>
                         </button>
-                        <button onclick="showAnalytic('profit')" class="flex-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold py-3 rounded-2xl shadow-sm transition active:scale-95 text-xs sm:text-sm flex flex-col items-center justify-center gap-1">
-                            <i class="fa-solid fa-sack-dollar text-emerald-500 text-lg"></i><span>Laba Terbesar</span>
+                        <button onclick="showAnalytic('profit')" class="flex-1 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border-2 border-emerald-200 hover:border-emerald-400 text-emerald-700 font-black py-4 rounded-2xl shadow-md transition active:scale-95 text-xs sm:text-sm flex flex-col items-center justify-center gap-2 relative overflow-hidden group">
+                            <i class="fa-solid fa-sack-dollar text-emerald-500 text-2xl group-hover:scale-110 transition"></i>
+                            <span>Laba Terbesar</span>
+                            <span class="text-[10px] opacity-70">Keuntungan Tertinggi</span>
                         </button>
                     </div>
                     <div id="analyticResults" class="transition-all duration-300">
-                        <div class="text-center p-8 text-gray-400 font-medium border-2 border-dashed border-gray-200 rounded-2xl mt-4">
-                            Pilih jenis analisis di atas
+                        <div class="text-center p-12">
+                            <i class="fa-solid fa-chart-pie text-gray-300 text-5xl mb-3"></i>
+                            <p class="text-gray-500 font-medium text-sm">Pilih jenis analisis di atas untuk melihat data</p>
                         </div>
                     </div>
                 </div>
@@ -481,7 +482,7 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                             <i class="fa-solid fa-search"></i>
                         </span>
-                        <input type="text" id="searchMaster" onkeyup="renderMasterProducts()" placeholder="Cari nama atau barcode..." class="w-full pl-12 pr-4 py-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium min-h-[44px]">
+                        <input type="text" id="searchMaster" onkeyup="debouncedRenderMasterProducts()" placeholder="Cari nama atau barcode..." class="w-full pl-12 pr-4 py-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium min-h-[44px]">
                     </div>
                     <div class="flex gap-1.5 sm:gap-2">
                         <button onclick="exportProductsToCSV()" class="bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 px-4 py-4 sm:px-3 sm:py-3 rounded-xl font-bold transition flex justify-center items-center min-h-[44px]">
@@ -654,6 +655,43 @@
                         <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
                             <p class="text-yellow-800 font-bold text-xs mb-1"><i class="fa-solid fa-info-circle mr-1"></i>Penting:</p>
                             <p class="text-yellow-700 text-[10px]">Login Google diperlukan untuk menggunakan fitur cloud backup. Data disimpan dengan aman di Firebase Realtime Database.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-file-import text-purple-500 mr-2"></i>Restore dari File Backup</h2>
+                    <div class="space-y-4">
+                        <p class="text-[11px] text-gray-500 font-medium">Upload file backup JSON yang sudah diunduh sebelumnya untuk mengembalikan data lama Anda.</p>
+                        
+                        <div class="border-2 border-dashed border-purple-300 rounded-xl p-6 text-center cursor-pointer hover:bg-purple-50 transition" onclick="document.getElementById('backupFileInput').click()">
+                            <i class="fa-solid fa-cloud-arrow-up text-purple-400 text-3xl mb-2"></i>
+                            <p class="text-sm font-bold text-gray-700">Klik atau Drag File Backup JSON</p>
+                            <p class="text-xs text-gray-500 mt-1">Format: .json (Backup_*.json)</p>
+                        </div>
+                        
+                        <input type="file" id="backupFileInput" class="hidden" accept=".json" onchange="handleBackupFileSelect(event)">
+                        
+                        <div id="backupFileInfo" class="hidden bg-blue-50 p-3 rounded-xl border border-blue-200">
+                            <p class="text-xs text-gray-600"><strong>File:</strong> <span id="backupFileName">-</span></p>
+                            <p class="text-xs text-gray-600"><strong>Ukuran:</strong> <span id="backupFileSize">-</span></p>
+                            <p class="text-xs text-gray-600"><strong>Status:</strong> <span id="backupFileStatus" class="font-bold text-blue-600">Siap restore</span></p>
+                        </div>
+                        
+                        <div id="restorePreview" class="hidden bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs space-y-1">
+                            <p><strong>📦 Produk:</strong> <span id="previewProducts">-</span> item</p>
+                            <p><strong>💳 Transaksi:</strong> <span id="previewTransactions">-</span> nota</p>
+                            <p><strong>💰 Hutang:</strong> <span id="previewDebts">-</span> catatan</p>
+                            <p><strong>📅 Backup Tanggal:</strong> <span id="previewBackupDate">-</span></p>
+                        </div>
+                        
+                        <button id="restoreFileBtn" onclick="executeRestoreFromFile()" disabled class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-sm transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                            <i class="fa-solid fa-download mr-2"></i> Restore Data Sekarang
+                        </button>
+                        
+                        <div class="bg-orange-50 p-3 rounded-xl border border-orange-200">
+                            <p class="text-orange-800 font-bold text-xs mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Peringatan:</p>
+                            <p class="text-orange-700 text-[10px]">Restore akan <strong>menimpa semua data lokal</strong> dengan data dari file backup. Pastikan Anda sudah backup data saat ini sebelum melanjutkan.</p>
                         </div>
                     </div>
                 </div>
@@ -1306,6 +1344,169 @@
                 });
         }
 
+        // ================= FILE BACKUP RESTORE FUNCTIONS =================
+        let currentBackupData = null;
+
+        function handleBackupFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileInfo = document.getElementById('backupFileInfo');
+            const fileStatus = document.getElementById('backupFileStatus');
+            const restoreBtn = document.getElementById('restoreFileBtn');
+            const previewDiv = document.getElementById('restorePreview');
+
+            // Display file info
+            document.getElementById('backupFileName').textContent = file.name;
+            document.getElementById('backupFileSize').textContent = (file.size / 1024).toFixed(2) + ' KB';
+            fileInfo.classList.remove('hidden');
+
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const content = e.target.result;
+                    const data = JSON.parse(content);
+
+                    // Validate backup format
+                    const validation = validateBackupFile(data);
+                    
+                    if (!validation.valid) {
+                        fileStatus.textContent = `❌ ${validation.error}`;
+                        fileStatus.className = 'font-bold text-red-600';
+                        restoreBtn.disabled = true;
+                        previewDiv.classList.add('hidden');
+                        currentBackupData = null;
+                        return;
+                    }
+
+                    // File valid - show preview
+                    fileStatus.textContent = '✅ File backup valid';
+                    fileStatus.className = 'font-bold text-green-600';
+                    restoreBtn.disabled = false;
+                    currentBackupData = data;
+
+                    // Show preview
+                    document.getElementById('previewProducts').textContent = (data.soka_master_products ? JSON.parse(data.soka_master_products).length : 0);
+                    document.getElementById('previewTransactions').textContent = (data.soka_transactions ? JSON.parse(data.soka_transactions).length : 0);
+                    document.getElementById('previewDebts').textContent = (data.soka_debts ? JSON.parse(data.soka_debts).length : 0);
+                    document.getElementById('previewBackupDate').textContent = data.backupDate ? new Date(data.backupDate).toLocaleString('id-ID') : '-';
+                    previewDiv.classList.remove('hidden');
+
+                } catch (err) {
+                    fileStatus.textContent = `❌ Format file tidak valid (JSON error)`;
+                    fileStatus.className = 'font-bold text-red-600';
+                    restoreBtn.disabled = true;
+                    previewDiv.classList.add('hidden');
+                    currentBackupData = null;
+                    console.error('File parse error:', err);
+                }
+            };
+
+            reader.onerror = () => {
+                fileStatus.textContent = '❌ Gagal membaca file';
+                fileStatus.className = 'font-bold text-red-600';
+                restoreBtn.disabled = true;
+                previewDiv.classList.add('hidden');
+                currentBackupData = null;
+            };
+
+            reader.readAsText(file);
+        }
+
+        function validateBackupFile(data) {
+            // Check required fields
+            if (typeof data !== 'object' || data === null) {
+                return { valid: false, error: 'File bukan JSON object yang valid' };
+            }
+
+            // Must have at least one of these fields
+            const hasRequiredFields = data.soka_master_products || 
+                                     data.soka_transactions || 
+                                     data.soka_debts || 
+                                     data.soka_store_settings;
+            
+            if (!hasRequiredFields) {
+                return { valid: false, error: 'File tidak mengandung data backup yang dikenali' };
+            }
+
+            // Validate JSON stringified fields
+            const fieldsToValidate = [
+                'soka_master_products',
+                'soka_transactions',
+                'soka_debts',
+                'soka_rekap_history'
+            ];
+
+            for (let field of fieldsToValidate) {
+                if (data[field]) {
+                    try {
+                        const parsed = JSON.parse(data[field]);
+                        if (!Array.isArray(parsed)) {
+                            return { valid: false, error: `Field ${field} bukan array yang valid` };
+                        }
+                    } catch (err) {
+                        return { valid: false, error: `Field ${field} tidak bisa di-parse` };
+                    }
+                }
+            }
+
+            return { valid: true };
+        }
+
+        function executeRestoreFromFile() {
+            if (!currentBackupData) {
+                showToast('Silakan upload file backup terlebih dahulu!', true);
+                return;
+            }
+
+            if (!confirm('⚠️ PERINGATAN PENTING:\\n\\nRestore akan MENIMPA SEMUA data lokal Anda dengan data dari file backup.\\n\\nAPAKAH ANDA YAKIN? Pastikan sudah backup data saat ini!')) {
+                return;
+            }
+
+            try {
+                showToast('Memproses restore data...', false);
+
+                // Restore semua data
+                if (currentBackupData.soka_master_products) {
+                    localStorage.setItem('soka_master_products', currentBackupData.soka_master_products);
+                }
+                if (currentBackupData.soka_transactions) {
+                    localStorage.setItem('soka_transactions', currentBackupData.soka_transactions);
+                }
+                if (currentBackupData.soka_debts) {
+                    localStorage.setItem('soka_debts', currentBackupData.soka_debts);
+                }
+                if (currentBackupData.soka_rekap_history) {
+                    localStorage.setItem('soka_rekap_history', currentBackupData.soka_rekap_history);
+                }
+                if (currentBackupData.soka_store_settings) {
+                    localStorage.setItem('soka_store_settings', currentBackupData.soka_store_settings);
+                }
+                if (currentBackupData.soka_password) {
+                    localStorage.setItem('soka_password', currentBackupData.soka_password);
+                }
+
+                // Clear preview
+                document.getElementById('backupFileInfo').classList.add('hidden');
+                document.getElementById('restorePreview').classList.add('hidden');
+                document.getElementById('restoreFileBtn').disabled = true;
+                document.getElementById('backupFileInput').value = '';
+                currentBackupData = null;
+
+                showToast('✅ Restore berhasil! Aplikasi akan dimuat ulang...', false);
+
+                // Reload aplikasi
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+
+            } catch (err) {
+                console.error('Restore from file error:', err);
+                showToast('❌ Restore gagal: ' + err.message, true);
+            }
+        }
+
         // ================= UI UPDATE FUNCTIONS =================
         function updateAuthUI(isLoggedIn) {
             const loginBtn = document.getElementById('firebase-login-btn');
@@ -1480,29 +1681,17 @@
                 
                 let teksAngka = val === 0 ? '' : val.toLocaleString('id-ID'); 
                 
-                // Perkiraan panjang teks (misal "84.664" itu sekitar 30 pixel)
-                let estimasiPanjangTeks = teksAngka.length * 4.5; 
-                
+                // Posisi text di tengah balok (horizontal)
                 let textX = x + (barWidth / 2);
-                let textY;
-                let textColor;
-                let fontTebal = "bold";
-
-                // JURUS TEKS PINTAR untuk HP dan Desktop
-                if (barHeight > estimasiPanjangTeks + 10) {
-                    // Jika balok tinggi: Angka di DALAM balok (Warna Putih)
-                    textY = y + barHeight - 4; // Nempel dari dasar balok menjulang ke atas
-                    textColor = "#ffffff";
-                } else {
-                    // Jika balok pendek: Angka di ATAS balok (Warna menyesuaikan balok)
-                    textY = y - 3; // Nempel di pucuk balok
-                    textColor = color; 
-                    fontTebal = "900"; // Ditebalkan sedikit biar makin jelas
-                }
+                // Posisi text di tengah balok (vertical) - 50% dari tinggi balok
+                let textY = y + (barHeight / 2);
+                
+                // Warna text: Putih agar kontras dengan balok
+                let textColor = "#ffffff";
                 
                 return `
                     <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="3" class="hover:opacity-80 transition-opacity cursor-pointer" />
-                    <text x="${textX}" y="${textY}" font-size="8" fill="${textColor}" font-weight="${fontTebal}" text-anchor="middle" class="pointer-events-none">${teksAngka}</text>
+                    <text x="${textX}" y="${textY}" font-size="10" font-weight="bold" fill="${textColor}" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${textX} ${textY})" class="pointer-events-none" style="font-family: Arial, sans-serif;">${teksAngka}</text>
                 `;
             }).join('');
 
@@ -1614,8 +1803,9 @@
             drawBarChart('chart-trx-svg', 'chart-trx-labels', dataTrx, '#6366f1', labels, 'horizontal');
         }
                 function prosesRekapHarian() {
-            let tbody = document.getElementById('body-rekap-harian');
-            if(!tbody) return;
+            let container = document.getElementById('recap-cards-container');
+            let summaryContainer = document.getElementById('recap-summary-cards');
+            if(!container || !summaryContainer) return;
 
             let allTx = [];
             let saved = localStorage.getItem('soka_transactions');
@@ -1635,7 +1825,8 @@
 
             // 2. CEK JIKA KOSONG
             if (filteredTx.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400 font-medium">Data kosong untuk periode ini</td></tr>';
+                container.innerHTML = '<div class="text-center py-12"><i class="fa-solid fa-inbox text-gray-300 text-5xl mb-3"></i><p class="text-gray-500 font-medium">Data kosong untuk periode ini</p></div>';
+                summaryContainer.innerHTML = '';
                 return;
             }
 
@@ -1658,39 +1849,122 @@
                 rekap[tgl].laba += laba;
             });
 
-            // 4. TAMPILKAN KE TABEL DENGAN DESAIN RAPI
+            // 4. HITUNG TOTAL & STATISTIK
             let sorted = Object.keys(rekap).sort().reverse();
-            let html = ""; let tNota = 0, tOmzet = 0, tLaba = 0;
-
+            let tNota = 0, tOmzet = 0, tLaba = 0;
+            
             sorted.forEach(tgl => {
-                let d = rekap[tgl]; tNota += d.nota; tOmzet += d.omzet; tLaba += d.laba;
+                let d = rekap[tgl];
+                tNota += d.nota;
+                tOmzet += d.omzet;
+                tLaba += d.laba;
+            });
+
+            // Hitung rata-rata & max
+            let avgOmzet = Math.floor(tOmzet / sorted.length);
+            let avgLaba = Math.floor(tLaba / sorted.length);
+            let maxOmzet = Math.max(...sorted.map(tgl => rekap[tgl].omzet));
+            let maxLaba = Math.max(...sorted.map(tgl => rekap[tgl].laba));
+
+            // 5. RENDER SUMMARY CARDS
+            let summaryHtml = `
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                    <i class="fa-solid fa-chart-line absolute -right-6 -top-6 text-6xl opacity-10"></i>
+                    <div class="relative z-10">
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">Total Omzet</p>
+                        <h3 class="text-2xl font-black">${formatRp(tOmzet)}</h3>
+                        <p class="text-blue-200 text-xs mt-1">Periode terpilih</p>
+                    </div>
+                </div>
                 
-                // Percantik format tanggal (Misal: 2026-04-03 jadi 03/04)
+                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                    <i class="fa-solid fa-sack-dollar absolute -right-6 -top-6 text-6xl opacity-10"></i>
+                    <div class="relative z-10">
+                        <p class="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">Total Laba</p>
+                        <h3 class="text-2xl font-black">${formatRp(tLaba)}</h3>
+                        <p class="text-emerald-200 text-xs mt-1">Keuntungan bersih</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                    <i class="fa-solid fa-receipt absolute -right-6 -top-6 text-6xl opacity-10"></i>
+                    <div class="relative z-10">
+                        <p class="text-amber-100 text-xs font-bold uppercase tracking-widest mb-1">Total Transaksi</p>
+                        <h3 class="text-2xl font-black">${tNota}</h3>
+                        <p class="text-amber-200 text-xs mt-1">Jumlah nota</p>
+                    </div>
+                </div>
+            `;
+            summaryContainer.innerHTML = summaryHtml;
+
+            // 6. RENDER DAILY CARDS
+            let cardsHtml = '';
+            
+            sorted.forEach((tgl, idx) => {
+                let d = rekap[tgl];
+                
+                // Format tanggal
                 let tglIndo = tgl;
+                let dayName = '';
                 if(tgl.includes('-')) {
                     let p = tgl.split('-');
-                    if(p.length === 3) tglIndo = `${p[2]}/${p[1]}`;
+                    if(p.length === 3) {
+                        let date = new Date(tgl);
+                        let days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+                        dayName = days[date.getDay()];
+                        tglIndo = `${p[2]}/${p[1]}/${p[0]}`;
+                    }
                 }
 
-                html += `
-                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td class="p-3 font-bold text-gray-600">${tglIndo}</td>
-                    <td class="p-3 text-center text-indigo-600 font-bold bg-indigo-50/50">${d.nota}</td>
-                    <td class="p-3 text-right text-blue-600 font-bold">Rp ${d.omzet.toLocaleString('id-ID')}</td>
-                    <td class="p-3 text-right text-emerald-600 font-bold bg-emerald-50/50">Rp ${d.laba.toLocaleString('id-ID')}</td>
-                </tr>`;
+                // Hitung persentase
+                let omzetPct = ((d.omzet / maxOmzet) * 100).toFixed(0);
+                let labaPct = ((d.laba / maxLaba) * 100).toFixed(0);
+                let profitMargin = ((d.laba / d.omzet) * 100).toFixed(1);
+
+                cardsHtml += `
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 hover:border-indigo-400 hover:shadow-md transition group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-xs font-black">${dayName}</span>
+                                <span class="text-gray-600 font-bold text-sm">${tglIndo}</span>
+                            </div>
+                            <p class="text-xs text-gray-400">${d.nota} nota transaksi</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500 font-bold">Margin:</p>
+                            <p class="text-lg font-black text-indigo-600">${profitMargin}%</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Omzet -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs font-bold text-gray-600"><i class="fa-solid fa-chart-line text-blue-500 mr-1"></i>Omzet</p>
+                                <span class="text-sm font-black text-blue-600">${formatRp(d.omzet)}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full" style="width: ${omzetPct}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Laba -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs font-bold text-gray-600"><i class="fa-solid fa-sack-dollar text-emerald-500 mr-1"></i>Laba Bersih</p>
+                                <span class="text-sm font-black text-emerald-600">${formatRp(d.laba)}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-full rounded-full" style="width: ${labaPct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
             });
-            
-            // Baris TOTAL Keseluruhan
-            html += `
-            <tr class="bg-indigo-600 text-white font-black border-t-2 border-indigo-800 shadow-inner">
-                <td class="p-3 rounded-bl-lg tracking-wider">TOTAL</td>
-                <td class="p-3 text-center">${tNota}</td>
-                <td class="p-3 text-right">Rp ${tOmzet.toLocaleString('id-ID')}</td>
-                <td class="p-3 text-right rounded-br-lg">Rp ${tLaba.toLocaleString('id-ID')}</td>
-            </tr>`;
-            
-            tbody.innerHTML = html;
+
+            container.innerHTML = cardsHtml;
         }
 
         // Pancing otomatis saat aplikasi pertama dibuka
@@ -1712,8 +1986,11 @@
             if (wadah.classList.contains('hidden')) {
                 // Munculkan tabel
                 wadah.classList.remove('hidden');
-                btn.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> Tutup';
-                btn.classList.replace('bg-indigo-600', 'bg-gray-500');
+                btn.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> Tutup Data';
+                btn.classList.replace('from-indigo-600', 'from-gray-600');
+                btn.classList.replace('to-indigo-700', 'to-gray-700');
+                btn.classList.replace('hover:from-indigo-700', 'hover:from-gray-700');
+                btn.classList.replace('hover:to-indigo-800', 'hover:to-gray-800');
                 
                 // Proses datanya agar yang tampil adalah data terbaru
                 prosesRekapHarian(); 
@@ -1721,7 +1998,10 @@
                 // Sembunyikan tabel
                 wadah.classList.add('hidden');
                 btn.innerHTML = '<i class="fa-solid fa-eye mr-1"></i> Buka Data';
-                btn.classList.replace('bg-gray-500', 'bg-indigo-600');
+                btn.classList.replace('from-gray-600', 'from-indigo-600');
+                btn.classList.replace('to-gray-700', 'to-indigo-700');
+                btn.classList.replace('hover:from-gray-700', 'hover:from-indigo-700');
+                btn.classList.replace('hover:to-gray-800', 'hover:to-indigo-800');
             }
         }
 
@@ -1871,7 +2151,6 @@ function kirimViaWhatsApp() {
         
         // Buat text yang ringkas untuk preview
         const storeName = storeSettings.name || 'SOKA POS';
-        const nomor = storeSettings.phone || '0822-2022-0414';
         
         const message = `📦 *BACKUP DATA TOKO ${storeName}*\n\n` +
                        `📅 Tanggal: ${dateStr}\n` +
@@ -1881,18 +2160,27 @@ function kirimViaWhatsApp() {
                        `⚠️ *PENTING: Simpan file backup ini dengan aman!*\n` +
                        `Gunakan untuk restore data jika ada masalah.`;
         
-        // Copy data ke clipboard otomatis
-        navigator.clipboard.writeText(dataStr).then(() => {
-            showToast("✅ Data backup disalin ke clipboard!");
+        // Copy data ke clipboard otomatis (dengan fallback)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(dataStr).then(() => {
+                showToast("✅ Data backup disalin ke clipboard!");
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                setTimeout(() => closeKirimBackupModal(), 500);
+            }).catch(err => {
+                console.log("Clipboard error:", err);
+                showToast("✅ Buka WhatsApp dan paste data backup dari clipboard");
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                setTimeout(() => closeKirimBackupModal(), 500);
+            });
+        } else {
+            // Fallback: Buka WhatsApp saja
+            showToast("✅ Buka WhatsApp untuk chat");
             window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-            closeKirimBackupModal();
-        }).catch(err => {
-            showToast("Kirim manual: " + message, false);
-            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-            closeKirimBackupModal();
-        });
+            setTimeout(() => closeKirimBackupModal(), 500);
+        }
         
     } catch(err) {
+        console.error("WhatsApp error:", err);
         showToast("Gagal kirim via WhatsApp: " + err.message, true);
     }
 }
@@ -1913,19 +2201,40 @@ function kirimViaEmail() {
                          `- Total Produk: ${JSON.parse(localStorage.getItem('soka_master_products') || '[]').length} item\n` +
                          `- Total Transaksi: ${JSON.parse(localStorage.getItem('soka_transactions') || '[]').length} nota\n` +
                          `- Hutang: ${JSON.parse(localStorage.getItem('soka_debts') || '[]').length} catatan\n\n` +
-                         `Data: Lihat file JSON yang dilampirkan.\n\n` +
+                         `File backup telah diunduh. Silakan attach ke email ini.\n\n` +
                          `---\nPesan otomatis dari SOKA POS`;
         
-        // Copy ke clipboard
-        navigator.clipboard.writeText(dataStr).then(() => {
-            showToast("✅ Data disalin ke clipboard!");
-        });
+        // Download file backup terlebih dahulu
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-        // Buka email client
-        window.location.href = `mailto:admin@example.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-        closeKirimBackupModal();
+        // Copy ke clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(dataStr).then(() => {
+                showToast("✅ File diunduh & data disalin ke clipboard!");
+            }).catch(() => {
+                showToast("✅ File backup diunduh!");
+            });
+        } else {
+            showToast("✅ File backup diunduh!");
+        }
+        
+        // Buka email client dengan delay
+        setTimeout(() => {
+            window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        }, 1000);
+        
+        setTimeout(() => closeKirimBackupModal(), 1500);
         
     } catch(err) {
+        console.error("Email error:", err);
         showToast("Gagal kirim via Email: " + err.message, true);
     }
 }
@@ -1946,20 +2255,26 @@ function kirimKeGoogleDrive() {
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
         
-        showToast("✅ File backup diunduh! Silakan upload ke Google Drive");
-        closeKirimBackupModal();
-        
-        // Buka Google Drive
+        // Tunggu sebentar sebelum revoke
         setTimeout(() => {
-            window.open('https://drive.google.com', '_blank');
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        showToast("✅ File backup diunduh! Buka Google Drive untuk upload");
+        
+        // Buka Google Drive dengan delay
+        setTimeout(() => {
+            window.open('https://drive.google.com/drive', '_blank');
+            closeKirimBackupModal();
         }, 1000);
         
     } catch(err) {
+        console.error("Google Drive error:", err);
         showToast("Gagal kirim ke Google Drive: " + err.message, true);
     }
 }
@@ -1973,16 +2288,24 @@ function showQRCodeBackup() {
         // Buat ringkasan backup untuk QR
         const backupCode = `BACKUP-${new Date().getTime().toString(36).toUpperCase()}`;
         
-        // Tampilkan modal QR Code
-        document.getElementById('qrBackupModal').classList.remove('hidden');
-        
         // Kosongkan container QR sebelumnya
         const container = document.getElementById('qrCodeContainer');
+        if (!container) {
+            showToast("Modal QR Code tidak ditemukan!", true);
+            return;
+        }
         container.innerHTML = '';
         
         // Generate QR Code berisi info backup
         const qrText = `SOKA_BACKUP|${storeSettings.name}|${dateStr}|${backupCode}|Items:${JSON.parse(localStorage.getItem('soka_master_products') || '[]').length}|TRX:${JSON.parse(localStorage.getItem('soka_transactions') || '[]').length}`;
         
+        // Cek apakah QRCode library tersedia
+        if (typeof QRCode === 'undefined') {
+            showToast("QR Code library belum dimuat. Silakan refresh halaman.", true);
+            return;
+        }
+        
+        // Generate QR Code
         new QRCode(container, {
             text: qrText,
             width: 250,
@@ -1992,9 +2315,18 @@ function showQRCodeBackup() {
             correctLevel: QRCode.CorrectLevel.H
         });
         
-        closeKirimBackupModal();
+        // Tampilkan modal QR Code setelah QR berhasil dibuat
+        setTimeout(() => {
+            const qrModal = document.getElementById('qrBackupModal');
+            if (qrModal) {
+                qrModal.classList.remove('hidden');
+            }
+            closeKirimBackupModal();
+            showToast("✅ QR Code backup berhasil dibuat!");
+        }, 500);
         
     } catch(err) {
+        console.error("QR Code error:", err);
         showToast("Gagal membuat QR Code: " + err.message, true);
     }
 }
@@ -2005,7 +2337,13 @@ function closeQRBackupModal() {
 
 function downloadQRImage() {
     try {
-        const canvas = document.querySelector('#qrCodeContainer canvas');
+        const container = document.getElementById('qrCodeContainer');
+        if (!container) {
+            showToast("Container QR Code tidak ditemukan!", true);
+            return;
+        }
+        
+        const canvas = container.querySelector('canvas');
         if (!canvas) {
             showToast("QR Code belum di-generate!", true);
             return;
@@ -2014,11 +2352,15 @@ function downloadQRImage() {
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = `QR_Backup_${new Date().toISOString().slice(0, 10)}.png`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         
         showToast("✅ QR Code berhasil diunduh!");
         
     } catch(err) {
+        console.error("Download QR error:", err);
         showToast("Gagal unduh QR Code: " + err.message, true);
     }
 }
@@ -2380,6 +2722,43 @@ function restoreData(event) {
             }
         }
 
+        // ==================== PERFORMANCE OPTIMIZATION ====================
+        // Cache DOM elements
+        const cacheDOM = {
+            searchInput: null,
+            productList: null,
+            cartItems: null,
+            totalPrice: null,
+            floatingCartTotal: null,
+            floatingCartCount: null,
+            getElements() {
+                this.searchInput = document.getElementById('searchInput');
+                this.productList = document.getElementById('productList');
+                this.cartItems = document.getElementById('cartItems');
+                this.totalPrice = document.getElementById('totalPrice');
+                this.floatingCartTotal = document.getElementById('floatingCartTotal');
+                this.floatingCartCount = document.getElementById('floatingCartCount');
+            }
+        };
+
+        // Debounce function for search
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Optimized debounced filter
+        const debouncedRenderProducts = debounce(renderProducts, 300);
+        const debouncedRenderMasterProducts = debounce(renderMasterProducts, 300);
+        const debouncedFilterReportHistory = debounce(filterReportHistory, 300);
+
         function handleBarcodeEnter(e) {
             if (e.key === 'Enter') {
                 const inputEl = document.getElementById('searchInput');
@@ -2398,9 +2777,9 @@ function restoreData(event) {
         }
 
                         function renderProducts() {
-            const filterText = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('productList');
-            list.innerHTML = "";
+            const filterText = (cacheDOM.searchInput?.value || '').toLowerCase();
+            const list = cacheDOM.productList || document.getElementById('productList');
+            
             const filtered = masterProducts.filter(p => 
                 p.name.toLowerCase().includes(filterText) || (p.barcode && p.barcode.includes(filterText))
             ).sort((a,b) => a.name.localeCompare(b.name));
@@ -2410,6 +2789,9 @@ function restoreData(event) {
                 return;
             }
 
+            // Use DocumentFragment for batch DOM operations (much faster)
+            const fragment = document.createDocumentFragment();
+            
             filtered.forEach(product => {
                 const div = document.createElement('div');
                 
@@ -2446,12 +2828,16 @@ function restoreData(event) {
                         <div class="bg-blue-50 text-blue-700 text-center text-[10px] sm:text-xs py-2 rounded-xl font-bold border border-blue-100"><i class="fa-solid fa-cart-plus"></i> Masuk</div>
                     </div>
                 `;
-                list.appendChild(div);
+                fragment.appendChild(div);
             });
+            
+            // Clear and append all at once (only 1 reflow instead of many)
+            list.innerHTML = '';
+            list.appendChild(fragment);
         }
 
 
-        function filterProducts() { renderProducts(); }
+        function filterProducts() { debouncedRenderProducts(); }
         
         function openManualModal() {
             document.getElementById('manName').value = ""; document.getElementById('manBuy').value = ""; document.getElementById('manSell').value = "";
@@ -2583,15 +2969,18 @@ function restoreData(event) {
         }
         
                         function updateCartUI() {
-            const list = document.getElementById('cartItems');
+            const list = cacheDOM.cartItems || document.getElementById('cartItems');
             if(!list) return;
-            list.innerHTML = "";
+            
             let total = 0;
             let count = 0;
 
             if(cart.length === 0) {
                 list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p class="font-medium text-lg">Keranjang Masih Kosong</p></div>`;
             } else {
+                // Use DocumentFragment for batch DOM operations
+                const fragment = document.createDocumentFragment();
+                
                 cart.forEach(item => {
                     total += (item.price * item.qty);
                     count += item.qty;
@@ -2612,18 +3001,23 @@ function restoreData(event) {
                             <button onclick="adjQty('${item.id}', 1)" class="w-7 h-7 bg-white rounded shadow-sm text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center">+</button>
                         </div>
                     `;
-                    list.appendChild(div);
+                    fragment.appendChild(div);
                 });
+                
+                // Clear and append all at once (only 1 reflow)
+                list.innerHTML = '';
+                list.appendChild(fragment);
             }
 
-            const totalEl = document.getElementById('totalPrice');
+            // Update price elements
+            const totalEl = cacheDOM.totalPrice || document.getElementById('totalPrice');
             if(totalEl) {
                 totalEl.innerText = formatRp(total);
                 totalEl.dataset.total = total;
             }
 
-            const floatTotal = document.getElementById('floatingCartTotal');
-            const floatCount = document.getElementById('floatingCartCount');
+            const floatTotal = cacheDOM.floatingCartTotal || document.getElementById('floatingCartTotal');
+            const floatCount = cacheDOM.floatingCartCount || document.getElementById('floatingCartCount');
             if(floatTotal) floatTotal.innerText = formatRp(total);
             if(floatCount) {
                 floatCount.innerText = count;
@@ -3099,37 +3493,142 @@ function printKhususLaptop() {
 
             if (type === 'sales') {
                 if(!window.currentTopSales || window.currentTopSales.length === 0) {
-                    container.innerHTML = `<div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center text-amber-800 font-medium text-sm">Belum ada data penjualan.</div>`;
+                    container.innerHTML = `<div class="bg-amber-50 p-6 rounded-2xl border border-amber-200 text-center">
+                        <i class="fa-solid fa-inbox text-amber-300 text-4xl mb-2"></i>
+                        <p class="text-amber-800 font-bold text-sm">Belum ada data penjualan</p>
+                        <p class="text-amber-600 text-xs mt-1">Mulai catat produk untuk melihat analisis</p>
+                    </div>`;
                     return;
                 }
-                let html = `<div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden animation-fadeIn">
-                    <i class="fa-solid fa-fire absolute -right-4 -top-4 text-7xl text-orange-500 opacity-10"></i>
-                    <div class="text-xs sm:text-sm font-black text-amber-800 mb-3"><i class="fa-solid fa-fire text-orange-500 mr-2"></i>5 BARANG TERLARIS (TERBANYAK):</div>
-                    <div class="space-y-2">`;
+
+                // Hitung total penjualan
+                let totalSales = window.currentTopSales.reduce((sum, item) => sum + item.qty, 0);
+                
+                let html = `<div class="space-y-4 animation-fadeIn">
+                    <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <i class="fa-solid fa-fire absolute -right-8 -top-8 text-9xl opacity-10"></i>
+                        <div class="relative z-10">
+                            <p class="text-amber-100 text-xs font-bold uppercase tracking-widest mb-1">📊 TOP PRODUK TERLARIS</p>
+                            <h3 class="text-3xl font-black mb-1">${window.currentTopSales[0].name}</h3>
+                            <p class="text-amber-100 text-sm"><i class="fa-solid fa-crown text-yellow-300 mr-1"></i>Terjual ${window.currentTopSales[0].qty} Unit (${((window.currentTopSales[0].qty/totalSales)*100).toFixed(1)}%)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+                            <p class="text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-1">Total Penjualan</p>
+                            <p class="text-2xl font-black text-blue-900">${totalSales}</p>
+                            <p class="text-blue-500 text-xs mt-1">Unit terjual</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-2xl p-4 border border-purple-200">
+                            <p class="text-purple-600 text-[10px] font-bold uppercase tracking-widest mb-1">Rata-rata per Item</p>
+                            <p class="text-2xl font-black text-purple-900">${(totalSales / window.currentTopSales.length).toFixed(0)}</p>
+                            <p class="text-purple-500 text-xs mt-1">Unit per produk</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-4 border-b border-gray-200">
+                            <p class="text-xs font-black text-amber-900 uppercase tracking-widest"><i class="fa-solid fa-list-ol mr-2 text-amber-600"></i>Ranking Penjualan</p>
+                        </div>
+                        <div class="divide-y divide-gray-100">`;
+                
                 window.currentTopSales.forEach((item, idx) => {
-                    html += `<div class="flex justify-between text-xs sm:text-sm text-amber-900 font-bold items-center bg-white p-2.5 rounded-xl shadow-sm border border-amber-100">
-                        <span class="truncate pr-2">${idx + 1}. ${item.name}</span>
-                        <span class="bg-amber-200 text-amber-800 px-2 py-1 rounded-lg text-[10px] sm:text-xs whitespace-nowrap font-black">${item.qty} Terjual</span>
+                    const percentage = ((item.qty / totalSales) * 100).toFixed(1);
+                    const rankColor = idx === 0 ? 'from-amber-400 to-orange-400' : idx === 1 ? 'from-gray-300 to-gray-400' : idx === 2 ? 'from-orange-300 to-orange-400' : 'from-gray-200 to-gray-300';
+                    const rankBg = idx === 0 ? 'bg-amber-100' : idx === 1 ? 'bg-gray-100' : idx === 2 ? 'bg-orange-100' : 'bg-gray-50';
+                    const rankText = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                    
+                    html += `<div class="p-4 hover:bg-gray-50 transition">
+                        <div class="flex items-start gap-3 mb-2">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${rankColor} flex items-center justify-center text-white font-black text-sm shadow-md">
+                                ${rankText}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-gray-800 truncate">${item.name}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">Terjual: <strong class="text-amber-600">${item.qty}</strong> unit</p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-lg text-sm font-black">${percentage}%</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-amber-400 to-orange-500 h-full rounded-full" style="width: ${percentage}%"></div>
+                        </div>
                     </div>`;
                 });
-                html += `</div></div>`;
+                
+                html += `</div></div></div>`;
                 container.innerHTML = html;
-            } else if (type === 'profit') {
+            } 
+            else if (type === 'profit') {
                 if(!window.currentTopProfit || window.currentTopProfit.length === 0) {
-                    container.innerHTML = `<div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center text-emerald-800 font-medium text-sm">Belum ada data laba.</div>`;
+                    container.innerHTML = `<div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 text-center">
+                        <i class="fa-solid fa-inbox text-emerald-300 text-4xl mb-2"></i>
+                        <p class="text-emerald-800 font-bold text-sm">Belum ada data laba</p>
+                        <p class="text-emerald-600 text-xs mt-1">Mulai catat produk untuk melihat analisis</p>
+                    </div>`;
                     return;
                 }
-                let html = `<div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden animation-fadeIn">
-                    <i class="fa-solid fa-sack-dollar absolute -right-4 -top-4 text-7xl text-emerald-500 opacity-10"></i>
-                    <div class="text-xs sm:text-sm font-black text-emerald-800 mb-3"><i class="fa-solid fa-sack-dollar text-emerald-500 mr-2"></i>5 PENYUMBANG LABA TERBESAR:</div>
-                    <div class="space-y-2">`;
+
+                // Hitung total laba
+                let totalProfit = window.currentTopProfit.reduce((sum, item) => sum + (item.profit || 0), 0);
+                
+                let html = `<div class="space-y-4 animation-fadeIn">
+                    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <i class="fa-solid fa-sack-dollar absolute -right-8 -top-8 text-9xl opacity-10"></i>
+                        <div class="relative z-10">
+                            <p class="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">💰 TOP PENYUMBANG LABA</p>
+                            <h3 class="text-3xl font-black mb-1">${window.currentTopProfit[0].name}</h3>
+                            <p class="text-emerald-100 text-sm"><i class="fa-solid fa-crown text-green-300 mr-1"></i>${formatRp(window.currentTopProfit[0].profit)} Keuntungan (${((window.currentTopProfit[0].profit/totalProfit)*100).toFixed(1)}%)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div class="bg-green-50 rounded-2xl p-4 border border-green-200">
+                            <p class="text-green-600 text-[10px] font-bold uppercase tracking-widest mb-1">Total Laba</p>
+                            <p class="text-2xl font-black text-green-900">${formatRp(totalProfit)}</p>
+                            <p class="text-green-500 text-xs mt-1">Keuntungan kotor</p>
+                        </div>
+                        <div class="bg-teal-50 rounded-2xl p-4 border border-teal-200">
+                            <p class="text-teal-600 text-[10px] font-bold uppercase tracking-widest mb-1">Rata-rata Laba</p>
+                            <p class="text-2xl font-black text-teal-900">${formatRp(totalProfit / window.currentTopProfit.length)}</p>
+                            <p class="text-teal-500 text-xs mt-1">Per produk</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-4 border-b border-gray-200">
+                            <p class="text-xs font-black text-emerald-900 uppercase tracking-widest"><i class="fa-solid fa-list-ol mr-2 text-emerald-600"></i>Ranking Keuntungan</p>
+                        </div>
+                        <div class="divide-y divide-gray-100">`;
+                
                 window.currentTopProfit.forEach((item, idx) => {
-                    html += `<div class="flex justify-between text-xs sm:text-sm text-emerald-900 font-bold items-center bg-white p-2.5 rounded-xl shadow-sm border border-emerald-100">
-                        <span class="truncate pr-2">${idx + 1}. ${item.name}</span>
-                        <span class="bg-emerald-200 text-emerald-800 px-2 py-1 rounded-lg text-[10px] sm:text-xs whitespace-nowrap font-black">${formatRp(item.profit)}</span>
+                    const percentage = ((item.profit / totalProfit) * 100).toFixed(1);
+                    const rankColor = idx === 0 ? 'from-emerald-400 to-teal-400' : idx === 1 ? 'from-gray-300 to-gray-400' : idx === 2 ? 'from-emerald-300 to-teal-400' : 'from-gray-200 to-gray-300';
+                    const rankBg = idx === 0 ? 'bg-emerald-100' : idx === 1 ? 'bg-gray-100' : idx === 2 ? 'bg-emerald-100' : 'bg-gray-50';
+                    const rankText = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                    
+                    html += `<div class="p-4 hover:bg-gray-50 transition">
+                        <div class="flex items-start gap-3 mb-2">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${rankColor} flex items-center justify-center text-white font-black text-sm shadow-md">
+                                ${rankText}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-gray-800 truncate">${item.name}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">Laba: <strong class="text-emerald-600">${formatRp(item.profit)}</strong></p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="inline-block bg-emerald-100 text-emerald-800 px-3 py-1 rounded-lg text-sm font-black">${percentage}%</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style="width: ${percentage}%"></div>
+                        </div>
                     </div>`;
                 });
-                html += `</div></div>`;
+                
+                html += `</div></div></div>`;
                 container.innerHTML = html;
             }
         }
@@ -3292,7 +3791,8 @@ function printKhususLaptop() {
         
                         function renderMasterProducts() {
             const filterText = document.getElementById('searchMaster').value.toLowerCase();
-            const list = document.getElementById('masterList'); list.innerHTML = "";
+            const list = document.getElementById('masterList');
+            
             const filtered = masterProducts.filter(p => p.name.toLowerCase().includes(filterText) || (p.barcode && p.barcode.includes(filterText))).sort((a,b) => a.name.localeCompare(b.name));
             
             document.getElementById('masterTotalItems').innerText = `${filtered.length} Item`;
@@ -3307,6 +3807,9 @@ function printKhususLaptop() {
             document.getElementById('masterTotalAset').innerText = `Aset: ${formatRp(totalAsetModal)}`;
 
             if(filtered.length === 0) { list.innerHTML = `<div class="p-6 text-center text-gray-400 font-medium">Barang tidak ditemukan.</div>`; return; }
+            
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
             
             filtered.forEach(product => {
                 const div = document.createElement('div');
@@ -3331,8 +3834,12 @@ function printKhususLaptop() {
                         <button onclick="openProductModal(${product.id})" class="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 p-2.5 rounded-xl transition"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button onclick="deleteProduct(${product.id})" class="bg-red-50 text-red-500 hover:bg-red-100 p-2.5 rounded-xl transition"><i class="fa-solid fa-trash"></i></button>
                     </div>`;
-                list.appendChild(div);
+                fragment.appendChild(div);
             });
+            
+            // Clear and append all at once
+            list.innerHTML = '';
+            list.appendChild(fragment);
         }
 
 function deleteProduct(id) {
@@ -3956,6 +4463,9 @@ function processTransaction(actionType) {
         
        
         function initApp() {
+            // Initialize DOM cache for better performance
+            cacheDOM.getElements();
+            
             loadStoreSettings();
             loadMasterData(); 
             loadDebtsData();
@@ -3977,6 +4487,41 @@ function processTransaction(actionType) {
         if (document.readyState === "complete" || document.readyState === "interactive") { 
             setTimeout(initApp, 100); 
         }
+
+        // Setup drag-and-drop for backup file upload
+        document.addEventListener("DOMContentLoaded", () => {
+            const dropZone = document.querySelector('[onclick="document.getElementById(\'backupFileInput\').click()"]');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.style.backgroundColor = '#f3e8ff';
+                    dropZone.style.borderColor = '#d8b4fe';
+                });
+                
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dropZone.style.backgroundColor = '';
+                    dropZone.style.borderColor = '#d8d8f3';
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.style.backgroundColor = '';
+                    dropZone.style.borderColor = '#d8d8f3';
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                            document.getElementById('backupFileInput').files = files;
+                            handleBackupFileSelect({ target: { files: files } });
+                        } else {
+                            showToast('Hanya file JSON yang diterima!', true);
+                        }
+                    }
+                });
+            }
+        });
 
         let deferredInstallPrompt = null;
 
