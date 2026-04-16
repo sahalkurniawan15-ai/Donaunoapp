@@ -992,16 +992,14 @@
             </button>
         </div>
 
-        <!-- Camera Preview Area with html5-qrcode -->
-        <div id="qr-reader" class="flex-1 w-full bg-black relative" style="overflow: hidden;"></div>
-        
         <!-- Status indicator -->
-        <div id="scanStatus" class="absolute top-20 left-0 right-0 text-center z-20 pointer-events-none">
-            <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
-                <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera aktif
-            </span>
+        <div id="scanStatus" class="bg-yellow-600 text-white px-4 py-2 text-center font-bold text-sm flex-none z-20">
+            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Menginisialisasi kamera...
         </div>
 
+        <!-- Camera Preview Area with html5-qrcode -->
+        <div id="qr-reader" class="flex-1 w-full bg-black relative overflow-hidden"></div>
+        
         <!-- Manual Input Section (Mobile-friendly) -->
         <div class="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-900 border-t border-gray-700 p-4 flex-none space-y-3">
             <div class="flex items-center gap-2 mb-2">
@@ -4947,48 +4945,78 @@ function processTransaction(actionType) {
                     window.location.hostname !== '127.0.0.1' && 
                     window.location.protocol !== 'https:');
         }
+        // Check if html5-qrcode library is loaded
+        function checkHtml5QrcodeLoaded() {
+            return typeof Html5Qrcode !== 'undefined' || 
+                   (window && typeof window.Html5Qrcode !== 'undefined');
+        }
+        
+        // Wait for html5-qrcode to load
+        async function waitForHtml5QrcodeLib(maxAttempts = 30) {
+            let attempts = 0;
+            return new Promise((resolve) => {
+                const checkLib = setInterval(() => {
+                    attempts++;
+                    if (checkHtml5QrcodeLoaded()) {
+                        clearInterval(checkLib);
+                        console.log('html5-qrcode library loaded');
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkLib);
+                        console.error('html5-qrcode library failed to load after', maxAttempts, 'attempts');
+                        resolve(false);
+                    }
+                }, 100);
+            });
+        }
         
         async function initHtml5QrCode() {
-            if (typeof Html5Qrcode === 'undefined') {
-                showToast('Library html5-qrcode belum siap. Gunakan input manual.', true);
-                return false;
-            }
+            const statusEl = document.getElementById('scanStatus');
             
             try {
-                // Gunakan html5-qrcode dengan back camera
-                html5QrcodeScanner = new Html5Qrcode(
-                    "qr-reader", 
-                    { 
-                        formatsToSupport: [ 
-                            Html5QrcodeSupport.ScanTypeToFormatMap.CODE_128,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.CODE_39,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.EAN_13,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.EAN_8,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.UPC_A,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.UPC_E,
-                            Html5QrcodeSupport.ScanTypeToFormatMap.QR_CODE
-                        ],
-                        disableFlip: false
+                // Wait for library to be available
+                if (!checkHtml5QrcodeLoaded()) {
+                    if (statusEl) statusEl.innerText = '⏳ Memuat library scanning...';
+                    const loaded = await waitForHtml5QrcodeLib();
+                    if (!loaded) {
+                        showToast('❌ Library html5-qrcode tidak bisa dimuat. Coba refresh (F5)', true);
+                        return false;
                     }
-                );
+                }
                 
+                if (statusEl) statusEl.innerText = '⚙️ Menginisialisasi scanner...';
+                
+                // Create html5-qrcode instance
+                html5QrcodeScanner = new Html5Qrcode("qr-reader");
+                
+                if (statusEl) statusEl.innerText = '✓ Scanner siap';
                 return true;
+                
             } catch (err) {
                 console.error('html5-qrcode init error:', err);
-                showToast('Gagal menginisialisasi scanner. Gunakan input manual.', true);
+                if (statusEl) {
+                    statusEl.innerText = `❌ Error: ${err.message || 'Gagal inisialisasi scanner'}`;
+                    statusEl.style.backgroundColor = '#dc2626';
+                }
+                showToast(`Gagal menginisialisasi scanner: ${err.message}`, true);
                 return false;
             }
         }
         
         async function openScanner(mode) {
             scanMode = mode;
-            document.getElementById('scannerModal').classList.remove('hidden');
+            const scannerModal = document.getElementById('scannerModal');
+            const statusEl = document.getElementById('scanStatus');
+            const qrReader = document.getElementById('qr-reader');
+            
+            scannerModal.classList.remove('hidden');
             document.getElementById('manualBarcodeInput').value = '';
             document.getElementById('manualBarcodeInput').focus();
             
             // Check if we have camera support
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 showToast("Device tidak support camera. Gunakan input manual.", true);
+                if (statusEl) statusEl.innerText = '❌ Browser tidak support camera';
                 return;
             }
             
@@ -4996,62 +5024,112 @@ function processTransaction(actionType) {
             if (isInsecureOrigin()) {
                 const guide = 'PENTING: Jalankan via HTTP untuk akses kamera.\n\nCommand: cd d:\\sokapos\npython -m http.server 8000\n\nLalu buka: http://localhost:8000/SABTU_FIX.html';
                 showToast(guide, true);
+                if (statusEl) statusEl.innerText = '❌ Jalankan via HTTP server';
                 return;
             }
             
             setTimeout(async () => {
                 try {
+                    if (statusEl) statusEl.innerText = '⏳ Inisialisasi scanner...';
+                    
+                    // Stop existing scanner jika ada
+                    if (html5QrcodeScanner) {
+                        try {
+                            await html5QrcodeScanner.stop();
+                            await html5QrcodeScanner.clear();
+                        } catch (e) {
+                            console.warn('Error stopping existing scanner:', e);
+                        }
+                        html5QrcodeScanner = null;
+                    }
+                    
+                    if (statusEl) statusEl.innerText = '⏳ Memuat library...';
+                    
                     // Initialize html5-qrcode
                     const initialized = await initHtml5QrCode();
                     if (!initialized) {
                         return;
                     }
                     
-                    // Update status
-                    const statusEl = document.getElementById('scanStatus');
-                    if (statusEl) {
-                        statusEl.innerHTML = `<span class="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block">
-                            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Membuka kamera...
-                        </span>`;
-                    }
+                    if (statusEl) statusEl.innerText = '📷 Membuka kamera...';
                     
-                    // Start scanning dengan back camera
-                    await html5QrcodeScanner.start(
-                        { facingMode: "environment" },
-                        {
-                            fps: 10,
-                            qrbox: { width: 250, height: 250 }
-                        },
-                        onHtml5QrCodeSuccess,
-                        onHtml5QrCodeError
-                    );
-                    
-                    // Update status to ready
-                    if (statusEl) {
-                        statusEl.innerHTML = `<span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
-                            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera siap
-                        </span>`;
-                    }
-                    
-                    showToast('Kamera siap! Arahkan barcode.', false);
+                    // Clear previous state
                     lastScanTime = 0;
                     lastScannedCode = '';
                     
+                    // Constraints untuk back camera - try exact first, fallback to ideal
+                    let cameraConstraints = {
+                        facingMode: { exact: "environment" }
+                    };
+                    
+                    try {
+                        // Start scanning
+                        await html5QrcodeScanner.start(
+                            cameraConstraints,
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 },
+                                aspectRatio: 1
+                            },
+                            (decodedText, decodedResult) => {
+                                onHtml5QrCodeSuccess(decodedText, decodedResult);
+                            },
+                            (error) => {
+                                onHtml5QrCodeError(error);
+                            }
+                        );
+                    } catch (exactErr) {
+                        // Fallback: try without exact constraint
+                        console.warn('exact facingMode failed, trying fallback:', exactErr);
+                        cameraConstraints = {
+                            facingMode: "environment"
+                        };
+                        
+                        await html5QrcodeScanner.start(
+                            cameraConstraints,
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 }
+                            },
+                            (decodedText, decodedResult) => {
+                                onHtml5QrCodeSuccess(decodedText, decodedResult);
+                            },
+                            (error) => {
+                                onHtml5QrCodeError(error);
+                            }
+                        );
+                    }
+                    
+                    // Update status to ready
+                    if (statusEl) {
+                        statusEl.style.backgroundColor = '#22c55e';
+                        statusEl.innerText = '✓ Kamera siap - Arahkan barcode...';
+                    }
+                    
+                    showToast('✓ Kamera siap! Arahkan barcode ke layar.', false);
+                    
                 } catch (err) {
-                    console.error("Scanner error:", err);
+                    console.error("Scanner start error:", err);
+                    
+                    if (statusEl) {
+                        statusEl.style.backgroundColor = '#dc2626';
+                    }
                     
                     // Handle specific camera errors
                     const errorName = err?.name || '';
                     let msg = 'Gagal membuka kamera.';
                     
                     if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-                        msg = '❌ IZIN KAMERA DITOLAK\\n\\nUbah di Pengaturan > Aplikasi > [Browser] > Izin > Kamera, lalu refresh (F5)';
+                        msg = '❌ IZIN KAMERA DITOLAK\n\nUbah di Pengaturan > Aplikasi > [Browser] > Izin > Kamera, lalu refresh (F5)';
                     } else if (errorName === 'NotFoundError') {
                         msg = '❌ Kamera tidak ditemukan di device ini.';
                     } else if (errorName === 'NotReadableError') {
                         msg = '❌ Kamera sedang digunakan aplikasi lain. Tutup aplikasi, coba lagi.';
+                    } else if (err && err.message) {
+                        msg = `❌ ${err.message}`;
                     }
                     
+                    if (statusEl) statusEl.innerText = msg.split('\\n')[0];
                     showToast(msg, true);
                 }
             }, 100);
@@ -5061,22 +5139,27 @@ function processTransaction(actionType) {
             try {
                 // Stop html5-qrcode scanner
                 if (html5QrcodeScanner) {
-                    html5QrcodeScanner.stop().then(() => {
+                    try {
+                        html5QrcodeScanner.stop();
                         html5QrcodeScanner.clear();
-                    }).catch(err => {
-                        console.warn("Error stopping scanner:", err);
-                    });
-                    html5QrcodeScanner = null;
+                        html5QrcodeScanner = null;
+                    } catch (e) {
+                        console.warn("Error stopping scanner:", e);
+                        html5QrcodeScanner = null;
+                    }
                 }
             } catch (e) {
-                console.warn("Error closing scanner:", e);
+                console.warn("Error in closeScanner:", e);
             }
             
-            // Clear visual feedback
+            // Clear status
             const statusEl = document.getElementById('scanStatus');
-            if (statusEl) statusEl.innerHTML = '';
+            if (statusEl) {
+                statusEl.innerText = '';
+                statusEl.style.backgroundColor = '';
+            }
             
-            // Clear and focus manual input
+            // Clear and reset manual input
             const manualInput = document.getElementById('manualBarcodeInput');
             if (manualInput) {
                 manualInput.value = '';
