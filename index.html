@@ -30,6 +30,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- JSZip untuk compress file -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* ==========================================
            PENGATURAN KHUSUS PRINTER THERMAL & STRUK
@@ -203,7 +204,7 @@
         </div>
     </div>
 
-    <header class="h-[65px] flex-none bg-blue-600 text-white shadow-md flex flex-wrap justify-between items-center px-4 z-40">
+    <header class="relative h-[65px] flex-none bg-blue-600 text-white shadow-md flex flex-wrap justify-between items-center px-4 z-40">
         <div class="flex flex-col w-full sm:w-auto">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-store mr-2 text-xl"></i>
@@ -220,10 +221,8 @@
         <button id="btn-clear-cart-desktop" onclick="clearCart(false)" class="hidden md:flex bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold shadow transition items-center">
             <i class="fa-solid fa-trash mr-2"></i> Kosongkan
         </button>
-        <div id="trial-banner" class="hidden fixed left-0 right-0 z-50 flex justify-center" style="top:65px;">
-            <button id="trial-banner-btn" onclick="openTrialModal()" class="bg-yellow-50 text-yellow-900 px-4 py-2 rounded-b-md shadow-sm text-sm font-semibold hover:bg-yellow-100">
-                Masa Uji Coba: Sisa <span id="trial-days" class="font-black mx-1">30</span> Hari. <span class="underline ml-2">Klik untuk Aktivasi</span>
-            </button>
+        <div id="trial-badge" class="absolute right-4 top-2 hidden bg-white/90 text-gray-900 px-3 py-0.5 rounded-full text-xs font-semibold shadow-sm cursor-pointer" onclick="openTrialModal()" aria-label="Trial Badge">
+            Trial: <span id="trial-days" class="font-black mx-1">30</span> Hari
         </div>
     </header>
 
@@ -1882,14 +1881,14 @@
                     infoEl.innerHTML = `Masa uji coba: <strong>${daysLeft} hari</strong> tersisa. Untuk aktivasi sebelum masa uji coba habis, hubungi <strong>Sahal Kurniawan</strong> (WA 0822-2022-0414).`;
                 }
 
-                // Tampilkan banner tipis di bawah header agar pengguna langsung melihat masa trial
-                const trialBanner = document.getElementById('trial-banner');
-                if (trialBanner) {
+                // Tampilkan badge kecil di header agar tidak menutupi konten
+                const trialBadge = document.getElementById('trial-badge');
+                if (trialBadge) {
                     const trialDaysEl = document.getElementById('trial-days');
                     if (trialDaysEl) trialDaysEl.innerText = daysLeft;
-                    trialBanner.classList.remove('hidden');
+                    trialBadge.classList.remove('hidden');
 
-                    // Set WA link inside the new modal (if present)
+                    // Prepare WA link used by SweetAlert fallback
                     const trialWaBtn = document.getElementById('trial-wa-btn');
                     if (trialWaBtn) {
                         trialWaBtn.href = `https://wa.me/${waNumber}?text=${message}`;
@@ -1971,13 +1970,57 @@
 
         // --- Trial modal helpers ---
         function openTrialModal() {
-            const modal = document.getElementById('trialModal');
-            if (modal) modal.classList.remove('hidden');
-            // ensure device id shown in modal (if needed)
-            const waBtn = document.getElementById('trial-wa-btn');
             const waNumber = '6282220220414';
             const message = encodeURIComponent(`Halo Mas Sahal, saya ingin aktivasi Soka POS. Device ID: ${deviceId}`);
-            if (waBtn && waBtn.href === '#') waBtn.href = `https://wa.me/${waNumber}?text=${message}`;
+            const waLink = `https://wa.me/${waNumber}?text=${message}`;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Aktivasi Soka POS',
+                    text: 'Gunakan fitur penuh selamanya dengan aktivasi sekarang.',
+                    icon: 'info',
+                    showDenyButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fa-brands fa-whatsapp"></i> Hubungi Sahal via WA',
+                    denyButtonText: 'Input Kode',
+                    cancelButtonText: 'Tutup',
+                    customClass: { popup: 'rounded-2xl' },
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.open(waLink, '_blank');
+                    } else if (result.isDenied) {
+                        Swal.fire({
+                            title: 'Masukkan Kode Aktivasi',
+                            input: 'text',
+                            inputPlaceholder: 'Kode Aktivasi',
+                            showCancelButton: true,
+                            confirmButtonText: 'Aktifkan',
+                            preConfirm: (value) => {
+                                const rumusRahasia = (parseInt(deviceId) * 3) + 2026;
+                                if (value == rumusRahasia) {
+                                    localStorage.setItem('soka_lisensi', 'AKTIF');
+                                    return true;
+                                } else {
+                                    Swal.showValidationMessage('Kode aktivasi salah');
+                                    return false;
+                                }
+                            }
+                        }).then((res2) => {
+                            if (res2.isConfirmed) {
+                                Swal.fire('Aktivasi Berhasil', 'Terima kasih! Aplikasi akan dimuat ulang.', 'success')
+                                    .then(() => { window.location.reload(); });
+                            }
+                        });
+                    }
+                });
+            } else {
+                // fallback to existing modal
+                const modal = document.getElementById('trialModal');
+                if (modal) modal.classList.remove('hidden');
+                const waBtn = document.getElementById('trial-wa-btn');
+                if (waBtn && waBtn.href === '#') waBtn.href = waLink;
+            }
         }
 
         function closeTrialModal() {
