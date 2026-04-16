@@ -24,7 +24,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.10.2/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- QR Code Generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -984,7 +984,7 @@
                 </div>
                 <div>
                     <h2 class="font-bold text-lg">Scan Barcode</h2>
-                    <p class="text-xs text-gray-300">Arahkan ke kamera atau input manual</p>
+                    <p class="text-xs text-gray-300">Arahkan kamera atau input manual</p>
                 </div>
             </div>
             <button onclick="closeScanner()" class="text-gray-300 hover:text-white hover:bg-gray-700 active:bg-gray-600 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
@@ -992,36 +992,14 @@
             </button>
         </div>
 
-        <!-- Camera Preview Area -->
-        <div class="flex-1 w-full bg-black relative flex justify-center items-center overflow-hidden">
-            <div id="reader" class="w-full h-full"></div>
-            
-            <!-- Scan frame dengan animasi -->
-            <div class="absolute inset-0 pointer-events-none">
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40">
-                    <!-- Corners -->
-                    <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-500"></div>
-                    <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-500"></div>
-                    <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500"></div>
-                    <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500"></div>
-                    
-                    <!-- Scanning line -->
-                    <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-green-500 to-transparent animate-pulse"></div>
-                </div>
-            </div>
-            
-            <!-- Status indicator -->
-            <div id="scanStatus" class="absolute top-20 left-0 right-0 text-center z-20">
-                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
-                    <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera aktif
-                </span>
-            </div>
-
-            <!-- Instruction text -->
-            <div class="absolute bottom-20 left-0 right-0 text-center text-white text-sm font-medium z-10 drop-shadow-lg px-6">
-                <p class="mb-2">📍 Arahkan barcode ke garis hijau di tengah</p>
-                <p class="text-xs text-gray-300">Tunggu 1-2 detik hingga terdeteksi</p>
-            </div>
+        <!-- Camera Preview Area with html5-qrcode -->
+        <div id="qr-reader" class="flex-1 w-full bg-black relative" style="overflow: hidden;"></div>
+        
+        <!-- Status indicator -->
+        <div id="scanStatus" class="absolute top-20 left-0 right-0 text-center z-20 pointer-events-none">
+            <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
+                <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera aktif
+            </span>
         </div>
 
         <!-- Manual Input Section (Mobile-friendly) -->
@@ -4970,97 +4948,39 @@ function processTransaction(actionType) {
                     window.location.protocol !== 'https:');
         }
         
-        function updatePermissionBadge(status='requesting') {
-            const badge = document.getElementById('permissionBadge');
-            if (!badge) return;
-            
-            let html = '';
-            if (status === 'requesting') {
-                html = `<div class="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-blue-700 border-t-transparent"></div>
-                    Meminta akses kamera...
-                </div>`;
-            } else if (status === 'granted') {
-                html = `<div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    <i class="fa-solid fa-check text-sm"></i>
-                    Kamera siap
-                </div>`;
-            } else if (status === 'denied') {
-                html = `<div class="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    <i class="fa-solid fa-times text-sm"></i>
-                    Izin ditolak
-                </div>`;
-            } else if (status === 'loading') {
-                html = `<div class="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-yellow-700 border-t-transparent"></div>
-                    Menginisialisasi scanner...
-                </div>`;
+        async function initHtml5QrCode() {
+            if (typeof Html5Qrcode === 'undefined') {
+                showToast('Library html5-qrcode belum siap. Gunakan input manual.', true);
+                return false;
             }
-            badge.innerHTML = html;
-        }
-        
-        async function requestCameraPermission() {
+            
             try {
-                updatePermissionBadge('requesting');
+                // Gunakan html5-qrcode dengan back camera
+                html5QrcodeScanner = new Html5Qrcode(
+                    "qr-reader", 
+                    { 
+                        formatsToSupport: [ 
+                            Html5QrcodeSupport.ScanTypeToFormatMap.CODE_128,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.CODE_39,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.EAN_13,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.EAN_8,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.UPC_A,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.UPC_E,
+                            Html5QrcodeSupport.ScanTypeToFormatMap.QR_CODE
+                        ],
+                        disableFlip: false
+                    }
+                );
                 
-                // Cek apakah origin aman
-                if (isInsecureOrigin()) {
-                    const msg = 'PENTING: Kamera hanya bekerja di HTTPS atau localhost. Jalankan dari HTTP server!';
-                    showToast(msg, true);
-                    console.warn('Insecure origin detected:', window.location.href);
-                    updatePermissionBadge('denied');
-                    return false;
-                }
-                
-                // Try to request camera permission explicitly
-                // Gunakan constraint yang lebih relaxed untuk mobile devices
-                const constraints = {
-                    video: { 
-                        facingMode: "environment", 
-                        width: { ideal: 480 },
-                        height: { ideal: 360 }
-                    },
-                    audio: false 
-                };
-                
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                
-                // Close stream setelah berhasil request permission
-                stream.getTracks().forEach(track => track.stop());
-                cameraPermissionRequested = true;
-                updatePermissionBadge('granted');
                 return true;
             } catch (err) {
-                console.error("Camera permission error (name: " + (err?.name || 'unknown') + "):", err);
-                updatePermissionBadge('denied');
-                cameraPermissionRequested = false;
-
-                // User-friendly messages based on error type
-                const errorName = err && err.name ? err.name : '';
-                let msg = (err && err.message) ? err.message : 'Gagal mengakses kamera.';
-
-                if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-                    msg = 'IZIN KAMERA DITOLAK. Klik Allow atau ubah di Pengaturan > Aplikasi > [Browser] > Izin > Kamera. Lalu refresh (F5).';
-                } else if (errorName === 'NotFoundError') {
-                    msg = 'Kamera tidak ditemukan pada perangkat ini.';
-                } else if (errorName === 'NotReadableError') {
-                    msg = 'Kamera tidak dapat diakses (sedang digunakan aplikasi lain). Tutup aplikasi lain, lalu coba lagi.';
-                } else if (errorName === 'OverconstrainedError') {
-                    msg = 'Spesifikasi kamera tidak cocok. Gunakan Input Manual untuk scan barcode.';
-                } else if (errorName === 'SecurityError') {
-                    msg = 'AKSES KAMERA DIBLOKIR: Halaman harus dibuka via HTTPS atau localhost, bukan file://';
-                } else if (errorName === 'AbortError') {
-                    msg = 'Akses kamera dibatalkan. Coba lagi.';
-                } else if (errorName === 'TypeError') {
-                    msg = 'Browser tidak support akses kamera. Gunakan Input Manual.';
-                }
-
-                try { showToast(msg, true); } catch(e) { console.error('Toast error:', e); }
+                console.error('html5-qrcode init error:', err);
+                showToast('Gagal menginisialisasi scanner. Gunakan input manual.', true);
                 return false;
             }
         }
         
-        function openScanner(mode) {
+        async function openScanner(mode) {
             scanMode = mode;
             document.getElementById('scannerModal').classList.remove('hidden');
             document.getElementById('manualBarcodeInput').value = '';
@@ -5072,101 +4992,81 @@ function processTransaction(actionType) {
                 return;
             }
             
+            // Check origin security
+            if (isInsecureOrigin()) {
+                const guide = 'PENTING: Jalankan via HTTP untuk akses kamera.\n\nCommand: cd d:\\sokapos\npython -m http.server 8000\n\nLalu buka: http://localhost:8000/SABTU_FIX.html';
+                showToast(guide, true);
+                return;
+            }
+            
             setTimeout(async () => {
                 try {
-                    // Check origin security first
-                    if (isInsecureOrigin()) {
-                        const guide = 'PENTING: Jalankan via HTTP untuk akses kamera.\n\nCommand: cd d:\\sokapos\npython -m http.server 8000\n\nLalu buka: http://localhost:8000/SABTU_FIX.html\n\nOr gunakan Input Manual di bawah.';
-                        showToast(guide, true);
-                        updatePermissionBadge('denied');
+                    // Initialize html5-qrcode
+                    const initialized = await initHtml5QrCode();
+                    if (!initialized) {
                         return;
                     }
                     
-                    // Request camera permission
-                    const hasPermission = await requestCameraPermission();
-                    
-                    if (!hasPermission) {
-                        return;
+                    // Update status
+                    const statusEl = document.getElementById('scanStatus');
+                    if (statusEl) {
+                        statusEl.innerHTML = `<span class="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block">
+                            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Membuka kamera...
+                        </span>`;
                     }
                     
-                    // Update badge to show loading state while initializing
-                    updatePermissionBadge('loading');
+                    // Start scanning dengan back camera
+                    await html5QrcodeScanner.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 }
+                        },
+                        onHtml5QrCodeSuccess,
+                        onHtml5QrCodeError
+                    );
                     
-                    if (typeof Quagga === 'undefined') {
-                        showToast("Library barcode belum siap, gunakan input manual", true);
-                        updatePermissionBadge('denied');
-                        return;
+                    // Update status to ready
+                    if (statusEl) {
+                        statusEl.innerHTML = `<span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
+                            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera siap
+                        </span>`;
                     }
                     
-                    // Initialize Quagga dengan error handling yang lebih baik
-                    try {
-                        Quagga.init({
-                            inputStream: {
-                                type: "LiveStream",
-                                constraints: {
-                                    width: { ideal: 480 },
-                                    height: { ideal: 360 },
-                                    facingMode: "environment"
-                                },
-                                target: document.querySelector('#reader')
-                            },
-                            decoder: {
-                                workers: 1,  // Kurangi dari 2 untuk mobile performance
-                                debug: false,
-                                multiple: false,
-                                formats: ['code_128', 'code_39', 'ean', 'ean_8', 'upca', 'upce']
-                            },
-                            locator: {
-                                patchSize: "medium",
-                                halfSample: true
-                            },
-                            frequency: 10  // Scan every 100ms untuk responsif di mobile
-                        }, function(err) {
-                            if (err) {
-                                console.error("Quagga init error:", err);
-                                showToast("Kamera init gagal. Gunakan Input Manual di bawah.", true);
-                                updatePermissionBadge('denied');
-                            } else {
-                                try {
-                                    Quagga.start();
-                                    Quagga.onDetected(onScanSuccess);
-                                    updatePermissionBadge('granted');
-                                    showToast('Kamera siap! Arahkan ke barcode.', false);
-                                    // Set longer debounce untuk mobile (avoid multiple triggers)
-                                    lastScanTime = 0;
-                                    lastScannedCode = '';
-                                } catch (startErr) {
-                                    console.error("Quagga start error:", startErr);
-                                    showToast("Kamera tidak bisa dimulai. Gunakan input manual.", true);
-                                    updatePermissionBadge('denied');
-                                }
-                            }
-                        });
-                    } catch (initErr) {
-                        console.error("Quagga init exception:", initErr);
-                        showToast("Kamera setup gagal. Gunakan Input Manual.", true);
-                        updatePermissionBadge('denied');
+                    showToast('Kamera siap! Arahkan barcode.', false);
+                    lastScanTime = 0;
+                    lastScannedCode = '';
+                    
+                } catch (err) {
+                    console.error("Scanner error:", err);
+                    
+                    // Handle specific camera errors
+                    const errorName = err?.name || '';
+                    let msg = 'Gagal membuka kamera.';
+                    
+                    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                        msg = '❌ IZIN KAMERA DITOLAK\\n\\nUbah di Pengaturan > Aplikasi > [Browser] > Izin > Kamera, lalu refresh (F5)';
+                    } else if (errorName === 'NotFoundError') {
+                        msg = '❌ Kamera tidak ditemukan di device ini.';
+                    } else if (errorName === 'NotReadableError') {
+                        msg = '❌ Kamera sedang digunakan aplikasi lain. Tutup aplikasi, coba lagi.';
                     }
-                } catch (e) {
-                    console.error("Scanner setup error:", e);
-                    showToast("Kesalahan scanner. Gunakan Input Manual.", true);
-                    updatePermissionBadge('denied');
+                    
+                    showToast(msg, true);
                 }
             }, 100);
         }
         
         function closeScanner() {
             try {
-                if (typeof Quagga !== 'undefined') {
-                    if (Quagga.initialized) {
-                        try { Quagga.stop(); } catch(e) {}
-                        try { Quagga.clear(); } catch(e) {}
-                    }
-                    if (Quagga._inputStream && Quagga._inputStream.stream) {
-                        Quagga._inputStream.stream.getTracks().forEach(track => {
-                            try { track.stop(); } catch(e) {}
-                        });
-                    }
+                // Stop html5-qrcode scanner
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        html5QrcodeScanner.clear();
+                    }).catch(err => {
+                        console.warn("Error stopping scanner:", err);
+                    });
+                    html5QrcodeScanner = null;
                 }
             } catch (e) {
                 console.warn("Error closing scanner:", e);
@@ -5176,42 +5076,45 @@ function processTransaction(actionType) {
             const statusEl = document.getElementById('scanStatus');
             if (statusEl) statusEl.innerHTML = '';
             
-            const permissionBadge = document.getElementById('permissionBadge');
-            if (permissionBadge) permissionBadge.innerHTML = '';
-            
             // Clear and focus manual input
             const manualInput = document.getElementById('manualBarcodeInput');
             if (manualInput) {
                 manualInput.value = '';
-                manualInput.placeholder = 'Tekan tombol untuk scan atau input manual...';
+                manualInput.placeholder = 'Ketik atau paste barcode...';
             }
             
             document.getElementById('scannerModal').classList.add('hidden');
-            quaggaInstance = null;
         }
         
-        function onScanSuccess(result) {
-            if (!result || !result.codeResult) return;
-            
-            const decodedText = (result.codeResult.code || '').trim();
-            if (!decodedText) return;
-            
+        // Callback untuk html5-qrcode success
+        function onHtml5QrCodeSuccess(decodedText, decodedResult) {
+            // Debounce untuk mencegah multiple triggers
             const currentTime = Date.now();
-            // Increased debounce untuk mobile (2 seconds instead of 1.5)
-            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 2000) { 
-                return; 
+            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 2000) {
+                return;
             }
-            lastScanTime = currentTime; 
+            
+            lastScanTime = currentTime;
             lastScannedCode = decodedText;
             
-            // Visual feedback - show detected barcode
+            console.log('Barcode detected:', decodedText);
+            
+            // Visual feedback
             const statusEl = document.getElementById('scanStatus');
             if (statusEl) {
-                statusEl.innerHTML = `<span class="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold inline-block"><i class="fa-solid fa-check text-lg mr-2"></i>Terdeteksi: ${decodedText}</span>`;
+                statusEl.innerHTML = `<span class="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold inline-block">
+                    <i class="fa-solid fa-check text-lg mr-2"></i>Terdeteksi: ${decodedText}
+                </span>`;
             }
             
             playBeep();
             processBarcodeResult(decodedText);
+        }
+        
+        // Callback untuk html5-qrcode error (dibiarkan silent, jangan spam console)
+        function onHtml5QrCodeError(errorMessage) {
+            // Silent error handling - logs go to console only in debug mode
+            // No toast to avoid spamming user during scanning
         }
         
         function submitManualBarcode() {
