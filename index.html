@@ -148,11 +148,34 @@
                 AKTIFKAN APLIKASI
             </button>
             <div id="lisensi-contact" class="mt-3 text-sm text-gray-600">
-                <p id="lisensi-info" class="mb-2 hidden"></p>
-                <a id="wa-activation-link" href="#" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition hidden">
-                    <i class="fa-brands fa-whatsapp mr-2"></i>Hubungi Sahal via WhatsApp
-                </a>
+                <p id="lisensi-small-info" class="text-xs">Hubungi Sahal untuk aktivasi: 0822-2022-0414</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Trial Activation Modal (opened from thin banner) -->
+    <div id="trialModal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md text-center shadow-2xl">
+            <h2 class="text-lg font-black mb-2">Terima kasih telah mencoba Soka POS!</h2>
+            <p class="text-sm text-gray-600 mb-4">Butuh aktivasi penuh? Pilih salah satu opsi di bawah.</p>
+
+            <a id="trial-wa-btn" href="#" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl mb-3">
+                <i class="fa-brands fa-whatsapp mr-2"></i>Hubungi Sahal (Aktivasi Full Version)
+            </a>
+
+            <button id="trial-input-btn" onclick="showTrialInput()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl mb-3">
+                Masukkan Kode Aktivasi
+            </button>
+
+            <div id="trial-input-area" class="hidden space-y-2">
+                <input id="trial-activation-input" type="text" placeholder="Masukkan kode aktivasi..." class="w-full px-4 py-3 border rounded-xl focus:outline-none">
+                <div class="flex gap-2">
+                    <button onclick="prosesAktivasiFromModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl">Aktifkan</button>
+                    <button onclick="closeTrialModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl">Batal</button>
+                </div>
+            </div>
+
+            <button onclick="closeTrialModal()" class="mt-4 text-xs text-gray-400">Tutup</button>
         </div>
     </div>
 
@@ -190,14 +213,18 @@
                 </div>
             </div>
             <div id="header-activate-area" class="mt-2 sm:mt-1 hidden flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                <button id="headerActivateBtn" onclick="openLicenseModalFromBanner()" class="bg-white text-blue-600 px-3 py-1 rounded-lg font-bold text-xs border border-white hover:border-blue-200 w-full sm:w-auto">Aktifkan Aplikasi</button>
+                <button id="headerActivateBtn" onclick="openTrialModal()" class="bg-white text-blue-600 px-3 py-1 rounded-lg font-bold text-xs border border-white hover:border-blue-200 w-full sm:w-auto">Aktifkan Aplikasi</button>
                 <a id="headerWaBtn" href="#" target="_blank" rel="noopener" class="bg-green-600 text-white px-3 py-1 rounded-lg font-bold text-xs hover:bg-green-700 w-full sm:w-auto text-center">Hubungi Sahal</a>
             </div>
         </div>
         <button id="btn-clear-cart-desktop" onclick="clearCart(false)" class="hidden md:flex bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold shadow transition items-center">
             <i class="fa-solid fa-trash mr-2"></i> Kosongkan
         </button>
-        <div id="trial-banner" class="hidden"></div>
+        <div id="trial-banner" class="hidden fixed left-0 right-0 z-50 flex justify-center" style="top:65px;">
+            <button id="trial-banner-btn" onclick="openTrialModal()" class="bg-yellow-50 text-yellow-900 px-4 py-2 rounded-b-md shadow-sm text-sm font-semibold hover:bg-yellow-100">
+                Masa Uji Coba: Sisa <span id="trial-days" class="font-black mx-1">30</span> Hari. <span class="underline ml-2">Klik untuk Aktivasi</span>
+            </button>
+        </div>
     </header>
 
     <div class="flex-1 relative w-full h-full overflow-hidden">
@@ -1855,17 +1882,18 @@
                     infoEl.innerHTML = `Masa uji coba: <strong>${daysLeft} hari</strong> tersisa. Untuk aktivasi sebelum masa uji coba habis, hubungi <strong>Sahal Kurniawan</strong> (WA 0822-2022-0414).`;
                 }
 
-                // Tampilkan banner singkat di header agar pengguna langsung melihat masa trial
+                // Tampilkan banner tipis di bawah header agar pengguna langsung melihat masa trial
                 const trialBanner = document.getElementById('trial-banner');
                 if (trialBanner) {
+                    const trialDaysEl = document.getElementById('trial-days');
+                    if (trialDaysEl) trialDaysEl.innerText = daysLeft;
                     trialBanner.classList.remove('hidden');
-                    trialBanner.innerHTML = `
-                        <div class="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-2">
-                            <i class="fa-solid fa-hourglass-half"></i>
-                            <span>Masa uji coba: <strong>${daysLeft} hari</strong></span>
-                            <button onclick="openLicenseModalFromBanner()" class="ml-2 bg-white text-yellow-800 px-3 py-1 rounded-lg font-black text-xs">Aktifkan</button>
-                        </div>
-                    `;
+
+                    // Set WA link inside the new modal (if present)
+                    const trialWaBtn = document.getElementById('trial-wa-btn');
+                    if (trialWaBtn) {
+                        trialWaBtn.href = `https://wa.me/${waNumber}?text=${message}`;
+                    }
                 }
                 try { showToast(`Masa uji coba: ${daysLeft} hari tersisa`, false); } catch(e) {}
                 return;
@@ -1939,6 +1967,48 @@
 
             const input = document.getElementById('input-aktivasi');
             if (input) { input.value = ''; setTimeout(() => input.focus(), 200); }
+        }
+
+        // --- Trial modal helpers ---
+        function openTrialModal() {
+            const modal = document.getElementById('trialModal');
+            if (modal) modal.classList.remove('hidden');
+            // ensure device id shown in modal (if needed)
+            const waBtn = document.getElementById('trial-wa-btn');
+            const waNumber = '6282220220414';
+            const message = encodeURIComponent(`Halo Mas Sahal, saya ingin aktivasi Soka POS. Device ID: ${deviceId}`);
+            if (waBtn && waBtn.href === '#') waBtn.href = `https://wa.me/${waNumber}?text=${message}`;
+        }
+
+        function closeTrialModal() {
+            const modal = document.getElementById('trialModal');
+            if (modal) modal.classList.add('hidden');
+            const area = document.getElementById('trial-input-area');
+            if (area) area.classList.add('hidden');
+        }
+
+        function showTrialInput() {
+            const area = document.getElementById('trial-input-area');
+            if (area) {
+                area.classList.remove('hidden');
+                const input = document.getElementById('trial-activation-input');
+                if (input) { input.value = ''; setTimeout(() => input.focus(), 120); }
+            }
+        }
+
+        function prosesAktivasiFromModal() {
+            const input = document.getElementById('trial-activation-input');
+            if (!input) return;
+            const inputKode = input.value;
+            const rumusRahasia = (parseInt(deviceId) * 3) + 2026;
+            if (inputKode == rumusRahasia) {
+                localStorage.setItem('soka_lisensi', 'AKTIF');
+                showToast('Aktivasi berhasil! Memuat ulang...', false);
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Kode Aktivasi Salah!', true);
+                input.value = '';
+            }
         }
 
         // Variabel Global
