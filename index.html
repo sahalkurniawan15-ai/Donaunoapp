@@ -999,40 +999,6 @@
 
         <!-- Camera Preview Area with html5-qrcode -->
         <div id="qr-reader" class="flex-1 w-full bg-black relative overflow-hidden"></div>
-        
-        <!-- Manual Input Section (Mobile-friendly) -->
-        <div class="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-900 border-t border-gray-700 p-4 flex-none space-y-3">
-            <div class="flex items-center gap-2 mb-2">
-                <i class="fa-solid fa-keyboard text-blue-400"></i>
-                <label class="text-white text-xs font-bold uppercase tracking-wider">Input Manual</label>
-            </div>
-
-            <div class="relative">
-                <input type="text" 
-                       id="manualBarcodeInput" 
-                       placeholder="Ketik atau paste barcode..." 
-                       class="w-full px-4 py-3 pr-12 rounded-lg border-2 border-gray-600 bg-gray-750 text-white focus:outline-none focus:border-blue-500 focus:bg-gray-700 font-bold transition" 
-                       onkeypress="if(event.key==='Enter') submitManualBarcode()"
-                       autocomplete="off">
-                <button onclick="pasteBarcode()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold transition active:scale-95" title="Paste barcode">
-                    <i class="fa-solid fa-paste"></i>
-                </button>
-            </div>
-
-            <div class="flex gap-2">
-                <button onclick="submitManualBarcode()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-arrow-right"></i>
-                    <span>Proses</span>
-                </button>
-                <button onclick="clearBarcodeInput()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-3 rounded-lg font-bold transition">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-
-            <p class="text-center text-xs text-gray-400">
-                💡 Tidak bisa scan? Gunakan input manual di atas, lebih cepat untuk barcode panjang!
-            </p>
-        </div>
     </div>
 
             <div id="manualModal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
@@ -5010,8 +4976,6 @@ function processTransaction(actionType) {
             const qrReader = document.getElementById('qr-reader');
             
             scannerModal.classList.remove('hidden');
-            document.getElementById('manualBarcodeInput').value = '';
-            document.getElementById('manualBarcodeInput').focus();
             
             // Check if we have camera support
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -5159,13 +5123,6 @@ function processTransaction(actionType) {
                 statusEl.style.backgroundColor = '';
             }
             
-            // Clear and reset manual input
-            const manualInput = document.getElementById('manualBarcodeInput');
-            if (manualInput) {
-                manualInput.value = '';
-                manualInput.placeholder = 'Ketik atau paste barcode...';
-            }
-            
             document.getElementById('scannerModal').classList.add('hidden');
         }
         
@@ -5200,45 +5157,6 @@ function processTransaction(actionType) {
             // No toast to avoid spamming user during scanning
         }
         
-        function submitManualBarcode() {
-            const barcode = (document.getElementById('manualBarcodeInput').value || '').trim();
-            if (!barcode) {
-                showToastError('Masukkan atau paste barcode terlebih dahulu!');
-                document.getElementById('manualBarcodeInput').focus();
-                playErrorBeep();
-                return;
-            }
-            
-            // Highlight untuk visual feedback
-            document.getElementById('manualBarcodeInput').classList.add('bg-blue-900', 'border-blue-500');
-            setTimeout(() => {
-                document.getElementById('manualBarcodeInput').classList.remove('bg-blue-900', 'border-blue-500');
-            }, 500);
-            
-            processBarcodeResult(barcode);
-        }
-        
-        function clearBarcodeInput() {
-            document.getElementById('manualBarcodeInput').value = '';
-            document.getElementById('manualBarcodeInput').focus();
-        }
-        
-        // Paste dari clipboard
-        async function pasteBarcode() {
-            try {
-                const text = await navigator.clipboard.readText();
-                document.getElementById('manualBarcodeInput').value = text.trim();
-                document.getElementById('manualBarcodeInput').focus();
-                showToast('Barcode dipaste dari clipboard', false);
-                playBeep();
-            } catch (err) {
-                console.warn('Clipboard read error:', err);
-                // Fallback: highlight manual input untuk user ketik
-                document.getElementById('manualBarcodeInput').focus();
-                showToast('Silakan paste barcode secara manual', true);
-            }
-        }
-        
         // Toast error variant
         function showToastError(message) {
             const toast = document.getElementById('toast');
@@ -5254,19 +5172,16 @@ function processTransaction(actionType) {
                 if (product) { 
                     addToCart(product.id, product.name, product.price, product.buyPrice);
                     playBeep(); 
-                    showToast('Successfully added: ' + product.name);
-                    document.getElementById('manualBarcodeInput').value = '';
+                    showToast('✓ Berhasil ditambahkan: ' + product.name);
                     setTimeout(() => closeScanner(), 1000);
                 } else { 
                     playErrorBeep();
-                    showToast('Barcode not found: ' + decodedText, true);
-                    document.getElementById('manualBarcodeInput').value = '';
-                    document.getElementById('manualBarcodeInput').focus();
+                    showToast('❌ Barcode tidak ditemukan: ' + decodedText, true);
                 }
             } else if (scanMode === 'edit') {
                 document.getElementById('editProductBarcode').value = decodedText;
                 playBeep();
-                showToast("Barcode captured!");
+                showToast("✓ Barcode berhasil ditangkap!");
                 setTimeout(() => closeScanner(), 800);
             }
         }
