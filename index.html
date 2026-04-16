@@ -976,27 +976,86 @@
         </div>
     </div>
 
-    <div id="scannerModal" class="fixed inset-0 bg-black z-[150] hidden flex flex-col no-print">
-        <div class="flex justify-between items-center p-4 bg-gray-900 text-white shadow-md z-10 flex-none">
-            <h2 class="font-bold text-lg"><i class="fa-solid fa-barcode mr-2"></i>Scan Barcode Kamera</h2>
-            <button onclick="closeScanner()" class="text-gray-300 hover:text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
+    <div id="scannerModal" class="fixed inset-0 bg-black z-[150] hidden flex flex-col no-print" style="height: 100dvh;">
+        <div class="flex justify-between items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg z-10 flex-none">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-barcode text-white text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg">Scan Barcode</h2>
+                    <p class="text-xs text-gray-300">Arahkan ke kamera atau input manual</p>
+                </div>
+            </div>
+            <button onclick="closeScanner()" class="text-gray-300 hover:text-white hover:bg-gray-700 active:bg-gray-600 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
+
+        <!-- Camera Preview Area -->
         <div class="flex-1 w-full bg-black relative flex justify-center items-center overflow-hidden">
-            <div id="reader" class="w-full h-full max-w-lg mx-auto"></div>
-            <div class="absolute inset-0 pointer-events-none border-[40px] border-black border-opacity-50"></div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40 border-2 border-green-500 rounded-lg pointer-events-none flex justify-center items-center">
-                <div class="w-full h-0.5 bg-green-500 bg-opacity-50 absolute animate-pulse"></div>
+            <div id="reader" class="w-full h-full"></div>
+            
+            <!-- Scan frame dengan animasi -->
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-40">
+                    <!-- Corners -->
+                    <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-500"></div>
+                    <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-500"></div>
+                    <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500"></div>
+                    <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500"></div>
+                    
+                    <!-- Scanning line -->
+                    <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-green-500 to-transparent animate-pulse"></div>
+                </div>
             </div>
-            <div class="absolute bottom-10 left-0 right-0 text-center text-white text-sm font-medium z-10 drop-shadow-md">Arahkan garis ke barcode produk</div>
+            
+            <!-- Status indicator -->
+            <div id="scanStatus" class="absolute top-20 left-0 right-0 text-center z-20">
+                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold inline-block animate-pulse">
+                    <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Kamera aktif
+                </span>
+            </div>
+
+            <!-- Instruction text -->
+            <div class="absolute bottom-20 left-0 right-0 text-center text-white text-sm font-medium z-10 drop-shadow-lg px-6">
+                <p class="mb-2">📍 Arahkan barcode ke garis hijau di tengah</p>
+                <p class="text-xs text-gray-300">Tunggu 1-2 detik hingga terdeteksi</p>
+            </div>
         </div>
-        <div class="bg-gray-900 border-t border-gray-700 p-4 flex-none">
-            <div class="mb-3">
-                <label class="text-white text-xs font-bold mb-2 block">💡 ATAU INPUT MANUAL:</label>
-                <input type="text" id="manualBarcodeInput" placeholder="Ketik atau paste barcode..." class="w-full px-4 py-3 rounded-lg border-2 border-gray-600 bg-gray-800 text-white focus:outline-none focus:border-green-500 font-bold text-center" onkeypress="if(event.key==='Enter') submitManualBarcode()">
+
+        <!-- Manual Input Section (Mobile-friendly) -->
+        <div class="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-900 border-t border-gray-700 p-4 flex-none space-y-3">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="fa-solid fa-keyboard text-blue-400"></i>
+                <label class="text-white text-xs font-bold uppercase tracking-wider">Input Manual</label>
             </div>
-            <button onclick="submitManualBarcode()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition">✓ Gunakan Input Manual</button>
+
+            <div class="relative">
+                <input type="text" 
+                       id="manualBarcodeInput" 
+                       placeholder="Ketik atau paste barcode..." 
+                       class="w-full px-4 py-3 pr-12 rounded-lg border-2 border-gray-600 bg-gray-750 text-white focus:outline-none focus:border-blue-500 focus:bg-gray-700 font-bold transition" 
+                       onkeypress="if(event.key==='Enter') submitManualBarcode()"
+                       autocomplete="off">
+                <button onclick="pasteBarcode()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold transition active:scale-95" title="Paste barcode">
+                    <i class="fa-solid fa-paste"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="submitManualBarcode()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span>Proses</span>
+                </button>
+                <button onclick="clearBarcodeInput()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-3 rounded-lg font-bold transition">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+
+            <p class="text-center text-xs text-gray-400">
+                💡 Tidak bisa scan? Gunakan input manual di atas, lebih cepat untuk barcode panjang!
+            </p>
         </div>
     </div>
 
@@ -4903,36 +4962,97 @@ function processTransaction(actionType) {
         let quaggaInstance = null;
         let cameraPermissionRequested = false;
         
+        // Check jika halaman dibuka dari file:// protocol (tidak aman untuk kamera)
+        function isInsecureOrigin() {
+            return window.location.protocol === 'file:' || 
+                   (window.location.hostname !== 'localhost' && 
+                    window.location.hostname !== '127.0.0.1' && 
+                    window.location.protocol !== 'https:');
+        }
+        
+        function updatePermissionBadge(status='requesting') {
+            const badge = document.getElementById('permissionBadge');
+            if (!badge) return;
+            
+            let html = '';
+            if (status === 'requesting') {
+                html = `<div class="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-blue-700 border-t-transparent"></div>
+                    Meminta akses kamera...
+                </div>`;
+            } else if (status === 'granted') {
+                html = `<div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <i class="fa-solid fa-check text-sm"></i>
+                    Kamera siap
+                </div>`;
+            } else if (status === 'denied') {
+                html = `<div class="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <i class="fa-solid fa-times text-sm"></i>
+                    Izin ditolak
+                </div>`;
+            } else if (status === 'loading') {
+                html = `<div class="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-yellow-700 border-t-transparent"></div>
+                    Menginisialisasi scanner...
+                </div>`;
+            }
+            badge.innerHTML = html;
+        }
+        
         async function requestCameraPermission() {
             try {
+                updatePermissionBadge('requesting');
+                
+                // Cek apakah origin aman
+                if (isInsecureOrigin()) {
+                    const msg = 'PENTING: Kamera hanya bekerja di HTTPS atau localhost. Jalankan dari HTTP server!';
+                    showToast(msg, true);
+                    console.warn('Insecure origin detected:', window.location.href);
+                    updatePermissionBadge('denied');
+                    return false;
+                }
+                
                 // Try to request camera permission explicitly
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", width: { min: 320 }, height: { min: 240 } },
+                // Gunakan constraint yang lebih relaxed untuk mobile devices
+                const constraints = {
+                    video: { 
+                        facingMode: "environment", 
+                        width: { ideal: 480 },
+                        height: { ideal: 360 }
+                    },
                     audio: false 
-                });
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 
                 // Close stream setelah berhasil request permission
                 stream.getTracks().forEach(track => track.stop());
                 cameraPermissionRequested = true;
+                updatePermissionBadge('granted');
                 return true;
             } catch (err) {
-                console.warn("Camera permission error:", err);
+                console.error("Camera permission error (name: " + (err?.name || 'unknown') + "):", err);
+                updatePermissionBadge('denied');
                 cameraPermissionRequested = false;
 
                 // User-friendly messages based on error type
-                const name = err && err.name ? err.name : '';
+                const errorName = err && err.name ? err.name : '';
                 let msg = (err && err.message) ? err.message : 'Gagal mengakses kamera.';
 
-                if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-                    msg = 'Izin kamera ditolak. Izinkan kamera di pengaturan situs atau OS, lalu muat ulang.';
-                } else if (name === 'NotFoundError') {
+                if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                    msg = 'IZIN KAMERA DITOLAK. Klik Allow atau ubah di Pengaturan > Aplikasi > [Browser] > Izin > Kamera. Lalu refresh (F5).';
+                } else if (errorName === 'NotFoundError') {
                     msg = 'Kamera tidak ditemukan pada perangkat ini.';
-                } else if (name === 'NotReadableError') {
-                    msg = 'Kamera tidak dapat diakses (mungkin sedang digunakan aplikasi lain). Tutup aplikasi lain yang memakai kamera.';
-                } else if (name === 'OverconstrainedError') {
-                    msg = 'Tidak ada perangkat kamera yang cocok dengan konfigurasi yang diminta.';
-                } else if (name === 'SecurityError') {
-                    msg = 'Akses kamera diblokir karena origin tidak aman. Gunakan HTTPS atau localhost.';
+                } else if (errorName === 'NotReadableError') {
+                    msg = 'Kamera tidak dapat diakses (sedang digunakan aplikasi lain). Tutup aplikasi lain, lalu coba lagi.';
+                } else if (errorName === 'OverconstrainedError') {
+                    msg = 'Spesifikasi kamera tidak cocok. Gunakan Input Manual untuk scan barcode.';
+                } else if (errorName === 'SecurityError') {
+                    msg = 'AKSES KAMERA DIBLOKIR: Halaman harus dibuka via HTTPS atau localhost, bukan file://';
+                } else if (errorName === 'AbortError') {
+                    msg = 'Akses kamera dibatalkan. Coba lagi.';
+                } else if (errorName === 'TypeError') {
+                    msg = 'Browser tidak support akses kamera. Gunakan Input Manual.';
                 }
 
                 try { showToast(msg, true); } catch(e) { console.error('Toast error:', e); }
@@ -4948,80 +5068,124 @@ function processTransaction(actionType) {
             
             // Check if we have camera support
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showToast("⚠️ Device tidak support camera. Gunakan input manual.", true);
+                showToast("Device tidak support camera. Gunakan input manual.", true);
                 return;
             }
             
             setTimeout(async () => {
                 try {
-                    // Request camera permission first
-                    const hasPermission = await requestCameraPermission();
-                    
-                    if (!hasPermission) {
-                        showToast("📝 Izin kamera ditolak. Gunakan input manual atau ubah pengaturan aplikasi.", true);
+                    // Check origin security first
+                    if (isInsecureOrigin()) {
+                        const guide = 'PENTING: Jalankan via HTTP untuk akses kamera.\n\nCommand: cd d:\\sokapos\npython -m http.server 8000\n\nLalu buka: http://localhost:8000/SABTU_FIX.html\n\nOr gunakan Input Manual di bawah.';
+                        showToast(guide, true);
+                        updatePermissionBadge('denied');
                         return;
                     }
                     
-                    if (typeof Quagga !== 'undefined') {
-                        try {
-                            Quagga.init({
-                                inputStream: {
-                                    type: "LiveStream",
-                                    constraints: {
-                                        width: { min: 320 },
-                                        height: { min: 240 },
-                                        facingMode: "environment",
-                                        aspectRatio: { min: 1, max: 100 }
-                                    },
-                                    target: document.querySelector('#reader')
+                    // Request camera permission
+                    const hasPermission = await requestCameraPermission();
+                    
+                    if (!hasPermission) {
+                        return;
+                    }
+                    
+                    // Update badge to show loading state while initializing
+                    updatePermissionBadge('loading');
+                    
+                    if (typeof Quagga === 'undefined') {
+                        showToast("Library barcode belum siap, gunakan input manual", true);
+                        updatePermissionBadge('denied');
+                        return;
+                    }
+                    
+                    // Initialize Quagga dengan error handling yang lebih baik
+                    try {
+                        Quagga.init({
+                            inputStream: {
+                                type: "LiveStream",
+                                constraints: {
+                                    width: { ideal: 480 },
+                                    height: { ideal: 360 },
+                                    facingMode: "environment"
                                 },
-                                decoder: {
-                                    workers: 2,
-                                    debug: false,
-                                    multiple: false,
-                                    formats: ['code_128', 'code_39', 'ean', 'ean_8', 'upca', 'upce']
-                                },
-                                locator: {
-                                    patchSize: "medium",
-                                    halfSample: true
+                                target: document.querySelector('#reader')
+                            },
+                            decoder: {
+                                workers: 1,  // Kurangi dari 2 untuk mobile performance
+                                debug: false,
+                                multiple: false,
+                                formats: ['code_128', 'code_39', 'ean', 'ean_8', 'upca', 'upce']
+                            },
+                            locator: {
+                                patchSize: "medium",
+                                halfSample: true
+                            },
+                            frequency: 10  // Scan every 100ms untuk responsif di mobile
+                        }, function(err) {
+                            if (err) {
+                                console.error("Quagga init error:", err);
+                                showToast("Kamera init gagal. Gunakan Input Manual di bawah.", true);
+                                updatePermissionBadge('denied');
+                            } else {
+                                try {
+                                    Quagga.start();
+                                    Quagga.onDetected(onScanSuccess);
+                                    updatePermissionBadge('granted');
+                                    showToast('Kamera siap! Arahkan ke barcode.', false);
+                                    // Set longer debounce untuk mobile (avoid multiple triggers)
+                                    lastScanTime = 0;
+                                    lastScannedCode = '';
+                                } catch (startErr) {
+                                    console.error("Quagga start error:", startErr);
+                                    showToast("Kamera tidak bisa dimulai. Gunakan input manual.", true);
+                                    updatePermissionBadge('denied');
                                 }
-                            }, function(err) {
-                                if (err) {
-                                    console.warn("Quagga init error:", err);
-                                    showToast("📝 Gunakan input manual atau aktifkan izin kamera di Pengaturan > Aplikasi", true);
-                                } else {
-                                    try {
-                                        Quagga.start();
-                                        Quagga.onDetected(onScanSuccess);
-                                    } catch (startErr) {
-                                        console.warn("Quagga start error:", startErr);
-                                        showToast("⚠️ Kamera tidak bisa dimulai. Gunakan input manual.", true);
-                                    }
-                                }
-                            });
-                        } catch (initErr) {
-                            console.error("Quagga init exception:", initErr);
-                            showToast("⚠️ Gunakan input manual jika kamera tidak tersedia", true);
-                        }
-                    } else {
-                        showToast("⚠️ Library barcode belum siap, gunakan input manual", true);
+                            }
+                        });
+                    } catch (initErr) {
+                        console.error("Quagga init exception:", initErr);
+                        showToast("Kamera setup gagal. Gunakan Input Manual.", true);
+                        updatePermissionBadge('denied');
                     }
                 } catch (e) {
                     console.error("Scanner setup error:", e);
-                    showToast("⚠️ Gunakan input manual jika kamera tidak tersedia", true);
+                    showToast("Kesalahan scanner. Gunakan Input Manual.", true);
+                    updatePermissionBadge('denied');
                 }
             }, 100);
         }
         
         function closeScanner() {
             try {
-                if (typeof Quagga !== 'undefined' && Quagga.initialized) {
-                    Quagga.stop();
-                    Quagga.clear();
+                if (typeof Quagga !== 'undefined') {
+                    if (Quagga.initialized) {
+                        try { Quagga.stop(); } catch(e) {}
+                        try { Quagga.clear(); } catch(e) {}
+                    }
+                    if (Quagga._inputStream && Quagga._inputStream.stream) {
+                        Quagga._inputStream.stream.getTracks().forEach(track => {
+                            try { track.stop(); } catch(e) {}
+                        });
+                    }
                 }
             } catch (e) {
-                console.warn("Error stopping Quagga:", e);
+                console.warn("Error closing scanner:", e);
             }
+            
+            // Clear visual feedback
+            const statusEl = document.getElementById('scanStatus');
+            if (statusEl) statusEl.innerHTML = '';
+            
+            const permissionBadge = document.getElementById('permissionBadge');
+            if (permissionBadge) permissionBadge.innerHTML = '';
+            
+            // Clear and focus manual input
+            const manualInput = document.getElementById('manualBarcodeInput');
+            if (manualInput) {
+                manualInput.value = '';
+                manualInput.placeholder = 'Tekan tombol untuk scan atau input manual...';
+            }
+            
             document.getElementById('scannerModal').classList.add('hidden');
             quaggaInstance = null;
         }
@@ -5033,19 +5197,69 @@ function processTransaction(actionType) {
             if (!decodedText) return;
             
             const currentTime = Date.now();
-            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 1500) { return; }
-            lastScanTime = currentTime; lastScannedCode = decodedText;
+            // Increased debounce untuk mobile (2 seconds instead of 1.5)
+            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 2000) { 
+                return; 
+            }
+            lastScanTime = currentTime; 
+            lastScannedCode = decodedText;
             
+            // Visual feedback - show detected barcode
+            const statusEl = document.getElementById('scanStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold inline-block"><i class="fa-solid fa-check text-lg mr-2"></i>Terdeteksi: ${decodedText}</span>`;
+            }
+            
+            playBeep();
             processBarcodeResult(decodedText);
         }
         
         function submitManualBarcode() {
             const barcode = (document.getElementById('manualBarcodeInput').value || '').trim();
             if (!barcode) {
-                showToast("❌ Masukkan kode barcode terlebih dahulu!", true);
+                showToastError('Masukkan atau paste barcode terlebih dahulu!');
+                document.getElementById('manualBarcodeInput').focus();
+                playErrorBeep();
                 return;
             }
+            
+            // Highlight untuk visual feedback
+            document.getElementById('manualBarcodeInput').classList.add('bg-blue-900', 'border-blue-500');
+            setTimeout(() => {
+                document.getElementById('manualBarcodeInput').classList.remove('bg-blue-900', 'border-blue-500');
+            }, 500);
+            
             processBarcodeResult(barcode);
+        }
+        
+        function clearBarcodeInput() {
+            document.getElementById('manualBarcodeInput').value = '';
+            document.getElementById('manualBarcodeInput').focus();
+        }
+        
+        // Paste dari clipboard
+        async function pasteBarcode() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('manualBarcodeInput').value = text.trim();
+                document.getElementById('manualBarcodeInput').focus();
+                showToast('Barcode dipaste dari clipboard', false);
+                playBeep();
+            } catch (err) {
+                console.warn('Clipboard read error:', err);
+                // Fallback: highlight manual input untuk user ketik
+                document.getElementById('manualBarcodeInput').focus();
+                showToast('Silakan paste barcode secara manual', true);
+            }
+        }
+        
+        // Toast error variant
+        function showToastError(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            document.getElementById('toast-icon').className = "fa-solid fa-triangle-exclamation text-red-400 mr-3 text-xl";
+            toast.classList.remove('opacity-0');
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 3000);
         }
         
         function processBarcodeResult(decodedText) {
@@ -5054,16 +5268,19 @@ function processTransaction(actionType) {
                 if (product) { 
                     addToCart(product.id, product.name, product.price, product.buyPrice);
                     playBeep(); 
-                    showToast(`✅ Masuk: ${product.name}`);
-                    setTimeout(() => closeScanner(), 800);
+                    showToast('Successfully added: ' + product.name);
+                    document.getElementById('manualBarcodeInput').value = '';
+                    setTimeout(() => closeScanner(), 1000);
                 } else { 
                     playErrorBeep();
-                    showToast(`❌ Barcode tidak ditemukan: ${decodedText}`, true);
+                    showToast('Barcode not found: ' + decodedText, true);
+                    document.getElementById('manualBarcodeInput').value = '';
+                    document.getElementById('manualBarcodeInput').focus();
                 }
             } else if (scanMode === 'edit') {
                 document.getElementById('editProductBarcode').value = decodedText;
                 playBeep();
-                showToast("✅ Barcode terbaca!");
+                showToast("Barcode captured!");
                 setTimeout(() => closeScanner(), 800);
             }
         }
