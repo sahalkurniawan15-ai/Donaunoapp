@@ -984,12 +984,17 @@
                 </div>
                 <div>
                     <h2 class="font-bold text-lg">Scan Barcode</h2>
-                    <p class="text-xs text-gray-300">Arahkan kamera atau input manual</p>
+                    <p class="text-xs text-gray-300">Scan banyak barang dengan cepat</p>
                 </div>
             </div>
-            <button onclick="closeScanner()" class="text-gray-300 hover:text-white hover:bg-gray-700 active:bg-gray-600 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleFlashlight()" id="flashlightBtn" class="text-yellow-300 hover:text-yellow-400 hover:bg-gray-700 active:bg-gray-600 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition" title="Nyalakan senter">
+                    <i class="fa-solid fa-lightbulb text-xl"></i>
+                </button>
+                <button onclick="closeScanner()" class="text-gray-300 hover:text-white hover:bg-gray-700 active:bg-gray-600 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Status indicator -->
@@ -2072,6 +2077,8 @@
         let lastScanTime = 0;
         let lastScannedCode = '';
         let expensesData = [];
+        let flashlightEnabled = false;
+        let currentStream = null;
 
         // Data Dummy Barang
         const newProductsBatch = [
@@ -5067,10 +5074,31 @@ function processTransaction(actionType) {
                     // Update status to ready
                     if (statusEl) {
                         statusEl.style.backgroundColor = '#22c55e';
-                        statusEl.innerText = '✓ Kamera siap - Arahkan barcode...';
+                        statusEl.innerText = '📷 Kamera siap - Arahkan barcode...';
                     }
                     
-                    showToast('✓ Kamera siap! Arahkan barcode ke layar.', false);
+                    // Capture stream untuk flashlight control
+                    try {
+                        const tempStream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: { exact: "environment" } }
+                        });
+                        currentStream = tempStream;
+                        // Stop stream setelah dapat info, html5-qrcode akan open ulang
+                        tempStream.getTracks().forEach(track => track.stop());
+                    } catch (streamErr) {
+                        console.warn('Could not capture stream for flashlight:', streamErr);
+                        try {
+                            const tempStream = await navigator.mediaDevices.getUserMedia({
+                                video: { facingMode: "environment" }
+                            });
+                            currentStream = tempStream;
+                            tempStream.getTracks().forEach(track => track.stop());
+                        } catch (e) {
+                            console.warn('Stream capture failed:', e);
+                        }
+                    }
+                    
+                    showToast('✓ Kamera siap! Mulai arahkan barcode.', false);
                     
                 } catch (err) {
                     console.error("Scanner start error:", err);
@@ -5101,6 +5129,29 @@ function processTransaction(actionType) {
         
         function closeScanner() {
             try {
+                // Disable flashlight if enabled
+                if (flashlightEnabled && currentStream) {
+                    try {
+                        const videoTrack = currentStream.getVideoTracks()[0];
+                        if (videoTrack) {
+                            videoTrack.applyConstraints({
+                                advanced: [{ torch: false }]
+                            }).catch(e => console.warn('Could not disable torch:', e));
+                        }
+                        flashlightEnabled = false;
+                    } catch (e) {
+                        console.warn('Error disabling flashlight:', e);
+                    }
+                }
+                
+                // Stop camera stream
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => {
+                        try { track.stop(); } catch (e) {}
+                    });
+                    currentStream = null;
+                }
+                
                 // Stop html5-qrcode scanner
                 if (html5QrcodeScanner) {
                     try {
@@ -5123,14 +5174,21 @@ function processTransaction(actionType) {
                 statusEl.style.backgroundColor = '';
             }
             
+            // Reset flashlight button style
+            const flashBtn = document.getElementById('flashlightBtn');
+            if (flashBtn) {
+                flashBtn.style.color = '#fbbf24';
+                flashBtn.style.textShadow = '';
+            }
+            
             document.getElementById('scannerModal').classList.add('hidden');
         }
         
         // Callback untuk html5-qrcode success
         function onHtml5QrCodeSuccess(decodedText, decodedResult) {
-            // Debounce untuk mencegah multiple triggers
+            // Cooldown timer untuk mencegah double-input (1.5 detik)
             const currentTime = Date.now();
-            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 2000) {
+            if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 1500) {
                 return;
             }
             
@@ -5139,16 +5197,52 @@ function processTransaction(actionType) {
             
             console.log('Barcode detected:', decodedText);
             
-            // Visual feedback
-            const statusEl = document.getElementById('scanStatus');
-            if (statusEl) {
-                statusEl.innerHTML = `<span class="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold inline-block">
-                    <i class="fa-solid fa-check text-lg mr-2"></i>Terdeteksi: ${decodedText}
-                </span>`;
+            // Haptic feedback - vibration support
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
             }
             
+            // Audio feedback - beep sound
             playBeep();
-            processBarcodeResult(decodedText);
+            
+            // Visual feedback - JANGAN tutup kamera
+            const statusEl = document.getElementById('scanStatus');
+            if (statusEl) {
+                statusEl.style.backgroundColor = '#22c55e';
+                statusEl.style.color = 'white';
+                statusEl.innerText = `✓ Terdeteksi: ${decodedText}`;
+                
+                // Revert status after 1 second
+                setTimeout(() => {
+                    if (statusEl) {
+                        statusEl.style.backgroundColor = '';
+                        statusEl.innerText = '📷 Kamera siap - Arahkan barcode...';
+                    }
+                }, 1000);
+            }
+            
+            // Process barcode tanpa menutup kamera
+            processBarcodeResultContinuous(decodedText);
+        }
+        
+        // High-speed continuous scanning - jangan tutup kamera
+        function processBarcodeResultContinuous(decodedText) {
+            if (scanMode === 'kasir') {
+                const product = masterProducts.find(p => p.barcode === decodedText);
+                if (product) { 
+                    addToCart(product.id, product.name, product.price, product.buyPrice);
+                    showToast(`✓ Berhasil ditambahkan: ${product.name}`, false);
+                } else { 
+                    playErrorBeep();
+                    showToast(`❌ Barcode tidak ditemukan: ${decodedText}`, true);
+                }
+            } else if (scanMode === 'edit') {
+                // Edit mode: set value dan tutup
+                document.getElementById('editProductBarcode').value = decodedText;
+                playBeep();
+                showToast("✓ Barcode berhasil ditangkap!");
+                setTimeout(() => closeScanner(), 800);
+            }
         }
         
         // Callback untuk html5-qrcode error (dibiarkan silent, jangan spam console)
@@ -5173,7 +5267,6 @@ function processTransaction(actionType) {
                     addToCart(product.id, product.name, product.price, product.buyPrice);
                     playBeep(); 
                     showToast('✓ Berhasil ditambahkan: ' + product.name);
-                    setTimeout(() => closeScanner(), 1000);
                 } else { 
                     playErrorBeep();
                     showToast('❌ Barcode tidak ditemukan: ' + decodedText, true);
@@ -5183,6 +5276,53 @@ function processTransaction(actionType) {
                 playBeep();
                 showToast("✓ Barcode berhasil ditangkap!");
                 setTimeout(() => closeScanner(), 800);
+            }
+        }
+        
+        // Flashlight/Torch control
+        async function toggleFlashlight() {
+            try {
+                if (!html5QrcodeScanner || !currentStream) {
+                    showToast('Kamera belum siap', true);
+                    return;
+                }
+                
+                const videoTrack = currentStream.getVideoTracks()[0];
+                if (!videoTrack) {
+                    showToast('Tidak ada akses ke video track', true);
+                    return;
+                }
+                
+                // Check if torch is supported
+                const capabilities = videoTrack.getCapabilities();
+                if (!capabilities.torch) {
+                    showToast('Perangkat tidak support senter/torch', true);
+                    return;
+                }
+                
+                const settings = videoTrack.getSettings();
+                const newTorchState = !settings.torch;
+                
+                await videoTrack.applyConstraints({
+                    advanced: [{ torch: newTorchState }]
+                });
+                
+                flashlightEnabled = newTorchState;
+                const btn = document.getElementById('flashlightBtn');
+                if (btn) {
+                    if (newTorchState) {
+                        btn.style.color = '#fbbf24';
+                        btn.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.8)';
+                        showToast('💡 Senter nyala', false);
+                    } else {
+                        btn.style.color = '#fbbf24';
+                        btn.style.textShadow = '';
+                        showToast('💡 Senter mati', false);
+                    }
+                }
+            } catch (err) {
+                console.error('Flashlight error:', err);
+                showToast('Gagal mengontrol senter: ' + err.message, true);
             }
         }
 
