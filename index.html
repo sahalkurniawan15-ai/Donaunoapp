@@ -160,6 +160,10 @@
             <h2 class="text-lg font-black mb-2">Terima kasih telah mencoba Soka POS!</h2>
             <p class="text-sm text-gray-600 mb-4">Butuh aktivasi penuh? Pilih salah satu opsi di bawah.</p>
 
+            <div class="bg-gray-100 p-3 rounded-xl mb-3 border border-gray-200 text-xs text-gray-600">
+                ID Perangkat: <span id="trial-device-id" class="font-black text-indigo-600">-</span>
+            </div>
+
             <a id="trial-wa-btn" href="#" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl mb-3">
                 <i class="fa-brands fa-whatsapp mr-2"></i>Hubungi Sahal (Aktivasi Full Version)
             </a>
@@ -215,9 +219,7 @@
             </div>
             <!-- Activation controls removed as requested -->
         </div>
-        <button id="btn-clear-cart-desktop" onclick="clearCart(false)" class="hidden md:flex bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold shadow transition items-center">
-            <i class="fa-solid fa-trash mr-2"></i> Kosongkan
-        </button>
+        <!-- 'Kosongkan Keranjang' button removed as requested -->
         <div id="trial-badge" class="absolute right-4 top-2 hidden bg-white/90 text-gray-900 px-3 py-0.5 rounded-full text-xs font-semibold shadow-sm cursor-pointer" onclick="openTrialModal()" aria-label="Trial Badge">
             Trial: <span id="trial-days" class="font-black mx-1">30</span> Hari
         </div>
@@ -1974,7 +1976,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Aktivasi Soka POS',
-                    text: 'Gunakan fitur penuh selamanya dengan aktivasi sekarang.',
+                    html: `Gunakan fitur penuh selamanya dengan aktivasi sekarang.<br><small>ID Perangkat: <strong>${deviceId}</strong></small>`,
                     icon: 'info',
                     showDenyButton: true,
                     showCancelButton: true,
@@ -1989,6 +1991,7 @@
                     } else if (result.isDenied) {
                         Swal.fire({
                             title: 'Masukkan Kode Aktivasi',
+                            html: `ID Perangkat: <strong>${deviceId}</strong>`,
                             input: 'text',
                             inputPlaceholder: 'Kode Aktivasi',
                             showCancelButton: true,
@@ -2017,6 +2020,8 @@
                 if (modal) modal.classList.remove('hidden');
                 const waBtn = document.getElementById('trial-wa-btn');
                 if (waBtn && waBtn.href === '#') waBtn.href = waLink;
+                const trialDeviceEl = document.getElementById('trial-device-id');
+                if (trialDeviceEl) trialDeviceEl.innerText = deviceId;
             }
         }
 
@@ -3368,10 +3373,11 @@ function backupData() {
             document.getElementById(`tab-${tabName}`).classList.replace('text-gray-400', 'text-blue-600');
             
             toggleMobileCart(false);
+            const btnClearEl = document.getElementById('btn-clear-cart-desktop');
 
             if (tabName === 'kasir') {
                 document.getElementById('header-subtitle').innerText = "Mesin Kasir Pintar";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'flex';
+                if (btnClearEl) btnClearEl.style.display = 'flex';
                 renderProducts();
                 // Show header activate area only on Kasir and when not already activated
                 try {
@@ -3391,24 +3397,24 @@ function backupData() {
                 } catch(e) {}
             } else if (tabName === 'laporan') {
                 document.getElementById('header-subtitle').innerText = "Laporan & Grafik";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                if (btnClearEl) btnClearEl.style.display = 'none';
                 loadReport();
                 updateMainStoreChart(); // Update grafik perkembangan toko 
             } else if (tabName === 'barang') {
                 document.getElementById('header-subtitle').innerText = "Database Toko";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                if (btnClearEl) btnClearEl.style.display = 'none';
                 renderMasterProducts();
             } else if (tabName === 'hutang') {
                 document.getElementById('header-subtitle').innerText = "Buku Hutang";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                if (btnClearEl) btnClearEl.style.display = 'none';
                 renderDebts();
             } else if (tabName === 'rekap') {
                 document.getElementById('header-subtitle').innerText = "Rekap Kas";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                if (btnClearEl) btnClearEl.style.display = 'none';
                 renderRekapKas();
             } else if (tabName === 'pengaturan') {
                 document.getElementById('header-subtitle').innerText = "Setelan Aplikasi";
-                document.getElementById('btn-clear-cart-desktop').style.display = 'none';
+                if (btnClearEl) btnClearEl.style.display = 'none';
                 loadStoreSettings();
             }
             // Ensure header activation area is hidden on non-Kasir tabs
