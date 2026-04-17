@@ -124,6 +124,145 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* ===================================
+           SCANNER UI PROFESSIONAL EFFECTS
+           =================================== */
+        
+        /* Laser line animation */
+        @keyframes laserScan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        
+        /* Frame pulse effect when barcode detected */
+        @keyframes framePulse {
+            0%, 100% { 
+                box-shadow: inset 0 0 0 2px #22c55e, 0 0 20px rgba(34, 197, 94, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: inset 0 0 0 3px #22c55e, 0 0 40px rgba(34, 197, 94, 0.6);
+                transform: scale(1.02);
+            }
+        }
+        
+        /* Corner bracket animation */
+        @keyframes cornerPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        /* Laser line glow */
+        @keyframes laserGlow {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 3px #22c55e); }
+            50% { opacity: 0.8; filter: drop-shadow(0 0 8px #22c55e); }
+        }
+        
+        /* Scanner overlay container */
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            pointer-events: none;
+        }
+        
+        /* Dark overlay outside scan area */
+        .scanner-dark-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            clip-path: polygon(
+                0% 0%,
+                0% 100%,
+                100% 100%,
+                100% 0%,
+                0% 0%,
+                calc(50% - 150px) calc(50% - 112px),
+                calc(50% - 150px) calc(50% + 112px),
+                calc(50% + 150px) calc(50% + 112px),
+                calc(50% + 150px) calc(50% - 112px),
+                calc(50% - 150px) calc(50% - 112px)
+            );
+            z-index: 25;
+        }
+        
+        /* Scan frame container */
+        .scan-frame-container {
+            position: relative;
+            width: 300px;
+            height: 224px;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(34, 197, 94, 0.05);
+            box-shadow: inset 0 0 0 2px #22c55e, 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        
+        /* Corner brackets */
+        .scan-corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #22c55e;
+            animation: cornerPulse 2s ease-in-out infinite;
+        }
+        
+        .scan-corner-top-left {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .scan-corner-top-right {
+            top: -2px;
+            right: -2px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .scan-corner-bottom-left {
+            bottom: -2px;
+            left: -2px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .scan-corner-bottom-right {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        /* Laser line */
+        .laser-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            animation: laserScan 2s ease-in-out infinite, laserGlow 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+            z-index: 10;
+        }
+        
+        /* Pulse class for detected barcode */
+        .scan-frame-pulse {
+            animation: framePulse 0.6s ease-out 1;
+        }
+        
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col h-[100dvh] w-full overflow-hidden text-sm sm:text-base select-none">
@@ -270,8 +409,8 @@
                 </div>
             </section>
 
-            <section id="cartSection" class="fixed inset-0 bg-gray-50 z-[80] transform translate-y-full transition-transform duration-300 md:static md:translate-y-0 md:z-auto md:w-[45%] lg:w-[40%] md:h-full flex flex-col shadow-2xl md:shadow-none">
-                <div class="md:hidden h-[65px] flex-none bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm z-20">
+            <section id="cartSection" class="fixed inset-0 bg-gray-50 z-[45] transform translate-y-full transition-transform duration-300 pt-[70px] md:pt-0 md:static md:translate-y-0 md:z-auto md:w-[45%] lg:w-[40%] md:h-full flex flex-col shadow-2xl md:shadow-none">
+                <div class="md:hidden h-[65px] flex-none bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm sticky top-0 z-30">
                     <h2 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-cart-shopping mr-2 text-blue-600"></i>Keranjang Kasir</h2>
                     <div class="flex gap-2">
                         <button onclick="clearCart(false)" class="bg-red-50 text-red-600 w-10 h-10 rounded-full flex items-center justify-center font-bold active:scale-95"><i class="fa-solid fa-trash"></i></button>
@@ -281,7 +420,7 @@
                     </div>
                 </div>
 
-                <div class="hidden md:flex h-[65px] flex-none bg-gray-800 text-white items-center justify-between px-5 shadow-sm md:sticky md:top-[65px] md:z-30">
+                <div class="hidden md:flex h-[65px] flex-none bg-gray-800 text-white items-center justify-between px-5 shadow-sm md:sticky md:top-[65px] md:z-50">
                     <span class="font-bold text-lg"><i class="fa-solid fa-cart-shopping mr-2"></i>Keranjang</span>
                     <div class="flex items-center gap-2">
                         <button onclick="clearCart(false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2">
@@ -292,20 +431,20 @@
                     </div>
                 </div>
                 
-                <div id="cartItems" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-100 pb-4">
+                <div id="cartItems" class="flex-1 overflow-y-auto p-2 space-y-1.5 bg-gray-100 relative z-10">
                     <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60">
-                        <i class="fa-solid fa-basket-shopping text-6xl mb-4"></i>
-                        <p class="font-medium text-lg">Keranjang Masih Kosong</p>
+                        <i class="fa-solid fa-basket-shopping text-5xl sm:text-6xl mb-2"></i>
+                        <p class="font-medium text-xs sm:text-sm">Keranjang Masih Kosong</p>
                     </div>
                 </div>
 
-                                                <div class="flex-none bg-white p-5 border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20 space-y-4 pb-[85px] md:pb-5">
-                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <span class="text-sm font-bold text-gray-500 uppercase tracking-wide">Total Belanja</span>
-                        <span id="totalPrice" class="text-3xl font-black text-blue-600 tracking-tighter" data-total="0">Rp 0</span>
+                                                <div class="flex-none bg-white px-4 py-2.5 border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20 flex items-center justify-between gap-3 pb-[85px] md:pb-3">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide leading-tight">Total</span>
+                        <span id="totalPrice" class="text-lg sm:text-xl font-black text-blue-600" data-total="0">Rp 0</span>
                     </div>
-                    <button onclick="openPaymentModal()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-4 rounded-xl text-lg transition flex justify-center items-center gap-2 shadow-sm">
-                        LANJUT BAYAR <i class="fa-solid fa-arrow-right ml-1"></i>
+                    <button onclick="openPaymentModal()" class="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black py-2.5 px-4 sm:px-6 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm flex-shrink-0">
+                        BAYAR <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </section>
@@ -1052,35 +1191,56 @@
             </div>
             
             <div class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
-                <div id="receipt-area" class="font-receipt text-xs text-black w-full max-w-[58mm] bg-white p-2 shadow-md border border-gray-300 font-bold">
-                        <div class="text-center mb-2">
-        <div class="font-black text-sm uppercase" id="print-store-name">SOKA CELLULER</div>
-        <div class="text-[9px] leading-tight font-bold" id="print-store-address">Konter pulsa, agen keuangan & sembako</div>
-        <div class="text-[9px] font-black mt-0.5" id="print-store-phone"></div>
-    </div>
-                    <div class="flex justify-between text-[9px] mb-1 font-bold">
-                        <span>TRX: <span id="receiptInvoice">INV-000000</span></span>
+                <div id="receipt-area" class="font-receipt text-black w-full max-w-[58mm] bg-white p-1.5 shadow-md border border-gray-300 font-bold" style="font-size: 10px; line-height: 1.3;">
+                    <!-- HEADER TOKO -->
+                    <div class="text-center mb-1.5" style="padding-bottom: 4px; border-bottom: 1px solid #000;">
+                        <div style="font-size: 12px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px;" id="print-store-name">SOKA CELLULER</div>
+                        <div style="font-size: 8px; margin: 1px 0;" id="print-store-address">Konter Pulsa & Sembako</div>
+                        <div style="font-size: 8px; font-weight: bold;" id="print-store-phone"></div>
                     </div>
-                    <div class="flex justify-between text-[9px] mb-1 font-bold">
-                        <span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span>
+                    
+                    <!-- INFO TRANSAKSI -->
+                    <div style="margin-bottom: 1px; font-size: 9px;">
+                        <div>TRX: <span id="receiptInvoice">INV-000000</span></div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span id="receiptDate">Tgl</span><span id="receiptTime">Jam</span>
+                        </div>
                     </div>
-                    <div class="dashed-line"></div>
-                    <div id="receiptItems" class="mb-2 text-[9px] font-bold"></div>
-                    <div class="dashed-line"></div>
-                    <div class="flex justify-between text-[9px] mb-1 font-bold">
-                        <span>Jumlah Barang</span><span id="receiptItemCount">0</span>
+                    
+                    <div class="dashed-line" style="margin: 2px 0;"></div>
+                    
+                    <!-- DAFTAR BARANG -->
+                    <div id="receiptItems" style="margin: 2px 0; font-size: 9px;"></div>
+                    
+                    <div class="dashed-line" style="margin: 2px 0;"></div>
+                    
+                    <!-- RINGKASAN -->
+                    <div style="margin: 2px 0; font-size: 9px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Juml. Item</span><span id="receiptItemCount">0</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between font-black text-xs mb-1">
-                        <span>TOTAL</span><span id="receiptTotal">Rp 0</span>
+                    
+                    <div style="margin: 2px 0; font-size: 11px; font-weight: 900; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 2px 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>TOTAL</span><span id="receiptTotal">Rp 0</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-[9px] mb-1 font-bold">
-                        <span>TUNAI</span><span id="receiptPay">Rp 0</span>
+                    
+                    <div style="margin: 1.5px 0; font-size: 9px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>TUNAI</span><span id="receiptPay">Rp 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>KEMBALI</span><span id="receiptChange">Rp 0</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-[9px] mb-2 font-bold">
-                        <span>KEMBALI</span><span id="receiptChange">Rp 0</span>
-                    </div>
-                    <div class="dashed-line"></div>
-                    <div class="text-center mt-2 text-[9px] font-bold" id="print-store-footer">Terima Kasih</div>
+                    
+                    <div class="dashed-line" style="margin: 2px 0;"></div>
+                    
+                    <!-- FOOTER -->
+                    <div style="text-align: center; margin-top: 2px; font-size: 10px; font-weight: bold;" id="print-store-footer">Terima Kasih</div>
+                    <div style="text-align: center; font-size: 8px; margin-top: 2px;">Silahkan berkunjung lagi</div>
                 </div>
             </div>
 
@@ -3741,24 +3901,29 @@ function backupData() {
                 const fragment = document.createDocumentFragment();
                 
                 cart.forEach(item => {
-                    total += (item.price * item.qty);
+                    const subtotal = item.price * item.qty;
+                    total += subtotal;
                     count += item.qty;
                     const div = document.createElement('div');
-                    div.className = "flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-2";
+                    div.className = "flex items-center justify-between gap-1.5 bg-white px-2.5 py-1.5 rounded-lg shadow-xs border border-gray-100 transition-all duration-200";
                     
-                    // PENYUSUNAN HTML KERANJANG
+                    // PENYUSUNAN HTML KERANJANG - SATU BARIS HORIZONTAL
                     div.innerHTML = `
-                        <div class="flex-1 pr-2">
-                            <div class="font-bold text-gray-800 text-sm leading-tight">${item.name}</div>
-                            <div class="text-blue-600 font-black text-xs mt-1">${formatRp(item.price)}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-gray-700 text-[11px] sm:text-xs leading-tight truncate">${item.name}</div>
+                            <div class="text-blue-600 font-bold text-[10px] sm:text-[11px]">${formatRp(item.price)}</div>
                         </div>
-                        <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
-                            <button onclick="adjQty('${item.id}', -1)" class="w-7 h-7 bg-white rounded shadow-sm text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center">-</button>
-                            
-                            <input type="number" value="${item.qty}" onchange="setCustomQty('${item.id}', this)" onfocus="this.select()" class="w-10 bg-transparent text-center font-black text-gray-800 text-sm focus:outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors">
-                            
-                            <button onclick="adjQty('${item.id}', 1)" class="w-7 h-7 bg-white rounded shadow-sm text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center">+</button>
+                        <div class="flex items-center gap-1 bg-gray-50 rounded-md p-0.5 border border-gray-200 flex-shrink-0">
+                            <button onclick="adjQty('${item.id}', -1)" class="w-5 h-5 bg-white rounded text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center text-[10px]">-</button>
+                            <input type="number" value="${item.qty}" onchange="setCustomQty('${item.id}', this)" onfocus="this.select()" class="w-6 bg-transparent text-center font-black text-gray-800 text-[11px] focus:outline-none border-b border-transparent focus:border-blue-400 transition-colors">
+                            <button onclick="adjQty('${item.id}', 1)" class="w-5 h-5 bg-white rounded text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center text-[10px]">+</button>
                         </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-green-600 font-black text-[11px] sm:text-xs">${formatRp(subtotal)}</div>
+                        </div>
+                        <button onclick="adjQty('${item.id}', -9999)" class="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-bold hover:bg-red-100 active:scale-95 transition-all duration-100 flex-shrink-0 border border-red-200 hover:shadow-sm" title="Hapus">
+                            <i class="fa-solid fa-trash text-[9px]"></i>
+                        </button>
                     `;
                     fragment.appendChild(div);
                 });
@@ -3829,28 +3994,47 @@ function backupData() {
         }
         
         function populateReceiptUI(invoice, dateStr, timeStr, itemsList, total, pay, change) {
-            document.getElementById('print-store-name').innerText = storeSettings.name;
-            document.getElementById('print-store-address').innerText = storeSettings.address;
-            document.getElementById('print-store-footer').innerText = storeSettings.footer;
-            document.getElementById('receiptInvoice').innerText = invoice;
-            document.getElementById('receiptDate').innerText = dateStr;
-            document.getElementById('receiptTime').innerText = timeStr;
+            // Set informasi toko
+            document.getElementById('print-store-name').innerText = storeSettings.name || 'SOKA CELLULER';
+            document.getElementById('print-store-address').innerText = storeSettings.address || 'Konter Pulsa & Sembako';
+            document.getElementById('print-store-footer').innerText = storeSettings.footer || 'Terima Kasih';
+            document.getElementById('print-store-phone').innerText = storeSettings.phone ? `WA: ${storeSettings.phone}` : '';
+            
+            // Set info transaksi
+            document.getElementById('receiptInvoice').innerText = invoice || 'INV-000000';
+            document.getElementById('receiptDate').innerText = dateStr || '00/00/0000';
+            document.getElementById('receiptTime').innerText = timeStr || '00:00';
+            
+            // Populate daftar barang
             const receiptItems = document.getElementById('receiptItems');
-            receiptItems.innerHTML = "";
+            receiptItems.innerHTML = '';
             let totalQty = 0;
+            
             itemsList.forEach(item => {
                 const qty = Number(item.qty) || 0;
                 totalQty += qty;
+                const subtotal = item.price * qty;
                 const itemDiv = document.createElement('div');
-                itemDiv.className = "mb-1";
-                itemDiv.innerHTML = `<div class="truncate text-[11px] font-bold">${item.name}</div><div class="flex justify-between pl-2 text-[11px] text-gray-700"><span>${qty} x ${item.price.toLocaleString('id-ID')}</span><span>${(item.price * qty).toLocaleString('id-ID')}</span></div>`;
+                itemDiv.style.cssText = 'margin-bottom: 3px; line-height: 1.2;';
+                
+                // Format: Nama barang di baris 1, qty x harga dan subtotal di baris 2
+                itemDiv.innerHTML = `
+                    <div style="font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</div>
+                    <div style="display: flex; justify-content: space-between; padding-left: 4px; font-size: 9px;">
+                        <span>${qty}x ${formatRp(item.price)}</span>
+                        <span style="font-weight: 900;">${formatRp(subtotal)}</span>
+                    </div>
+                `;
                 receiptItems.appendChild(itemDiv);
             });
-            const receiptItemCountEl = document.getElementById('receiptItemCount');
-            if (receiptItemCountEl) receiptItemCountEl.innerText = `${totalQty} Barang`;
-            document.getElementById('receiptTotal').innerText = total.toLocaleString('id-ID');
-            document.getElementById('receiptPay').innerText = pay.toLocaleString('id-ID');
-            document.getElementById('receiptChange').innerText = change.toLocaleString('id-ID');
+            
+            // Set jumlah barang
+            document.getElementById('receiptItemCount').innerText = `${totalQty} item`;
+            
+            // Set total, tunai, kembali dengan format Rp
+            document.getElementById('receiptTotal').innerText = formatRp(total);
+            document.getElementById('receiptPay').innerText = formatRp(pay);
+            document.getElementById('receiptChange').innerText = formatRp(change);
         }
         
         function closeReceipt() { document.getElementById('receiptModal').classList.add('hidden'); }
@@ -5184,20 +5368,20 @@ function processTransaction(actionType) {
             document.getElementById('scannerModal').classList.add('hidden');
         }
         
-        // Callback untuk html5-qrcode success
+        // Callback untuk html5-qrcode success - CONTINUOUS SCAN MODE
         function onHtml5QrCodeSuccess(decodedText, decodedResult) {
             // Cooldown timer untuk mencegah double-input (1.5 detik)
             const currentTime = Date.now();
             if (decodedText === lastScannedCode && (currentTime - lastScanTime) < 1500) {
-                return;
+                return; // Ignore duplicate scan
             }
             
             lastScanTime = currentTime;
             lastScannedCode = decodedText;
             
-            console.log('Barcode detected:', decodedText);
+            console.log('✓ Barcode detected:', decodedText);
             
-            // Haptic feedback - vibration support
+            // Haptic feedback - vibration (100ms single pulse)
             if (navigator.vibrate) {
                 navigator.vibrate(100);
             }
@@ -5205,43 +5389,45 @@ function processTransaction(actionType) {
             // Audio feedback - beep sound
             playBeep();
             
-            // Visual feedback - JANGAN tutup kamera
+            // Visual feedback - update status label tapi JANGAN tutup kamera
             const statusEl = document.getElementById('scanStatus');
             if (statusEl) {
                 statusEl.style.backgroundColor = '#22c55e';
                 statusEl.style.color = 'white';
-                statusEl.innerText = `✓ Terdeteksi: ${decodedText}`;
+                statusEl.innerText = `✓ ${decodedText}`;
                 
-                // Revert status after 1 second
+                // Revert status after 800ms, tapi kamera tetap aktif
                 setTimeout(() => {
-                    if (statusEl) {
+                    if (statusEl && html5QrcodeScanner) {
                         statusEl.style.backgroundColor = '';
-                        statusEl.innerText = '📷 Kamera siap - Arahkan barcode...';
+                        statusEl.innerText = '📷 Kamera aktif - Scan barang selanjutnya...';
                     }
-                }, 1000);
+                }, 800);
             }
             
-            // Process barcode tanpa menutup kamera
+            // ★ CONTINUOUS SCANNING: Process barcode TANPA stop/close kamera
             processBarcodeResultContinuous(decodedText);
         }
         
-        // High-speed continuous scanning - jangan tutup kamera
+        // ★ CONTINUOUS HIGH-SPEED SCANNING - Kamera TETAP AKTIF, jangan stop/close
         function processBarcodeResultContinuous(decodedText) {
             if (scanMode === 'kasir') {
+                // MODE KASIR: Scan barang langsung masuk keranjang, kamera tetap aktif
                 const product = masterProducts.find(p => p.barcode === decodedText);
                 if (product) { 
                     addToCart(product.id, product.name, product.price, product.buyPrice);
-                    showToast(`✓ Berhasil ditambahkan: ${product.name}`, false);
+                    showToast(`✓ ${product.name}`, false);
+                    // Kamera TETAP AKTIF untuk scan barang berikutnya
                 } else { 
                     playErrorBeep();
-                    showToast(`❌ Barcode tidak ditemukan: ${decodedText}`, true);
+                    showToast(`❌ \'${decodedText}\' tdk ada`, true);
                 }
             } else if (scanMode === 'edit') {
-                // Edit mode: set value dan tutup
+                // MODE EDIT: Set value lalu tutup scanner
                 document.getElementById('editProductBarcode').value = decodedText;
                 playBeep();
-                showToast("✓ Barcode berhasil ditangkap!");
-                setTimeout(() => closeScanner(), 800);
+                showToast("✓ Barcode tertangkap");
+                setTimeout(() => closeScanner(), 600);
             }
         }
         
