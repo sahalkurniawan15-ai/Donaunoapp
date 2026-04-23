@@ -291,6 +291,7 @@
                 <p id="lisensi-small-info" class="text-xs">Hubungi Sahal untuk aktivasi: 0822-2022-0414</p>
             </div>
         </div>
+            <!-- Unit Selection Modal moved out of layar-lisensi to body root -->
     </div>
 
     <!-- Trial Activation Modal (opened from thin banner) -->
@@ -320,6 +321,26 @@
             </div>
 
             <button onclick="closeTrialModal()" class="mt-4 text-xs text-gray-400">Tutup</button>
+        </div>
+    </div>
+    <!-- Unit Selection Modal (Pilih Base / Retail dan Masukkan Jumlah) -->
+    <div id="unitSelectModal" class="fixed inset-0 bg-black bg-opacity-75 z-[110] hidden flex items-center justify-center no-print p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-4 sm:p-6 w-full max-w-xs sm:max-w-sm flex flex-col shadow-2xl relative">
+            <h2 id="unitSelectTitle" class="font-black text-lg text-gray-800 border-b pb-3 mb-4">Pilih Satuan & Jumlah</h2>
+            <input type="hidden" id="unitProductId">
+            <div class="space-y-3 mb-4">
+                <div id="unitOptions" class="space-y-2 text-sm">
+                    <!-- radio options inserted dynamically -->
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-bold mb-1">Jumlah</label>
+                    <input type="number" id="unitQuantity" value="1" step="1" min="1" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-gray-800 font-bold text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t pt-4">
+                <button onclick="closeUnitModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition">Batal</button>
+                <button id="btnAddUnit" onclick="addUnitToCartFromModal(event)" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md active:scale-95"><i class="fa-solid fa-cart-plus mr-2"></i> Tambah ke Keranjang</button>
+            </div>
         </div>
     </div>
 
@@ -1334,6 +1355,37 @@
                         <input type="number" id="editProductStock" placeholder="0" class="w-full px-3 py-3 border-2 border-orange-200 bg-orange-50 rounded-xl focus:outline-none focus:border-orange-500 text-orange-600 font-bold text-sm">
                     </div>
                 </div>
+
+                                <!-- BEGIN: Retail / Decimal fields -->
+                                <div class="grid grid-cols-2 gap-3 mt-3 items-center">
+                                    <div>
+                                        <label class="block text-gray-600 text-[10px] font-bold mb-1 uppercase">Satuan (Base Unit)</label>
+                                        <input type="text" id="editProductBaseUnit" placeholder="Pack / Kg / Pcs" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-gray-500 text-gray-700 font-bold text-sm">
+                                    </div>
+                                    <div class="flex items-center justify-end gap-4">
+                                        <label class="flex items-center gap-2 text-sm font-bold"><input type="checkbox" id="editProductHasRetail" onchange="toggleEditRetailFields()" class="h-4 w-4"> Jual Eceran</label>
+                                        <label class="flex items-center gap-2 text-sm font-bold"><input type="checkbox" id="editProductAllowDecimal" class="h-4 w-4"> Allow Decimal</label>
+                                    </div>
+                                </div>
+
+                                <div id="editRetailFields" class="mt-3 hidden">
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-gray-600 text-[10px] font-bold mb-1 uppercase">Retail Unit</label>
+                                            <input type="text" id="editProductRetailUnit" placeholder="Pcs / Gram" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-gray-500 text-gray-700 font-bold text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-600 text-[10px] font-bold mb-1 uppercase">Retail Price (Rp)</label>
+                                            <input type="number" id="editProductRetailPrice" placeholder="2500" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-gray-500 text-gray-700 font-bold text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-600 text-[10px] font-bold mb-1 uppercase">Conversion Rate</label>
+                                            <input type="number" id="editProductConversionRate" placeholder="12" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-gray-500 text-gray-700 font-bold text-sm">
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2">Contoh: Conversion Rate = 12 berarti 1 Pack = 12 Pcs</p>
+                                </div>
+                                <!-- END: Retail / Decimal fields -->
             </div>
 
             <div class="flex justify-end gap-3 border-t pt-5">
@@ -3719,7 +3771,13 @@ function backupData() {
                 div.className = `bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer transition transform h-full relative overflow-hidden min-h-[140px] active:scale-95 active:bg-blue-50`;
                 
                 div.onclick = () => {
-                    addToCart(product.id, product.name, product.price, product.buyPrice);
+                    console.log('[renderProducts] click', { id: product.id, name: product.name, hasRetail: product.hasRetail, allowDecimal: product.allowDecimal });
+                    try {
+                        addToCart(product.id, product.name, product.price, product.buyPrice);
+                    } catch (err) {
+                        console.error('[renderProducts] addToCart error', err);
+                        showToast('Gagal menambah ke keranjang', true);
+                    }
                     if(isOutOfStock) {
                         // Tampilkan notifikasi kecil saja tanpa bunyi error
                         showToast("Peringatan: Terjual dengan stok minus", true);
@@ -3815,7 +3873,9 @@ function backupData() {
             if(type === 'digital_tarik') prefix = "[TARIK] ";
             if(type === 'digital_setor') prefix = "[SETOR] ";
 
+            const manualCartId = 'C' + Date.now() + Math.floor(Math.random()*1000);
             cart.push({ 
+                cartId: manualCartId,
                 id: "M"+Date.now(), 
                 name: prefix + name, 
                 buyPrice: buyPrice, 
@@ -3827,117 +3887,233 @@ function backupData() {
             updateCartUI(); closeManualModal(); playBeep(); showToast(`${name} ditambahkan!`);
         }
         
-                            function addToCart(id, name, price, buyPrice) {
-            const existing = cart.find(item => String(item.id) === String(id));
-            if (existing) { existing.qty += 1; } 
-            else { cart.push({ id, name, price, buyPrice, originalPrice: price, qty: 1, itemType: 'fisik' }); } // <-- tambah itemType: 'fisik'
-            updateCartUI();
-        }
-
-        function adjQty(id, delta) {
-            const item = cart.find(i => String(i.id) === String(id));
-            if (item) {
-                item.qty += delta; 
-                if (item.qty <= 0) cart = cart.filter(i => String(i.id) !== String(id)); 
-            }
-            updateCartUI();
-        }
-        function setCustomQty(id, inputElement) {
-            let newQty = parseInt(inputElement.value);
-            
-            // Validasi: Jika dikosongkan atau huruf, kembalikan ke 1
-            if (isNaN(newQty) || newQty < 0) {
-                newQty = 1;
+                            function formatQty(q) {
+                const n = Number(q) || 0;
+                if (Number.isInteger(n)) return String(n);
+                return parseFloat(n.toFixed(2)).toString().replace(/\.00$/, '');
             }
 
-            const itemIndex = cart.findIndex(i => String(i.id) === String(id));
-            if (itemIndex !== -1) {
-                if (newQty === 0) {
-                    // Jika diketik angka 0, langsung hapus barang dari keranjang
-                    cart.splice(itemIndex, 1);
-                } else {
-                    // Update dengan jumlah ketikan baru
-                    cart[itemIndex].qty = newQty;
+            function addToCart(id, name, price, buyPrice) {
+                console.log('[addToCart] start', { id, name, price, buyPrice });
+                // Find product in master list
+                const product = masterProducts.find(p => String(p.id) === String(id));
+                console.log('[addToCart] found product:', product);
+
+                function truthyFlag(v) {
+                    if (v === true || v === 1) return true;
+                    if (typeof v === 'string') {
+                        const s = v.trim().toLowerCase();
+                        return s === 'true' || s === '1' || s === 'yes' || s === 'on';
+                    }
+                    return false;
+                }
+
+                const needsModal = product && (truthyFlag(product.hasRetail) || truthyFlag(product.allowDecimal));
+                console.log('[addToCart] needsModal:', needsModal);
+                if (needsModal) {
+                    try {
+                        console.log('[addToCart] opening unit modal for', id);
+                        openUnitModal(id);
+                    } catch (err) {
+                        console.error('[addToCart] openUnitModal error', err);
+                        showToast('Gagal membuka modal satuan', true);
+                    }
+                    return;
+                }
+
+                const existing = cart.find(item => String(item.id) === String(id) && (item.unitType === 'base' || !item.unitType));
+                if (existing) { existing.qty = Number(existing.qty) + 1; }
+                else {
+                    const cid = 'C' + Date.now() + Math.floor(Math.random()*1000);
+                    cart.push({ cartId: cid, id, name, price, buyPrice, originalPrice: price, qty: 1, itemType: 'fisik', unitLabel: (product ? (product.baseUnit || product.unit || '') : ''), unitType: 'base', allowDecimal: false });
+                }
+                updateCartUI();
+            }
+
+            function openUnitModal(productId) {
+                console.log('[openUnitModal] productId', productId);
+                const product = masterProducts.find(p => String(p.id) === String(productId));
+                console.log('[openUnitModal] product', product);
+                const modalEl = document.getElementById('unitSelectModal');
+                console.log('[openUnitModal] modal element exists?', !!modalEl);
+                if (!product) { console.warn('[openUnitModal] product not found', productId); return; }
+                document.getElementById('unitProductId').value = productId;
+                document.getElementById('unitSelectTitle').innerText = `Tambah: ${product.name}`;
+
+                const opts = document.getElementById('unitOptions'); opts.innerHTML = '';
+                // Base option
+                const baseLabel = document.createElement('label'); baseLabel.className = 'flex items-center gap-2';
+                const baseRadio = document.createElement('input'); baseRadio.type = 'radio'; baseRadio.name = 'unitOption'; baseRadio.value = 'base'; baseRadio.checked = true; baseRadio.onchange = onUnitOptionChange;
+                baseLabel.appendChild(baseRadio);
+                baseLabel.appendChild(document.createTextNode(` ${product.baseUnit || (product.unit || 'Unit')} — ${formatRp(product.price)} / ${product.baseUnit || ''}`));
+                opts.appendChild(baseLabel);
+
+                if (product.hasRetail) {
+                    const retailLabel = document.createElement('label'); retailLabel.className = 'flex items-center gap-2';
+                    const retailRadio = document.createElement('input'); retailRadio.type = 'radio'; retailRadio.name = 'unitOption'; retailRadio.value = 'retail'; retailRadio.onchange = onUnitOptionChange;
+                    retailLabel.appendChild(retailRadio);
+                    retailLabel.appendChild(document.createTextNode(` ${product.retailUnit || 'Pcs'} — ${formatRp(product.retailPrice)} / ${product.retailUnit || ''}`));
+                    opts.appendChild(retailLabel);
+                }
+
+                const qtyEl = document.getElementById('unitQuantity');
+                // default qty
+                qtyEl.value = product.allowDecimal ? 0.5 : 1;
+                qtyEl.step = product.allowDecimal ? 0.1 : 1;
+                qtyEl.min = product.allowDecimal ? 0.01 : 1;
+
+                if (modalEl) modalEl.classList.remove('hidden');
+                console.log('[openUnitModal] modal shown for', productId);
+            }
+
+            function closeUnitModal() { document.getElementById('unitSelectModal').classList.add('hidden'); }
+
+            function onUnitOptionChange() {
+                const productId = document.getElementById('unitProductId').value;
+                const product = masterProducts.find(p => String(p.id) === String(productId));
+                if (!product) return;
+                const selected = document.querySelector('input[name="unitOption"]:checked').value;
+                const qtyEl = document.getElementById('unitQuantity');
+                if (selected === 'retail') { qtyEl.step = 1; qtyEl.min = 1; if (Number(qtyEl.value) < 1) qtyEl.value = 1; }
+                else { qtyEl.step = product.allowDecimal ? 0.1 : 1; qtyEl.min = product.allowDecimal ? 0.01 : 1; if (Number(qtyEl.value) < qtyEl.min) qtyEl.value = qtyEl.min; }
+            }
+
+            function addUnitToCartFromModal(e) {
+                e && e.preventDefault();
+                const productId = document.getElementById('unitProductId').value;
+                console.log('[addUnitToCartFromModal] productId', productId);
+                const product = masterProducts.find(p => String(p.id) === String(productId));
+                console.log('[addUnitToCartFromModal] product', product);
+                if (!product) { console.warn('[addUnitToCartFromModal] product not found, closing modal'); return closeUnitModal(); }
+                const selected = document.querySelector('input[name="unitOption"]:checked');
+                const unit = selected ? selected.value : 'base';
+                let qty = parseFloat(document.getElementById('unitQuantity').value);
+                console.log('[addUnitToCartFromModal] selected unit', unit, 'qty', qty);
+                if (isNaN(qty) || qty <= 0) { return showToast('Masukkan jumlah valid', true); }
+
+                let pricePerUnit = product.price;
+                let unitLabel = product.baseUnit || (product.unit || 'Unit');
+                let unitType = 'base';
+                let allowDecimal = product.allowDecimal || false;
+                if (unit === 'retail' && product.hasRetail) {
+                    pricePerUnit = product.retailPrice || product.price;
+                    unitLabel = product.retailUnit || unitLabel;
+                    unitType = 'retail';
+                    allowDecimal = false; // retail typically integer
+                    qty = Math.floor(qty); if (qty < 1) qty = 1;
+                }
+
+                const cid = 'C' + Date.now() + Math.floor(Math.random()*1000);
+                const itemObj = { cartId: cid, id: product.id, name: product.name, price: pricePerUnit, buyPrice: product.buyPrice || 0, originalPrice: pricePerUnit, qty: qty, itemType: 'fisik', unitLabel: unitLabel, unitType: unitType, allowDecimal: allowDecimal };
+                console.log('[addUnitToCartFromModal] pushing to cart', itemObj);
+                cart.push(itemObj);
+                updateCartUI(); closeUnitModal(); playBeep(); showToast(`${product.name} ditambahkan!`);
+            }
+
+            function adjQty(id, delta) {
+                if (delta === -9999) { cart = cart.filter(i => String(i.cartId) !== String(id)); updateCartUI(); return; }
+                const item = cart.find(i => String(i.cartId) === String(id));
+                if (item) {
+                    const step = (item.allowDecimal ? 0.1 : 1);
+                    let newQty = Number(item.qty) + Number(delta);
+                    if (item.allowDecimal) newQty = parseFloat(newQty.toFixed(2));
+                    else newQty = Math.max(0, parseInt(newQty));
+                    if (isNaN(newQty) || newQty <= 0) {
+                        cart = cart.filter(i => String(i.cartId) !== String(id));
+                    } else {
+                        item.qty = newQty;
+                    }
+                }
+                updateCartUI();
+            }
+
+            function setCustomQty(id, inputElement) {
+                const raw = inputElement.value;
+                const itemIndex = cart.findIndex(i => String(i.cartId) === String(id));
+                if (itemIndex === -1) return;
+                const item = cart[itemIndex];
+                let newQty = item.allowDecimal ? parseFloat(raw) : parseInt(raw);
+                if (isNaN(newQty) || newQty < 0) newQty = 1;
+                if (newQty === 0) { cart.splice(itemIndex, 1); }
+                else { if (item.allowDecimal) item.qty = parseFloat(newQty.toFixed(2)); else item.qty = parseInt(newQty); }
+                updateCartUI();
+            }
+
+            function updateItemPrice(id, inputElement) {
+                const newPrice = parseInt(inputElement.value);
+                const item = cart.find(i => String(i.cartId) === String(id));
+                if (item) { item.price = (!isNaN(newPrice) && newPrice >= 0) ? newPrice : item.originalPrice; }
+                updateCartUI();
+            }
+
+            function clearCart(force = false) {
+                if(force || confirm("Yakin ingin mengosongkan keranjang?")) {
+                    cart = []; document.getElementById('payAmount').value = ''; updateCartUI(); toggleMobileCart(false);
                 }
             }
-            updateCartUI(); // Refresh tampilan dan total harga
-        }
-        
-        function updateItemPrice(id, inputElement) {
-            const newPrice = parseInt(inputElement.value);
-            const item = cart.find(i => String(i.id) === String(id));
-            if (item) { item.price = (!isNaN(newPrice) && newPrice >= 0) ? newPrice : item.originalPrice; }
-            updateCartUI();
-        }
-        
-        function clearCart(force = false) {
-            if(force || confirm("Yakin ingin mengosongkan keranjang?")) {
-                cart = []; document.getElementById('payAmount').value = ''; updateCartUI(); toggleMobileCart(false);
-            }
-        }
-        
+
                         function updateCartUI() {
-            const list = cacheDOM.cartItems || document.getElementById('cartItems');
-            if(!list) return;
-            
-            let total = 0;
-            let count = 0;
-
-            if(cart.length === 0) {
-                list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p class="font-medium text-lg">Keranjang Masih Kosong</p></div>`;
-            } else {
-                // Use DocumentFragment for batch DOM operations
-                const fragment = document.createDocumentFragment();
+                const list = cacheDOM.cartItems || document.getElementById('cartItems');
+                if(!list) return;
                 
-                cart.forEach(item => {
-                    const subtotal = item.price * item.qty;
-                    total += subtotal;
-                    count += item.qty;
-                    const div = document.createElement('div');
-                    div.className = "flex items-center justify-between gap-1.5 bg-white px-2.5 py-1.5 rounded-lg shadow-xs border border-gray-100 transition-all duration-200";
-                    
-                    // PENYUSUNAN HTML KERANJANG - SATU BARIS HORIZONTAL
-                    div.innerHTML = `
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold text-gray-700 text-[11px] sm:text-xs leading-tight truncate">${item.name}</div>
-                            <div class="text-blue-600 font-bold text-[10px] sm:text-[11px]">${formatRp(item.price)}</div>
-                        </div>
-                        <div class="flex items-center gap-1 bg-gray-50 rounded-md p-0.5 border border-gray-200 flex-shrink-0">
-                            <button onclick="adjQty('${item.id}', -1)" class="w-5 h-5 bg-white rounded text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center text-[10px]">-</button>
-                            <input type="number" value="${item.qty}" onchange="setCustomQty('${item.id}', this)" onfocus="this.select()" class="w-6 bg-transparent text-center font-black text-gray-800 text-[11px] focus:outline-none border-b border-transparent focus:border-blue-400 transition-colors">
-                            <button onclick="adjQty('${item.id}', 1)" class="w-5 h-5 bg-white rounded text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center text-[10px]">+</button>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <div class="text-green-600 font-black text-[11px] sm:text-xs">${formatRp(subtotal)}</div>
-                        </div>
-                        <button onclick="adjQty('${item.id}', -9999)" class="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-bold hover:bg-red-100 active:scale-95 transition-all duration-100 flex-shrink-0 border border-red-200 hover:shadow-sm" title="Hapus">
-                            <i class="fa-solid fa-trash text-[9px]"></i>
-                        </button>
-                    `;
-                    fragment.appendChild(div);
-                });
-                
-                // Clear and append all at once (only 1 reflow)
-                list.innerHTML = '';
-                list.appendChild(fragment);
-            }
+                let total = 0;
+                let count = 0;
 
-            // Update price elements
-            const totalEl = cacheDOM.totalPrice || document.getElementById('totalPrice');
-            if(totalEl) {
-                totalEl.innerText = formatRp(total);
-                totalEl.dataset.total = total;
-            }
+                if(cart.length === 0) {
+                    list.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60"><i class="fa-solid fa-basket-shopping text-6xl mb-4"></i><p class="font-medium text-lg">Keranjang Masih Kosong</p></div>`;
+                } else {
+                    const fragment = document.createDocumentFragment();
+                    cart.forEach(item => {
+                        const subtotal = item.price * item.qty;
+                        total += subtotal;
+                        count += Number(item.qty) || 0;
+                        const div = document.createElement('div');
+                        div.className = "flex items-center justify-between gap-1.5 bg-white px-2.5 py-1.5 rounded-lg shadow-xs border border-gray-100 transition-all duration-200";
 
-            const floatTotal = cacheDOM.floatingCartTotal || document.getElementById('floatingCartTotal');
-            const floatCount = cacheDOM.floatingCartCount || document.getElementById('floatingCartCount');
-            if(floatTotal) floatTotal.innerText = formatRp(total);
-            if(floatCount) {
-                floatCount.innerText = count;
-                if(count > 0) floatCount.classList.remove('hidden');
-                else floatCount.classList.add('hidden');
+                        const step = item.allowDecimal ? 0.1 : 1;
+                        const qtyDisplay = formatQty(item.qty);
+                        const unitText = item.unitLabel ? ` ${qtyDisplay} ${item.unitLabel}` : ` ${qtyDisplay}`;
+
+                        div.innerHTML = `
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-gray-700 text-[11px] sm:text-xs leading-tight truncate">${item.name}${item.unitLabel ? ' • '+(item.unitType==='retail'?item.unitLabel: ''): ''}</div>
+                                <div class="text-blue-600 font-bold text-[10px] sm:text-[11px]">${formatRp(item.price)}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">${qtyDisplay}${item.unitLabel ? ' ' + item.unitLabel : ''}</div>
+                            </div>
+                            <div class="flex items-center gap-1 bg-gray-50 rounded-md p-0.5 border border-gray-200 flex-shrink-0">
+                                <button onclick="adjQty('${item.cartId}', ${item.allowDecimal ? -0.1 : -1})" class="w-6 h-6 bg-white rounded text-red-500 font-bold hover:bg-red-50 active:scale-95 transition flex justify-center items-center text-[10px]">-</button>
+                                <input type="number" value="${item.qty}" step="${step}" onchange="setCustomQty('${item.cartId}', this)" onfocus="this.select()" class="w-12 bg-transparent text-center font-black text-gray-800 text-[11px] focus:outline-none border-b border-transparent focus:border-blue-400 transition-colors">
+                                <button onclick="adjQty('${item.cartId}', ${item.allowDecimal ? 0.1 : 1})" class="w-6 h-6 bg-white rounded text-blue-500 font-bold hover:bg-blue-50 active:scale-95 transition flex justify-center items-center text-[10px]">+</button>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-green-600 font-black text-[11px] sm:text-xs">${formatRp(subtotal)}</div>
+                            </div>
+                            <button onclick="adjQty('${item.cartId}', -9999)" class="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[9px] font-bold hover:bg-red-100 active:scale-95 transition-all duration-100 flex-shrink-0 border border-red-200 hover:shadow-sm" title="Hapus">
+                                <i class="fa-solid fa-trash text-[9px]"></i>
+                            </button>
+                        `;
+                        fragment.appendChild(div);
+                    });
+                    list.innerHTML = '';
+                    list.appendChild(fragment);
+                }
+
+                // Update price elements
+                const totalEl = cacheDOM.totalPrice || document.getElementById('totalPrice');
+                if(totalEl) {
+                    totalEl.innerText = formatRp(total);
+                    totalEl.dataset.total = Math.round(total);
+                }
+
+                const floatTotal = cacheDOM.floatingCartTotal || document.getElementById('floatingCartTotal');
+                const floatCount = cacheDOM.floatingCartCount || document.getElementById('floatingCartCount');
+                if(floatTotal) floatTotal.innerText = formatRp(total);
+                if(floatCount) {
+                    floatCount.innerText = count;
+                    if(count > 0) floatCount.classList.remove('hidden');
+                    else floatCount.classList.add('hidden');
+                }
             }
-        }
 
         function setQuickCash(amount) {
             const inputEl = document.getElementById('payAmount');
@@ -4005,12 +4181,13 @@ function backupData() {
                 const subtotal = item.price * qty;
                 const itemDiv = document.createElement('div');
                 itemDiv.style.cssText = 'margin-bottom: 3px; line-height: 1.2;';
-                
-                // Format: Nama barang di baris 1, qty x harga dan subtotal di baris 2
+
+                const unitLabel = item.unitLabel ? ` ${item.unitLabel}` : '';
+                // Format: Nama barang di baris 1, qty x harga dan subtotal di baris 2 (tampilkan satuan bila ada)
                 itemDiv.innerHTML = `
                     <div style="font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</div>
                     <div style="display: flex; justify-content: space-between; padding-left: 4px; font-size: 9px;">
-                        <span>${qty}x ${formatRp(item.price)}</span>
+                        <span>${qty}${unitLabel} x ${formatRp(item.price)}</span>
                         <span style="font-weight: 900;">${formatRp(subtotal)}</span>
                     </div>
                 `;
@@ -4038,7 +4215,8 @@ function backupData() {
             text += `JUMLAH BARANG: ${totalQty}\n`;
             itemsList.forEach(item => {
                 text += `${item.name}\n`;
-                let qtyPrice = `${item.qty}x ${item.price.toLocaleString('id-ID')}`;
+                const unitLabel = item.unitLabel ? ` ${item.unitLabel}` : '';
+                let qtyPrice = `${item.qty}${unitLabel} x ${item.price.toLocaleString('id-ID')}`;
                 let subtotalStr = (item.price * item.qty).toLocaleString('id-ID');
                 let spaces = " ".repeat(Math.max(1, 32 - qtyPrice.length - subtotalStr.length));
                 text += `${qtyPrice}${spaces}${subtotalStr}\n`;
@@ -4057,33 +4235,74 @@ function backupData() {
                 const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
                 const pay = parseInt(document.getElementById('payAmount').value || 0);
                 const inv = document.getElementById('receiptInvoice').innerText;
-                
-                let totalModal = 0; 
-                cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
-                const profit = total - totalModal;
-                
+
+                        // Build detailed items and compute total modal (cost) using per-line rounded integers
+                        const itemsDetailed = cart.map(item => {
+                            const prod = masterProducts.find(p => String(p.id) === String(item.id));
+                            const prodBuy = Number((prod && (prod.buyPrice || prod.buyprice || prod.buy_price)) || (item.buyPrice || 0));
+                            const conv = Number((prod && (prod.conversionRate || prod.conversion_rate)) || 0);
+
+                            // Determine how many BASE units to deduct from stock
+                            let baseQty = 0;
+                            if (String(item.unitType) === 'retail') {
+                                baseQty = conv > 0 ? Number(item.qty) / conv : Number(item.qty);
+                            } else {
+                                baseQty = Number(item.qty);
+                            }
+                            baseQty = Math.round((Number(baseQty) || 0) * 10000) / 10000; // keep 4 decimals safe
+
+                            // Compute per-unit buy price and total cost (modal) for this sold quantity
+                            let perUnitBuy = Number(prodBuy) || 0;
+                            if (String(item.unitType) === 'retail' && conv > 0) {
+                                perUnitBuy = prodBuy / conv; // buy price per retail unit
+                            }
+                            const itemCostRaw = perUnitBuy * Number(item.qty);
+                            const itemCostRounded = Math.round(itemCostRaw); // round to integer Rupiah per line
+
+                            // Deduct stock safely if product has stock field
+                            if (prod && typeof prod.stock !== 'undefined' && prod.stock !== null) {
+                                const prev = Number(prod.stock) || 0;
+                                prod.stock = Math.round((prev - baseQty) * 10000) / 10000;
+                            }
+
+                            // Return augmented item copy for transaction record — include per-unit buyPrice (rounded) and per-line cost
+                            const itemCopy = Object.assign({}, item);
+                            itemCopy.baseQtyDeducted = baseQty;
+                            itemCopy.buyPrice = Math.round(perUnitBuy); // per-unit buy price (rounded)
+                            itemCopy.cost = itemCostRounded; // total cost for this line (integer Rupiah)
+                            return itemCopy;
+                        });
+
+                        // Persist updated masterProducts (stock changes)
+                        saveMasterData();
+
+                        // Total modal is the sum of rounded per-line costs (integers)
+                        const totalModal = itemsDetailed.reduce((s, it) => s + (Number(it.cost) || 0), 0);
+
+                        const profit = total - totalModal;
+
                 if (actionType !== 'print_only') {
-                    const transaction = { 
-                        id: Date.now(), 
-                        invoice: inv, 
-                        date: currentTransactionDateStr, 
-                        displayDate: document.getElementById('receiptDate').innerText, 
-                        time: document.getElementById('receiptTime').innerText, 
-                        items: JSON.parse(JSON.stringify(cart)), 
-                        total: total, 
-                        modal: totalModal, 
-                        profit: profit, 
-                        pay: pay, 
+                    const transaction = {
+                        id: Date.now(),
+                        invoice: inv,
+                        date: currentTransactionDateStr,
+                        displayDate: document.getElementById('receiptDate').innerText,
+                        time: document.getElementById('receiptTime').innerText,
+                        items: itemsDetailed,
+                        total: total,
+                        modal: totalModal,
+                        profit: profit,
+                        pay: pay,
                         change: pay - total,
-                        method: typeof currentPaymentMethod !== 'undefined' ? currentPaymentMethod : 'cash' 
+                        method: typeof currentPaymentMethod !== 'undefined' ? currentPaymentMethod : 'cash'
                     };
-                    let history = JSON.parse(localStorage.getItem('soka_transactions')) || []; 
-                    history.push(transaction); 
+                    let history = JSON.parse(localStorage.getItem('soka_transactions')) || [];
+                    history.push(transaction);
                     localStorage.setItem('soka_transactions', JSON.stringify(history));
                     updateMainStoreChart();
                 }
-                
-                textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
+
+                textReceipt = generateRawTextReceipt(inv, itemsDetailed, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
             } else {
                 const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
@@ -4327,31 +4546,29 @@ function printKhususLaptop() {
                 else { totalTunai += (Number(tx.total) || 0); }
 
                 let safeItems = tx.items || [];
-                if(Array.isArray(safeItems)) {
+                if (Array.isArray(safeItems)) {
                     safeItems.forEach(i => {
-                        if(i && i.name) {
+                        if (i && i.name) {
                             let namaBarang = i.name.trim().toUpperCase();
-                            if(!itemStats[namaBarang]) { itemStats[namaBarang] = { name: i.name, qty: 0, profit: 0 }; }
-                            itemStats[namaBarang].qty += (Number(i.qty) || 0);
-                            
-                            let modal = Number(i.buyPrice) || 0;
-                            let jual = Number(i.price) || 0;
-                            let labaItem = ((jual - modal) * (Number(i.qty) || 0));
-                            let omzetItem = jual * (Number(i.qty) || 0);
-                            let modalItem = modal * (Number(i.qty) || 0);
+                            if (!itemStats[namaBarang]) { itemStats[namaBarang] = { name: i.name, qty: 0, profit: 0 }; }
+                            const qty = Number(i.qty) || 0;
+                            itemStats[namaBarang].qty += qty;
+
+                            const jual = Number(i.price) || 0;
+                            // Prefer per-line cost if available (i.cost), else fallback to per-unit buyPrice * qty
+                            const modalLine = (typeof i.cost !== 'undefined') ? Number(i.cost) : (Number(i.buyPrice) || 0) * qty;
+                            const omzetItem = jual * qty;
+                            const labaItem = omzetItem - modalLine;
 
                             itemStats[namaBarang].profit += labaItem;
-                            // PEMISAHAN DANA FISIK VS DIGITAL (ANTI BENGKAK - HANYA UNTUNG)
-                            if(i.itemType && i.itemType.startsWith('digital')) {
-                                // SEMUA DIGITAL (Pulsa, Token, Tarik, Setor):
-                                // Yang dihitung sebagai Omzet murni hanya UNTUNG/ADMIN-nya saja.
-                                totalDigital += labaItem; 
-                                // modalDigital dibiarkan 0, agar perhitungan Laba Digital selaras.
-                            } 
-                            else {
-                                // JIKA FISIK (Sembako dll): Hitung normal.
+                            // PEMISAHAN DANA FISIK VS DIGITAL
+                            if (i.itemType && i.itemType.startsWith('digital')) {
+                                // Digital: only count the margin as omzet
+                                totalDigital += labaItem;
+                            } else {
+                                // Fisik: count omzet and modal normally
                                 totalFisik += omzetItem;
-                                modalFisik += modalItem; 
+                                modalFisik += modalLine;
                             }
                         }
                     });
@@ -4749,9 +4966,10 @@ function printKhususLaptop() {
                 // Kembalikan stok barang yang ada di dalam nota yang dihapus
                 if (txToDelete && txToDelete.items) {
                     txToDelete.items.forEach(cartItem => {
-                        let pIndex = masterProducts.findIndex(p => String(p.id) === String(cartItem.id));
-                        if (pIndex !== -1 && masterProducts[pIndex].stock !== undefined) {
-                            masterProducts[pIndex].stock += cartItem.qty; // Stok ditambah kembali
+                        const pIndex = masterProducts.findIndex(p => String(p.id) === String(cartItem.id));
+                        if (pIndex !== -1 && typeof masterProducts[pIndex].stock !== 'undefined') {
+                            const qtyToRestore = (typeof cartItem.baseQtyDeducted !== 'undefined') ? Number(cartItem.baseQtyDeducted) : (Number(cartItem.qty) || 0);
+                            masterProducts[pIndex].stock = Math.round(((Number(masterProducts[pIndex].stock) || 0) + qtyToRestore) * 10000) / 10000;
                         }
                     });
                     saveMasterData(); // Simpan stok terbaru ke database
@@ -4896,6 +5114,14 @@ function deleteProduct(id) {
                 document.getElementById('editProductModal').value = product.buyPrice; 
                 document.getElementById('editProductJual').value = product.price;
                 document.getElementById('editProductStock').value = product.stock || 0;
+                // populate new retail/decimal fields if present
+                document.getElementById('editProductBaseUnit').value = product.baseUnit || (product.unit || 'Unit');
+                document.getElementById('editProductHasRetail').checked = !!product.hasRetail;
+                document.getElementById('editProductRetailUnit').value = product.retailUnit || '';
+                document.getElementById('editProductRetailPrice').value = product.retailPrice || '';
+                document.getElementById('editProductConversionRate').value = product.conversionRate || '';
+                document.getElementById('editProductAllowDecimal').checked = !!product.allowDecimal;
+                toggleEditRetailFields();
             } else {
                 document.getElementById('modalTitle').innerHTML = "<i class='fa-solid fa-box-open mr-2 text-blue-500'></i>Tambah Baru";
                 document.getElementById('editProductId').value = ""; 
@@ -4904,11 +5130,25 @@ function deleteProduct(id) {
                 document.getElementById('editProductModal').value = ""; 
                 document.getElementById('editProductJual').value = "";
                 document.getElementById('editProductStock').value = ""; 
+                // reset additional fields
+                document.getElementById('editProductBaseUnit').value = 'Unit';
+                document.getElementById('editProductHasRetail').checked = false;
+                document.getElementById('editProductRetailUnit').value = '';
+                document.getElementById('editProductRetailPrice').value = '';
+                document.getElementById('editProductConversionRate').value = '';
+                document.getElementById('editProductAllowDecimal').checked = false;
+                toggleEditRetailFields();
             }
         }
         
+        function toggleEditRetailFields(){
+            const checked = document.getElementById('editProductHasRetail').checked;
+            const el = document.getElementById('editRetailFields');
+            if(checked) el.classList.remove('hidden'); else el.classList.add('hidden');
+        }
+
         function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
-        
+
         function saveProductData() {
             const id = document.getElementById('editProductId').value; 
             const barcode = document.getElementById('editProductBarcode').value.trim(); 
@@ -4916,6 +5156,14 @@ function deleteProduct(id) {
             const buyPrice = parseInt(document.getElementById('editProductModal').value); 
             const price = parseInt(document.getElementById('editProductJual').value);
             const stock = parseInt(document.getElementById('editProductStock').value) || 0; 
+
+            // new fields
+            const baseUnit = document.getElementById('editProductBaseUnit').value.trim() || 'Unit';
+            const hasRetail = document.getElementById('editProductHasRetail').checked;
+            const retailUnit = document.getElementById('editProductRetailUnit').value.trim();
+            const retailPrice = parseInt(document.getElementById('editProductRetailPrice').value) || 0;
+            const conversionRate = parseInt(document.getElementById('editProductConversionRate').value) || 0;
+            const allowDecimal = document.getElementById('editProductAllowDecimal').checked;
 
             if(!name || isNaN(buyPrice) || isNaN(price)) return showToast("Isi semua form dengan benar!", true);
             if(barcode) { const isBarcodeUsed = masterProducts.find(p => p.barcode === barcode && String(p.id) !== String(id)); if(isBarcodeUsed) return showToast("Barcode sudah dipakai barang lain!", true); }
@@ -4925,87 +5173,134 @@ function deleteProduct(id) {
                     masterProducts[index].barcode = barcode; masterProducts[index].name = name; 
                     masterProducts[index].buyPrice = buyPrice; masterProducts[index].price = price; 
                     masterProducts[index].stock = stock; 
+                    // save new fields
+                    masterProducts[index].baseUnit = baseUnit;
+                    masterProducts[index].hasRetail = hasRetail;
+                    masterProducts[index].retailUnit = retailUnit;
+                    masterProducts[index].retailPrice = retailPrice;
+                    masterProducts[index].conversionRate = conversionRate;
+                    masterProducts[index].allowDecimal = allowDecimal;
                     showToast("Data barang berhasil diubah!"); 
                 }
             } else {
-                masterProducts.push({ id: Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price, stock: stock }); 
+                masterProducts.push({ id: Date.now(), barcode: barcode, name: name, buyPrice: buyPrice, price: price, stock: stock, baseUnit: baseUnit, hasRetail: hasRetail, retailUnit: retailUnit, retailPrice: retailPrice, conversionRate: conversionRate, allowDecimal: allowDecimal }); 
                 showToast("Barang baru ditambahkan!");
             }
-            saveMasterData(); renderMasterProducts(); if(!document.getElementById('view-barang').classList.contains('hidden')){ renderProducts(); } closeProductModal();
+            saveMasterData(); renderMasterProducts(); if(document.getElementById('view-barang').classList.contains('hidden')){ renderProducts(); } closeProductModal();
         }
 
-        // CARI fungsi processTransaction(actionType) dan TIMPA isinya dengan ini:
-function processTransaction(actionType) {
+        // Finalized processTransaction: compute per-line modal (rounded), persist transaction and update stock
+        function processTransaction(actionType) {
             let textReceipt = "";
-            if(!isReprintMode) {
+            if (!isReprintMode) {
                 const total = parseInt(document.getElementById('totalPrice').dataset.total || 0);
                 const pay = parseInt(document.getElementById('payAmount').value || 0);
                 const inv = document.getElementById('receiptInvoice').innerText;
-                
-                let totalModal = 0; 
-                cart.forEach(item => { totalModal += ((item.buyPrice || 0) * item.qty); });
+
+                // Build detailed items and compute per-line cost rounded to integer Rupiah
+                const itemsDetailed = cart.map(item => {
+                    const prod = masterProducts.find(p => String(p.id) === String(item.id));
+                    const prodBuy = Number((prod && (prod.buyPrice || prod.buyprice || prod.buy_price)) || (item.buyPrice || 0));
+                    const conv = Number((prod && (prod.conversionRate || prod.conversion_rate)) || 0);
+
+                    // Determine how many BASE units to deduct from stock
+                    let baseQty = 0;
+                    if (String(item.unitType) === 'retail') {
+                        baseQty = conv > 0 ? Number(item.qty) / conv : Number(item.qty);
+                    } else {
+                        baseQty = Number(item.qty);
+                    }
+                    baseQty = Math.round((Number(baseQty) || 0) * 10000) / 10000; // safe 4 decimals
+
+                    // Compute per-unit buy price and total cost for this sold quantity
+                    let perUnitBuy = Number(prodBuy) || 0;
+                    if (String(item.unitType) === 'retail' && conv > 0) {
+                        perUnitBuy = prodBuy / conv;
+                    }
+                    const itemCostRaw = perUnitBuy * Number(item.qty);
+                    const itemCostRounded = Math.round(itemCostRaw);
+
+                    // Deduct stock safely if product has stock field
+                    if (prod && typeof prod.stock !== 'undefined' && prod.stock !== null) {
+                        const prev = Number(prod.stock) || 0;
+                        prod.stock = Math.round((prev - baseQty) * 10000) / 10000;
+                    }
+
+                    const itemCopy = Object.assign({}, item);
+                    itemCopy.baseQtyDeducted = baseQty;
+                    itemCopy.buyPrice = Math.round(perUnitBuy); // store rounded per-unit modal for reference
+                    itemCopy.cost = itemCostRounded; // store rounded per-line modal
+                    return itemCopy;
+                });
+
+                // Persist updated masterProducts (stock changes)
+                saveMasterData();
+
+                // Total modal is the sum of rounded per-line costs
+                const totalModal = itemsDetailed.reduce((s, it) => s + (Number(it.cost) || 0), 0);
                 const profit = total - totalModal;
-                
+
                 if (actionType !== 'print_only') {
-                                        // POTONG STOK (MENDUKUNG MINUS)
-                    cart.forEach(cartItem => {
-                        let pIndex = masterProducts.findIndex(p => String(p.id) === String(cartItem.id));
-                        if (pIndex !== -1 && masterProducts[pIndex].stock !== undefined) {
-                            masterProducts[pIndex].stock -= cartItem.qty;
-                            // Baris pencegah minus sudah dihapus, jadi sekarang bisa -1, -2, dst.
-                        }
-                    });
-                    saveMasterData(); 
-                    renderMasterProducts(); 
-                    renderProducts(); 
-                
-                    const transaction = { 
-                        id: Date.now(), 
-                        invoice: inv, 
-                        date: currentTransactionDateStr, 
-                        displayDate: document.getElementById('receiptDate').innerText, 
-                        time: document.getElementById('receiptTime').innerText, 
-                        items: JSON.parse(JSON.stringify(cart)), 
-                        total: total, 
-                        modal: totalModal, 
-                        profit: profit, 
-                        pay: pay, 
+                    // Persist transaction
+                    const transaction = {
+                        id: Date.now(),
+                        invoice: inv,
+                        date: currentTransactionDateStr,
+                        displayDate: document.getElementById('receiptDate').innerText,
+                        time: document.getElementById('receiptTime').innerText,
+                        items: itemsDetailed,
+                        total: total,
+                        modal: totalModal,
+                        profit: profit,
+                        pay: pay,
                         change: pay - total,
-                        method: typeof currentPaymentMethod !== 'undefined' ? currentPaymentMethod : 'cash' 
+                        method: typeof currentPaymentMethod !== 'undefined' ? currentPaymentMethod : 'cash'
                     };
-                    let history = JSON.parse(localStorage.getItem('soka_transactions')) || []; 
-                    history.push(transaction); 
+                    let history = JSON.parse(localStorage.getItem('soka_transactions')) || [];
+                    history.push(transaction);
                     localStorage.setItem('soka_transactions', JSON.stringify(history));
+
+                    // Refresh UI
+                    renderMasterProducts();
+                    renderProducts();
+                    updateMainStoreChart();
                 }
-                
-                textReceipt = generateRawTextReceipt(inv, cart, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
+
+                textReceipt = generateRawTextReceipt(inv, itemsDetailed, total, pay, (pay - total), document.getElementById('receiptDate').innerText, document.getElementById('receiptTime').innerText);
             } else {
                 const inv = reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`;
                 textReceipt = generateRawTextReceipt(inv, reprintTxData.items, reprintTxData.total, reprintTxData.pay, reprintTxData.change, reprintTxData.displayDate, reprintTxData.time);
             }
 
-                                                 if (actionType === 'printer') {
-                // DETEKSI OTOMATIS: Apakah kita ada di dalam APK Kodular?
+            if (actionType === 'printer') {
                 if (typeof window.AppInventor !== 'undefined') {
-                    // Ya, kita di dalam APK. Gunakan Jembatan Kodular!
                     window.AppInventor.setWebViewString("CETAK:" + textReceipt);
-                } 
-                // Jika bukan di APK, apakah browser HP ini mendukung fitur Share?
-                else if (navigator.share) {
+                } else if (navigator.share) {
                     navigator.share({ title: 'Struk Soka Celluler', text: textReceipt }).catch(console.error);
-                } 
-                // Kalau dibuka di Laptop atau browser jadul
-                else {
+                } else {
                     alert("Maaf, fitur cetak tidak didukung di layar ini.");
                 }
 
-            } else if (actionType === 'whatsapp') { 
+            } else if (actionType === 'whatsapp') {
                 safeOpenWhatsApp(textReceipt);
+            } else if (actionType === 'image') {
+                const receiptEl = document.getElementById('receipt-area');
+                setTimeout(() => {
+                    html2canvas(receiptEl, { scale: 3, backgroundColor: '#ffffff' }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        const inv = isReprintMode ? (reprintTxData.invoice || `INV-${reprintTxData.id.toString().slice(-6)}`) : document.getElementById('receiptInvoice').innerText;
+                        link.download = `Struk_${inv}.png`;
+                        link.href = imgData;
+                        link.click();
+                        showToast("Struk gambar berhasil diunduh!");
+                    });
+                }, 100);
             }
 
-            if(!isReprintMode) { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); updateMainStoreChart(); }
-            closeReceipt(); 
-        }                
+            if (!isReprintMode && actionType !== 'image') { clearCart(true); showToast("Transaksi Berhasil Disimpan!"); }
+            if (actionType !== 'image') { closeReceipt(); }
+        }
         
         // ================= SISTEM BUKU HUTANG (KASBON) =================
         function loadDebtsData() { const saved = localStorage.getItem('soka_debts'); if (saved) { debtsData = JSON.parse(saved); } }
