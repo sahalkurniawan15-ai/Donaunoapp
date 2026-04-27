@@ -4640,10 +4640,16 @@
                 
                 // Load transaction data
                 const transactions = JSON.parse(localStorage.getItem('soka_transactions') || '[]');
+                
+                // Filter today's transactions more reliably using transaction ID (timestamp)
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+                const todayEnd = todayStart + (24 * 60 * 60 * 1000);
+                
                 const todaysTransactions = transactions.filter(t => {
-                    const txDate = new Date(t.date).toDateString();
-                    const today = new Date().toDateString();
-                    return txDate === today;
+                    if (!t.id) return false;
+                    const txTime = typeof t.id === 'number' ? t.id : parseInt(t.id);
+                    return txTime >= todayStart && txTime < todayEnd;
                 });
 
                 // Calculate metrics
@@ -4694,7 +4700,7 @@
             function populateDashRecentTransactions(transactions) {
                 const container = document.getElementById('dashRecentTransactions');
                 
-                if (transactions.length === 0) {
+                if (!transactions || transactions.length === 0) {
                     container.innerHTML = `
                         <div class="text-center text-xs text-gray-400 py-8">
                             <i class="fa-solid fa-inbox text-2xl mb-2 block opacity-30"></i>
@@ -4704,32 +4710,49 @@
                     return;
                 }
 
-                container.innerHTML = transactions
-                    .sort((a, b) => new Date(b.time) - new Date(a.time))
-                    .slice(0, 10)
-                    .map(tx => `
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
+                // Sort by transaction ID (timestamp) descending - most recent first
+                const sorted = transactions
+                    .sort((a, b) => (b.id || 0) - (a.id || 0))
+                    .slice(0, 15);
+
+                container.innerHTML = sorted.map((tx, idx) => {
+                    const itemCount = (tx.items && tx.items.length) || 0;
+                    const profitValue = tx.profit || (tx.total - (tx.modal || 0));
+                    const profitPercent = tx.total > 0 ? Math.round((profitValue / tx.total) * 100) : 0;
+                    
+                    return `
+                        <div class="bg-gradient-to-r from-gray-50 to-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
                             <div class="flex items-start justify-between mb-2">
-                                <div class="flex-1">
-                                    <div class="text-xs font-bold text-gray-800">#${tx.invoice}</div>
-                                    <div class="text-xs text-gray-500 mt-1">${tx.customer_name || 'Umum'}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full flex-shrink-0">${idx + 1}</span>
+                                        <div class="text-xs font-bold text-gray-800 truncate">#${tx.invoice || 'N/A'}</div>
+                                    </div>
+                                    <div class="text-xs text-gray-600 ml-7">${tx.customer_name || 'Pelanggan Umum'}</div>
                                 </div>
-                                <div class="text-right">
-                                    <div class="text-sm font-black text-blue-600">${formatRp(tx.total)}</div>
-                                    <span class="inline-block text-[10px] font-bold px-2 py-1 rounded ${tx.method === 'cash' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} mt-1">
-                                        ${tx.method === 'cash' ? '💵 Tunai' : '📱 QRIS'}
-                                    </span>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-sm font-black text-blue-600">${formatRp(tx.total || 0)}</div>
+                                    <div class="text-[10px] text-emerald-600 font-bold mt-0.5">Profit: ${formatRp(profitValue)}</div>
                                 </div>
                             </div>
-                            <div class="text-xs text-gray-500">${tx.displayDate} ${tx.time}</div>
+                            <div class="flex items-center justify-between text-xs text-gray-500 pl-7">
+                                <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded ${tx.method === 'cash' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
+                                        ${tx.method === 'cash' ? '💵 Tunai' : '📱 QRIS'}
+                                    </span>
+                                    <span>${tx.time || 'N/A'}</span>
+                                </div>
+                            </div>
                         </div>
-                    `).join('');
+                    `;
+                }).join('');
             }
 
             function populateDashTopProducts(transactions) {
                 const container = document.getElementById('dashTopProducts');
                 
-                if (transactions.length === 0 || !transactions.some(t => t.items && t.items.length > 0)) {
+                if (!transactions || transactions.length === 0) {
                     container.innerHTML = `
                         <div class="text-center text-xs text-gray-400 py-8">
                             <i class="fa-solid fa-box-open text-2xl mb-2 block opacity-30"></i>
@@ -4741,29 +4764,45 @@
 
                 // Aggregate products across all transactions
                 const productMap = {};
+                
                 transactions.forEach(tx => {
-                    if (tx.items) {
+                    if (tx.items && Array.isArray(tx.items)) {
                         tx.items.forEach(item => {
-                            if (!productMap[item.barcode]) {
-                                productMap[item.barcode] = {
+                            if (!item.barcode || !item.name) return;
+                            
+                            const key = item.barcode;
+                            if (!productMap[key]) {
+                                productMap[key] = {
                                     barcode: item.barcode,
                                     name: item.name,
                                     quantity: 0,
                                     totalRevenue: 0,
-                                    avgPrice: 0
+                                    totalCost: 0,
+                                    totalProfit: 0,
+                                    unitPrice: 0,
+                                    transactionCount: 0
                                 };
                             }
-                            productMap[item.barcode].quantity += item.qty;
-                            productMap[item.barcode].totalRevenue += item.total;
-                            productMap[item.barcode].avgPrice = item.price;
+                            const qty = Number(item.qty) || 1;
+                            const price = Number(item.price) || 0;
+                            const revenue = price * qty;
+                            const cost = (Number(item.cost) || 0);
+                            const profit = revenue - cost;
+                            
+                            productMap[key].quantity += qty;
+                            productMap[key].totalRevenue += revenue;
+                            productMap[key].totalCost += cost;
+                            productMap[key].totalProfit += profit;
+                            productMap[key].unitPrice = price;
+                            productMap[key].transactionCount++;
                         });
                     }
                 });
 
-                // Convert to array and sort by quantity
+                // Convert to array and sort by revenue (most profitable/sold)
                 const topProducts = Object.values(productMap)
-                    .sort((a, b) => b.quantity - a.quantity)
-                    .slice(0, 10);
+                    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+                    .slice(0, 12);
 
                 if (topProducts.length === 0) {
                     container.innerHTML = `
@@ -4775,23 +4814,32 @@
                     return;
                 }
 
-                container.innerHTML = topProducts.map((product, idx) => `
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="inline-flex items-center justify-center w-6 h-6 bg-yellow-100 text-yellow-700 text-xs font-black rounded-full">${idx + 1}</span>
-                                    <div class="text-xs font-bold text-gray-800 truncate">${product.name}</div>
+                container.innerHTML = topProducts.map((product, idx) => {
+                    const profitMargin = product.totalRevenue > 0 ? Math.round((product.totalProfit / product.totalRevenue) * 100) : 0;
+                    const avgPerTransaction = Math.round(product.quantity / product.transactionCount);
+                    
+                    return `
+                        <div class="bg-gradient-to-r from-gray-50 to-white p-3 rounded-lg border border-gray-200 hover:border-emerald-300 hover:shadow-md transition">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 text-xs font-black rounded-full flex-shrink-0">${idx + 1}</span>
+                                        <div class="text-xs font-bold text-gray-800 truncate">${product.name}</div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 ml-7">${product.barcode}</div>
                                 </div>
-                                <div class="text-xs text-gray-500 ml-8">${product.barcode}</div>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-sm font-black text-emerald-600">${product.quantity}x</div>
+                                    <div class="text-[10px] text-blue-600 font-bold mt-0.5">${formatRp(product.totalRevenue)}</div>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-sm font-black text-emerald-600">${product.quantity}x</div>
-                                <div class="text-xs text-gray-500 mt-1">${formatRp(product.totalRevenue)}</div>
+                            <div class="flex items-center justify-between text-xs text-gray-500 pl-7">
+                                <span class="inline-block bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold">${profitMargin}% profit</span>
+                                <span>${avgPerTransaction}x/transaksi</span>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             // ================= DRAWER MENU FUNCTIONS =================
@@ -5542,47 +5590,58 @@
                 jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
                 jendelaPrint.document.write('<style>');
 
-                /* 1. Kertas 58mm & Font Dasar - Rata Kiri dengan font lebih tebal */
-                jendelaPrint.document.write('@page { size: 58mm auto; margin: 0; }');
-                jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; font-weight: bold !important; color: black !important; box-sizing: border-box; text-align: left !important; }');
-                jendelaPrint.document.write('body { width: 47mm; max-width: 47mm; margin: 0; padding: 0 1mm 0 1mm; font-size: 10px; line-height: 1.2; background: white; font-weight: bold; }');
+                /* 1. Kertas 48mm - Optimized untuk thermal printer dengan lebar 48mm */
+                jendelaPrint.document.write('@page { size: 48mm auto; margin: 0; padding: 0; }');
+                jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; color: black !important; box-sizing: border-box; }');
+                jendelaPrint.document.write('html { width: 48mm; margin: 0; padding: 0; }');
+                jendelaPrint.document.write('body { width: 48mm; max-width: 48mm; margin: 0; padding: 0.3mm 0.5mm; font-size: 9px; line-height: 1.3; background: white; font-weight: normal; overflow-x: hidden; }');
 
-                /* 2. GAYA LAYOUT - Semua rata kiri kecuali yang ditentukan */
+                /* 2. GAYA LAYOUT - Flex & Text Alignment */
                 jendelaPrint.document.write('.text-center { text-align: center !important; }');
                 jendelaPrint.document.write('.text-right { text-align: right !important; }');
                 jendelaPrint.document.write('.text-left { text-align: left !important; }');
                 jendelaPrint.document.write('.flex { display: flex !important; }');
-                jendelaPrint.document.write('.justify-between { justify-content: space-between !important; }');
+                jendelaPrint.document.write('.justify-between { justify-content: space-between !important; flex-wrap: nowrap; }');
                 jendelaPrint.document.write('.justify-center { justify-content: center !important; }');
                 jendelaPrint.document.write('.items-center { align-items: center !important; }');
                 jendelaPrint.document.write('.w-full { width: 100% !important; }');
                 jendelaPrint.document.write('.font-bold { font-weight: 900 !important; }');
                 jendelaPrint.document.write('.font-black { font-weight: 900 !important; }');
 
-                /* 3. Gaya Tabel - Rata kiri untuk daftar barang */
-                jendelaPrint.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 2px 0; }');
-                jendelaPrint.document.write('td, th { word-wrap: break-word; overflow-wrap: break-word; padding: 1px 0; text-align: left; }');
+                /* 3. Gaya Tabel & List - Optimized untuk 48mm */
+                jendelaPrint.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0.5px 0; }');
+                jendelaPrint.document.write('td, th { word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; padding: 0.25px 0; text-align: left; font-size: 9px; line-height: 1.3; }');
                 jendelaPrint.document.write('td.text-right, th.text-right { text-align: right !important; }');
                 jendelaPrint.document.write('td.text-center, th.text-center { text-align: center !important; }');
 
-                /* 4. Garis Strip - Strip yang jelas dan rapi */
-                jendelaPrint.document.write('.dashed-line { border-top: 1px dashed black !important; margin: 3px 0; width: 100%; height: 0; border-width: 1px 0 0 0; }');
+                /* 4. Garis Strip */
+                jendelaPrint.document.write('.dashed-line { border-top: 1px dashed black !important; margin: 1px 0; width: 100%; height: 0; border-width: 1px 0 0 0; }');
                 jendelaPrint.document.write('.no-print { display: none !important; }');
 
-                /* 5. Elemen Dasar - Spacing rapi */
-                jendelaPrint.document.write('p, div, h4, span { margin: 1px 0; word-wrap: break-word; white-space: normal; }');
-                jendelaPrint.document.write('h4 { font-size: 11px; margin: 2px 0; }');
+                /* 5. Elemen Dasar - Minimal spacing untuk 48mm */
+                jendelaPrint.document.write('p, div, h4, span { margin: 0.25px 0; padding: 0; word-wrap: break-word; white-space: normal; overflow-wrap: break-word; }');
+                jendelaPrint.document.write('h4 { font-size: 9px; margin: 0.5px 0; }');
                 jendelaPrint.document.write('.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }');
 
                 /* 6. Layout khusus untuk struk */
                 jendelaPrint.document.write('#receipt-area { width: 100%; padding: 0; margin: 0; }');
-                jendelaPrint.document.write('#receiptItems { margin: 2px 0; }');
-                jendelaPrint.document.write('#receiptItems div { margin: 1px 0; }');
+                jendelaPrint.document.write('#receiptItems { margin: 0.5px 0; }');
+                jendelaPrint.document.write('#receiptItems div { margin: 0.25px 0; font-size: 8.5px; line-height: 1.3; }');
+
+                /* 7. Optimasi teks - Prevent overflow */
+                jendelaPrint.document.write('div[style*="font-size: 12px"] { font-size: 10px !important; }');
+                jendelaPrint.document.write('div[style*="font-size: 11px"] { font-size: 9px !important; }');
+                jendelaPrint.document.write('div[style*="font-size: 10px"] { font-size: 9px !important; }');
+                jendelaPrint.document.write('div[style*="font-size: 8px"] { font-size: 7.5px !important; }');
+
+                /* 8. Header & Footer */
+                jendelaPrint.document.write('#receipt-area > div:first-child { text-align: center; margin-bottom: 0.5px; }');
+                jendelaPrint.document.write('#receipt-area > div:last-child { text-align: center; margin-top: 0.5px; }');
 
                 jendelaPrint.document.write('</style></head><body>');
 
-                /* Wadah utama dengan layout yang rapi */
-                jendelaPrint.document.write('<div style="width: 100%; overflow: hidden; text-align: left;">' + isiStruk + '</div>');
+                /* Wadah utama */
+                jendelaPrint.document.write('<div>' + isiStruk + '</div>');
 
                 jendelaPrint.document.write('</body></html>');
                 jendelaPrint.document.close();
