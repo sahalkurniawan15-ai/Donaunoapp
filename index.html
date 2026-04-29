@@ -38,7 +38,9 @@
         .font-receipt {
             font-family: 'Courier New', Courier, monospace;
             line-height: 1.2;
-            font-weight: bold;
+            font-weight: 900;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .dashed-line {
@@ -80,11 +82,13 @@
                 /* Lebar fleksibel 58mm atau 80mm */
                 max-width: var(--paper-width, 58mm);
                 margin: 0;
-                padding: 2mm;
-                /* Sedikit jarak aman dari tepi kertas */
+                padding: 0.8mm 1mm;
+                /* Kurangi padding untuk menghindari teks terpotong */
                 background: white;
                 color: black;
                 font-family: 'Courier New', Courier, monospace;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .no-print {
@@ -1897,8 +1901,8 @@
             <div
                 class="overflow-y-auto flex-1 bg-gray-100 p-4 border border-gray-200 rounded-2xl flex justify-center shadow-inner mb-4">
                 <div id="receipt-area"
-                    class="font-receipt text-black w-full max-w-[58mm] bg-white p-1.5 shadow-md border border-gray-300 font-bold"
-                    style="font-size: 10px; line-height: 1.3;">
+                    class="font-receipt text-black w-full max-w-[58mm] bg-white bg-white shadow-md border border-gray-300 font-bold"
+                    style="font-size: 10px; line-height: 1.3; padding: 0.8mm 1mm; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
                     <!-- HEADER TOKO -->
                     <div class="text-center mb-1.5" style="padding-bottom: 4px; border-bottom: 1px solid #000;">
                         <div style="font-size: 12px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px;"
@@ -4768,12 +4772,14 @@
                 transactions.forEach(tx => {
                     if (tx.items && Array.isArray(tx.items)) {
                         tx.items.forEach(item => {
-                            if (!item.barcode || !item.name) return;
+                            // Gunakan barcode jika ada, jika tidak gunakan id atau name
+                            const identifier = item.barcode || item.id || item.name;
+                            if (!identifier || !item.name) return;
                             
-                            const key = item.barcode;
+                            const key = identifier;
                             if (!productMap[key]) {
                                 productMap[key] = {
-                                    barcode: item.barcode,
+                                    barcode: item.barcode || item.id || '',
                                     name: item.name,
                                     quantity: 0,
                                     totalRevenue: 0,
@@ -5583,74 +5589,97 @@
                     alert("Area struk tidak ditemukan!");
                     return;
                 }
-                var isiStruk = areaStruk.innerHTML;
 
-                var jendelaPrint = window.open('', '', 'height=600,width=400');
+                // Simpan HTML asli
+                var bodyHtml = document.body.innerHTML;
+                var strukHtml = areaStruk.innerHTML;
 
-                jendelaPrint.document.write('<html><head><title>Struk Soka Celluler</title>');
-                jendelaPrint.document.write('<style>');
+                // Buat HTML baru untuk cetak dengan style 45mm
+                var printHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            @page {
+                                size: 45mm auto;
+                                margin: 0;
+                                padding: 0;
+                            }
+                            * {
+                                font-family: "Courier New", Courier, monospace !important;
+                                color: black !important;
+                                box-sizing: border-box !important;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                overflow-wrap: break-word !important;
+                                word-wrap: break-word !important;
+                                overflow: hidden !important;
+                            }
+                            html {
+                                width: 45mm;
+                                margin: 0;
+                                padding: 0;
+                                overflow: hidden;
+                            }
+                            body {
+                                width: 45mm;
+                                max-width: 45mm;
+                                margin: 0;
+                                padding: 0.4mm 0.4mm;
+                                font-size: 10.5px;
+                                line-height: 1.4;
+                                background: white;
+                                font-weight: 900;
+                                overflow: hidden;
+                            }
+                            .text-center { text-align: center !important; }
+                            .text-right { text-align: right !important; }
+                            .text-left { text-align: left !important; }
+                            .flex { display: flex !important; }
+                            .justify-between { justify-content: space-between !important; flex-wrap: nowrap !important; }
+                            .justify-center { justify-content: center !important; }
+                            .items-center { align-items: center !important; }
+                            .w-full { width: 100% !important; max-width: 100% !important; }
+                            .font-bold { font-weight: 900 !important; }
+                            .font-black { font-weight: 900 !important; }
+                            table { width: 100%; max-width: 100%; border-collapse: collapse; table-layout: auto; margin: 0.5px 0; }
+                            td, th { word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; padding: 0.2px 0; text-align: left; font-size: 10.5px; line-height: 1.4; font-weight: 900; }
+                            td.text-right, th.text-right { text-align: right !important; }
+                            td.text-center, th.text-center { text-align: center !important; }
+                            .dashed-line { border-top: 1px solid black !important; margin: 0.5px 0 !important; width: 100%; height: 0; border-width: 1px 0 0 0; }
+                            .no-print { display: none !important; }
+                            p, div, h4, span { margin: 0px 0; padding: 0; word-wrap: break-word; white-space: normal; overflow-wrap: break-word; font-weight: 900; max-width: 100%; }
+                            h4 { font-size: 10.5px; margin: 0.3px 0; font-weight: 900; }
+                            .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                            #receipt-area { width: 100%; max-width: 100%; padding: 0; margin: 0; font-weight: 900; }
+                            #receiptItems { margin: 0.5px 0; }
+                            #receiptItems div { margin: 0.3px 0; font-size: 10.5px; line-height: 1.4; font-weight: 900; }
+                            div[style*="font-size: 12px"] { font-size: 11px !important; font-weight: 900 !important; }
+                            div[style*="font-size: 11px"] { font-size: 10.5px !important; font-weight: 900 !important; }
+                            div[style*="font-size: 10px"] { font-size: 10.5px !important; font-weight: 900 !important; }
+                            div[style*="font-size: 9px"] { font-size: 10px !important; font-weight: 900 !important; }
+                            div[style*="font-size: 8px"] { font-size: 9px !important; font-weight: 900 !important; }
+                            #receipt-area > div:first-child { text-align: center; margin-bottom: 0.5px; font-weight: 900; }
+                            #receipt-area > div:last-child { text-align: center; margin-top: 0.5px; font-weight: 900; }
+                        </style>
+                    </head>
+                    <body>
+                        <div id="receipt-area">${strukHtml}</div>
+                    </body>
+                    </html>
+                `;
 
-                /* 1. Kertas 48mm - Optimized untuk thermal printer dengan lebar 48mm */
-                jendelaPrint.document.write('@page { size: 48mm auto; margin: 0; padding: 0; }');
-                jendelaPrint.document.write('* { font-family: "Courier New", Courier, monospace !important; color: black !important; box-sizing: border-box; }');
-                jendelaPrint.document.write('html { width: 48mm; margin: 0; padding: 0; }');
-                jendelaPrint.document.write('body { width: 48mm; max-width: 48mm; margin: 0; padding: 0.3mm 0.5mm; font-size: 9px; line-height: 1.3; background: white; font-weight: normal; overflow-x: hidden; }');
-
-                /* 2. GAYA LAYOUT - Flex & Text Alignment */
-                jendelaPrint.document.write('.text-center { text-align: center !important; }');
-                jendelaPrint.document.write('.text-right { text-align: right !important; }');
-                jendelaPrint.document.write('.text-left { text-align: left !important; }');
-                jendelaPrint.document.write('.flex { display: flex !important; }');
-                jendelaPrint.document.write('.justify-between { justify-content: space-between !important; flex-wrap: nowrap; }');
-                jendelaPrint.document.write('.justify-center { justify-content: center !important; }');
-                jendelaPrint.document.write('.items-center { align-items: center !important; }');
-                jendelaPrint.document.write('.w-full { width: 100% !important; }');
-                jendelaPrint.document.write('.font-bold { font-weight: 900 !important; }');
-                jendelaPrint.document.write('.font-black { font-weight: 900 !important; }');
-
-                /* 3. Gaya Tabel & List - Optimized untuk 48mm */
-                jendelaPrint.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0.5px 0; }');
-                jendelaPrint.document.write('td, th { word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; padding: 0.25px 0; text-align: left; font-size: 9px; line-height: 1.3; }');
-                jendelaPrint.document.write('td.text-right, th.text-right { text-align: right !important; }');
-                jendelaPrint.document.write('td.text-center, th.text-center { text-align: center !important; }');
-
-                /* 4. Garis Strip */
-                jendelaPrint.document.write('.dashed-line { border-top: 1px dashed black !important; margin: 1px 0; width: 100%; height: 0; border-width: 1px 0 0 0; }');
-                jendelaPrint.document.write('.no-print { display: none !important; }');
-
-                /* 5. Elemen Dasar - Minimal spacing untuk 48mm */
-                jendelaPrint.document.write('p, div, h4, span { margin: 0.25px 0; padding: 0; word-wrap: break-word; white-space: normal; overflow-wrap: break-word; }');
-                jendelaPrint.document.write('h4 { font-size: 9px; margin: 0.5px 0; }');
-                jendelaPrint.document.write('.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }');
-
-                /* 6. Layout khusus untuk struk */
-                jendelaPrint.document.write('#receipt-area { width: 100%; padding: 0; margin: 0; }');
-                jendelaPrint.document.write('#receiptItems { margin: 0.5px 0; }');
-                jendelaPrint.document.write('#receiptItems div { margin: 0.25px 0; font-size: 8.5px; line-height: 1.3; }');
-
-                /* 7. Optimasi teks - Prevent overflow */
-                jendelaPrint.document.write('div[style*="font-size: 12px"] { font-size: 10px !important; }');
-                jendelaPrint.document.write('div[style*="font-size: 11px"] { font-size: 9px !important; }');
-                jendelaPrint.document.write('div[style*="font-size: 10px"] { font-size: 9px !important; }');
-                jendelaPrint.document.write('div[style*="font-size: 8px"] { font-size: 7.5px !important; }');
-
-                /* 8. Header & Footer */
-                jendelaPrint.document.write('#receipt-area > div:first-child { text-align: center; margin-bottom: 0.5px; }');
-                jendelaPrint.document.write('#receipt-area > div:last-child { text-align: center; margin-top: 0.5px; }');
-
-                jendelaPrint.document.write('</style></head><body>');
-
-                /* Wadah utama */
-                jendelaPrint.document.write('<div>' + isiStruk + '</div>');
-
-                jendelaPrint.document.write('</body></html>');
+                // Buka window baru dengan HTML untuk cetak
+                var jendelaPrint = window.open('', '', 'width=400,height=600');
+                jendelaPrint.document.write(printHtml);
                 jendelaPrint.document.close();
-                jendelaPrint.focus();
 
-                setTimeout(function () {
+                // Tunggu sebentar kemudian langsung cetak tanpa preview
+                setTimeout(function() {
+                    jendelaPrint.focus();
                     jendelaPrint.print();
                     jendelaPrint.close();
-                    processTransaction('printer');
                 }, 500);
             }
             function toggleReportFilter() {
