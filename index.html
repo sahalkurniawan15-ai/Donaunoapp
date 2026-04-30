@@ -5515,7 +5515,7 @@
                 // Set jumlah barang
                 document.getElementById('receiptItemCount').innerText = `${totalQty} item`;
 
-                // Jika ada diskon yang diterapkan, tampilkan di struk
+                // Jika ada diskon yang diterapkan, tampilkan di struk hanya jika jumlah > 0
                 let discountObj = null;
                 if (typeof isReprintMode !== 'undefined' && isReprintMode && typeof reprintTxData !== 'undefined' && reprintTxData && reprintTxData.discount) {
                     discountObj = reprintTxData.discount;
@@ -5523,12 +5523,15 @@
                     discountObj = window.currentAppliedDiscount;
                 }
 
-                if (discountObj && discountObj.amount && discountObj.amount > 0) {
-                    const discountLine = document.createElement('div');
-                    discountLine.style.cssText = 'display:flex; justify-content: space-between; padding-left: 4px; font-size: 9px;';
-                    const code = discountObj.code || '';
-                    discountLine.innerHTML = `<span>Diskon (${code})</span><span style="font-weight: 900;">-${formatRp(discountObj.amount)}</span>`;
-                    receiptItems.appendChild(discountLine);
+                if (discountObj) {
+                    const discAmount = parseAmount(discountObj.amount || 0);
+                    if (discAmount > 0) {
+                        const discountLine = document.createElement('div');
+                        discountLine.style.cssText = 'display:flex; justify-content: space-between; padding-left: 4px; font-size: 9px;';
+                        const code = discountObj.code || '';
+                        discountLine.innerHTML = `<span>Diskon (${code})</span><span style="font-weight: 900;">-${formatRp(discAmount)}</span>`;
+                        receiptItems.appendChild(discountLine);
+                    }
                 }
 
                 // Set total, tunai, kembali dengan format Rp
@@ -5559,15 +5562,15 @@
                 // Tulis diskon ke teks struk: periksa currentAppliedDiscount lalu reprintTxData.discount
                 try {
                     let discountObj = null;
-                    if (typeof window !== 'undefined' && window.currentAppliedDiscount && window.currentAppliedDiscount.amount) {
+                    if (typeof window !== 'undefined' && window.currentAppliedDiscount) {
                         discountObj = window.currentAppliedDiscount;
                     } else if (typeof reprintTxData !== 'undefined' && reprintTxData && reprintTxData.discount) {
                         discountObj = reprintTxData.discount;
                     }
-                    if (discountObj && discountObj.amount) {
-                        const disc = discountObj.amount || 0;
-                        const code = discountObj.code || '';
-                        text += `DISKON (${code}): -${disc.toLocaleString('id-ID')}\n`;
+                    const discAmount = parseAmount((discountObj && discountObj.amount) ? discountObj.amount : 0);
+                    if (discAmount > 0) {
+                        const code = (discountObj && discountObj.code) ? discountObj.code : '';
+                        text += `DISKON (${code}): -${discAmount.toLocaleString('id-ID')}\n`;
                     }
                 } catch (e) { /* ignore */ }
                 text += `TOTAL${" ".repeat(32 - 5 - total.toLocaleString('id-ID').length)}${total.toLocaleString('id-ID')}\n`;
